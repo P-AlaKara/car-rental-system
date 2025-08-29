@@ -78,6 +78,17 @@ function LoginPage() {
         <div className="w-full max-w-md px-4">
           <div className="bg-white border rounded-lg p-8 shadow-sm">
             <div className="text-center mb-8">
+              <div className="flex items-center justify-between mb-4">
+                <button
+                  onClick={() => navigate('/')}
+                  className="flex items-center gap-2 text-sm text-slate-600 hover:text-sky-700 transition"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                  </svg>
+                  Back to Homepage
+                </button>
+              </div>
               <h1 className="text-2xl font-semibold text-slate-900 mb-2">Welcome Back</h1>
               <p className="text-slate-600">Sign in to your account</p>
             </div>

@@ -107,9 +107,6 @@ const Header = () => {
           <NavLink href="/" sectionId="home">Home</NavLink>
           <NavLink isScroll sectionId="about">About</NavLink>
           <NavLink isScroll sectionId="contact">Contact</NavLink>
-          <a href="/terms" className="px-3 py-1 text-xs border border-gray-300 rounded-md hover:border-sky-300 text-foreground/80 hover:text-sky-700">
-            T&Cs
-          </a>
         </nav>
         <div className="hidden md:flex items-center gap-3">
           {user ? (
