@@ -1015,6 +1015,27 @@ export interface BookingUpdateResponse {
 
 // Booking Management API functions
 export const bookingAPI = {
+  // Create a new booking
+  async createBooking(data: {
+    car_id: number
+    start_date: string
+    end_date: string
+    pickup_location: string
+    return_location: string
+    driver_email: string
+    driver_fullname: string
+    license_number: string
+    residential_area: string
+    special_requests?: string
+    total_cost: number
+    payment_frequency: '3days' | 'weekly'
+  }): Promise<ApiResponse<any>> {
+    console.log('📝 Creating booking with data:', data)
+    return await apiRequest<any>('/book', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    })
+  },
   // Fetch all bookings with pagination
   async getBookings(page = 0, size = 20): Promise<BookingListResponse> {
     console.log(`📅 Fetching bookings (page: ${page}, size: ${size})`)

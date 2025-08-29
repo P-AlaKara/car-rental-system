@@ -3,13 +3,14 @@ import { useParams, useNavigate } from 'react-router-dom'
 import Header from '../components/Header'
 import Footer from '../components/Footer'
 import PaymentSection from '../components/PaymentSection'
-import { DEMO_CARS } from '../lib/demo-data'
+import { bookingAPI, fleetAPI, buildImageUrl } from '../lib/api'
 
 function BookPage() {
   const { carId } = useParams<{ carId: string }>()
   const navigate = useNavigate()
-  
-  const car = DEMO_CARS.find(c => c.id === Number(carId))
+  const [car, setCar] = React.useState<any | null>(null)
+  const [loading, setLoading] = React.useState(false)
+  const [error, setError] = React.useState<string | null>(null)
   
   const [formData, setFormData] = React.useState({
     startDate: '',
@@ -24,6 +25,7 @@ function BookPage() {
   const [showPayment, setShowPayment] = React.useState(false)
   const [totalCost, setTotalCost] = React.useState(0)
   const [selectedPaymentMethod, setSelectedPaymentMethod] = React.useState('')
+  const [paymentFrequency, setPaymentFrequency] = React.useState<'3days' | 'weekly'>('weekly')
   const [isProcessing, setIsProcessing] = React.useState(false)
 
   if (!car) {
@@ -51,9 +53,9 @@ function BookPage() {
       const start = new Date(formData.startDate)
       const end = new Date(formData.endDate)
       const days = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24))
-      setTotalCost(days > 0 ? days * car.rental_rate_per_day : 0)
+      setTotalCost(days > 0 ? days * Number(car?.rental_rate_per_day || 0) : 0)
     }
-  }, [formData.startDate, formData.endDate, car.rental_rate_per_day])
+  }, [formData.startDate, formData.endDate, car])
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target
@@ -97,13 +99,33 @@ function BookPage() {
     setSelectedPaymentMethod(method)
   }
 
-  const handlePaymentSubmit = () => {
-    setIsProcessing(true)
-    // Simulate payment processing
-    setTimeout(() => {
-      setIsProcessing(false)
+  const handlePaymentSubmit = async () => {
+    try {
+      setIsProcessing(true)
+      // Compose API payload
+      const payload = {
+        car_id: Number(car.id),
+        start_date: `${formData.startDate} 10:00:00`,
+        end_date: `${formData.endDate} 10:00:00`,
+        pickup_location: formData.pickupLocation || 'Same as pickup',
+        return_location: formData.returnLocation || formData.pickupLocation || 'Same as pickup',
+        driver_email: '',
+        driver_fullname: '',
+        license_number: '',
+        residential_area: '',
+        special_requests: formData.specialRequests || undefined,
+        total_cost: Number(totalCost),
+        payment_frequency: paymentFrequency,
+      }
+
+      // NOTE: you can extend the form to capture driver details. For now, sending empty strings for required fields to follow the provided API contract.
+      await bookingAPI.createBooking(payload)
       handlePaymentSuccess()
-    }, 2000)
+    } catch (e: any) {
+      alert(e?.message || 'Booking failed')
+    } finally {
+      setIsProcessing(false)
+    }
   }
 
   if (showPayment) {
@@ -119,6 +141,20 @@ function BookPage() {
               onPaymentSubmit={handlePaymentSubmit}
               isProcessing={isProcessing}
             />
+            <div className="max-w-xl mt-6">
+              <label htmlFor="paymentFrequency" className="block text-sm font-medium text-slate-700 mb-2">Payment Frequency</label>
+              <select
+                id="paymentFrequency"
+                value={paymentFrequency}
+                onChange={(e) => setPaymentFrequency(e.target.value as '3days' | 'weekly')}
+                aria-label="Payment Frequency"
+                title="Payment Frequency"
+                className="w-full px-3 py-2 border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
+              >
+                <option value="weekly">Weekly</option>
+                <option value="3days">Every 3 days</option>
+              </select>
+            </div>
           </div>
         </div>
         <Footer />
@@ -157,11 +193,12 @@ function BookPage() {
                     
                     <div className="grid md:grid-cols-2 gap-4 mb-4">
                       <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-2">
+                        <label htmlFor="pickupDate" className="block text-sm font-medium text-slate-700 mb-2">
                           Pickup Date *
                         </label>
                         <input
                           type="date"
+                          id="pickupDate"
                           name="startDate"
                           value={formData.startDate}
                           onChange={handleInputChange}
@@ -171,11 +208,12 @@ function BookPage() {
                         />
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-2">
+                        <label htmlFor="returnDate" className="block text-sm font-medium text-slate-700 mb-2">
                           Return Date *
                         </label>
                         <input
                           type="date"
+                          id="returnDate"
                           name="endDate"
                           value={formData.endDate}
                           onChange={handleInputChange}
@@ -188,14 +226,17 @@ function BookPage() {
 
                     <div className="grid md:grid-cols-2 gap-4 mb-4">
                       <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-2">
+                        <label htmlFor="pickupLocation" className="block text-sm font-medium text-slate-700 mb-2">
                           Pickup Location *
                         </label>
                         <select
+                          id="pickupLocation"
                           name="pickupLocation"
                           value={formData.pickupLocation}
                           onChange={handleInputChange}
                           required
+                          aria-label="Pickup Location"
+                          title="Pickup Location"
                           className="w-full px-3 py-2 border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
                         >
                           <option value="">Select pickup location</option>
@@ -207,13 +248,16 @@ function BookPage() {
                         </select>
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-2">
+                        <label htmlFor="returnLocation" className="block text-sm font-medium text-slate-700 mb-2">
                           Return Location
                         </label>
                         <select
+                          id="returnLocation"
                           name="returnLocation"
                           value={formData.returnLocation}
                           onChange={handleInputChange}
+                          aria-label="Return Location"
+                          title="Return Location"
                           className="w-full px-3 py-2 border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
                         >
                           <option value="">Same as pickup</option>
@@ -237,6 +281,7 @@ function BookPage() {
                         onChange={handleInputChange}
                         placeholder="+61 4XX XXX XXX"
                         required
+                        aria-label="Phone Number"
                         className="w-full px-3 py-2 border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
                       />
                     </div>
@@ -251,6 +296,7 @@ function BookPage() {
                         value={formData.promoCode}
                         onChange={handleInputChange}
                         placeholder="Enter promo code"
+                        aria-label="Promo Code"
                         className="w-full px-3 py-2 border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
                       />
                     </div>
@@ -265,6 +311,7 @@ function BookPage() {
                         onChange={handleInputChange}
                         rows={3}
                         placeholder="Any special requests or notes..."
+                        aria-label="Special Requests"
                         className="w-full px-3 py-2 border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
                       />
                     </div>
@@ -287,7 +334,7 @@ function BookPage() {
                   <div className="space-y-3 mb-6">
                     <div className="flex gap-3">
                       <img 
-                        src={car.image_url || '/images/cars/sedan-silver.png'} 
+                        src={(car.images && car.images[0]?.image_url) ? buildImageUrl(car.images[0].image_url) : '/images/cars/sedan-silver.png'} 
                         alt={`${car.make} ${car.model}`}
                         className="w-16 h-12 object-cover rounded"
                       />
@@ -295,7 +342,7 @@ function BookPage() {
                         <p className="font-medium text-slate-900">
                           {car.year} {car.make} {car.model}
                         </p>
-                        <p className="text-sm text-slate-600">{car.category}</p>
+                        <p className="text-sm text-slate-600">{car.category?.name || car.category}</p>
                       </div>
                     </div>
                   </div>
@@ -309,7 +356,7 @@ function BookPage() {
                         </div>
                         <div className="flex justify-between">
                           <span>Rate per day:</span>
-                          <span>${car.rental_rate_per_day}</span>
+                          <span>${Number(car.rental_rate_per_day)}</span>
                         </div>
                         <hr className="my-2" />
                         <div className="flex justify-between font-semibold">

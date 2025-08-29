@@ -2,7 +2,7 @@ import * as React from 'react'
 import Header from '../components/Header'
 import Footer from '../components/Footer'
 import CarCard from '../components/CarCard'
-import { fleetAPI, type CarListResponse } from '../lib/api'
+import { fleetAPI, type CarListResponse, getStoredUser } from '../lib/api'
 
 const CARS_PER_PAGE = 12
 
@@ -24,9 +24,21 @@ function CarsPage() {
   const [total, setTotal] = React.useState(0)
   const [loading, setLoading] = React.useState(false)
   const [error, setError] = React.useState<string | null>(null)
+  const [onlyMyAgency, setOnlyMyAgency] = React.useState(false)
+  const [myAgencyId, setMyAgencyId] = React.useState<number | null>(null)
 
   const types = ['All', 'Sedan', 'SUV', 'Hatchback', 'Van']
   const priceRanges = ['All', 'Under $50', '$50-$100', 'Over $100']
+
+  // Determine current user's agency id (if logged in)
+  React.useEffect(() => {
+    const u = getStoredUser()
+    if (u && (u as any).agency && (u as any).agency.id) {
+      setMyAgencyId((u as any).agency.id)
+    } else {
+      setMyAgencyId(null)
+    }
+  }, [])
 
   // Fetch from frontend cars endpoint; apply only min_price + pagination server-side for now
   const fetchCars = React.useCallback(async () => {
@@ -34,15 +46,21 @@ function CarsPage() {
       setLoading(true)
       setError(null)
       const minPrice = priceRange === 'Under $50' ? 0 : priceRange === '$50-$100' ? 50 : priceRange === 'Over $100' ? 100 : undefined
-      const resp = await fleetAPI.getFrontendCars({ min_price: minPrice, page: currentPage - 1, size: CARS_PER_PAGE })
-      setCars(resp.data.data)
-      setTotal(resp.data.meta.total)
+      if (onlyMyAgency && myAgencyId) {
+        const resp = await fleetAPI.getCarsByAgency({ agency_id: myAgencyId, page: currentPage - 1, size: CARS_PER_PAGE })
+        setCars(resp.data)
+        setTotal(resp.meta.total_elements)
+      } else {
+        const resp = await fleetAPI.getFrontendCars({ min_price: minPrice, page: currentPage - 1, size: CARS_PER_PAGE })
+        setCars(resp.data.data)
+        setTotal(resp.data.meta.total)
+      }
     } catch (e: any) {
       setError(e?.message || 'Failed to load cars')
     } finally {
       setLoading(false)
     }
-  }, [priceRange, currentPage])
+  }, [priceRange, currentPage, onlyMyAgency, myAgencyId])
 
   React.useEffect(() => {
     fetchCars()
@@ -103,6 +121,23 @@ function CarsPage() {
                   </Chip>
                 ))}
               </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-slate-900 mb-3">Agency Filter</label>
+              <div className="flex items-center gap-3">
+                <label className="inline-flex items-center gap-2 text-sm text-slate-700">
+                  <input
+                    type="checkbox"
+                    checked={onlyMyAgency}
+                    onChange={(e) => { setOnlyMyAgency(e.target.checked); setCurrentPage(1) }}
+                  />
+                  <span>Show my agency cars only{myAgencyId ? ` (ID: ${myAgencyId})` : ''}</span>
+                </label>
+              </div>
+              {!myAgencyId && onlyMyAgency && (
+                <p className="text-xs text-slate-500 mt-2">No agency detected on your profile. Showing all cars.</p>
+              )}
             </div>
           </div>
 
