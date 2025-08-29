@@ -184,7 +184,7 @@ function LoginPage() {
             </div>
 
             {/* Demo Account Info */}
-            <div className="mt-8 p-4 bg-blue-50 border border-blue-200 rounded-md">
+            {/* <div className="mt-8 p-4 bg-blue-50 border border-blue-200 rounded-md">
               <h3 className="text-sm font-medium text-blue-900 mb-2">Demo Account</h3>
               <p className="text-xs text-blue-700 mb-2">Use these credentials to explore:</p>
               <div className="text-xs text-blue-800 space-y-1">
@@ -192,7 +192,7 @@ function LoginPage() {
                 <p><strong>Admin:</strong> admin@example.com / Admin@123</p>
                 <p><strong>Super Admin:</strong> superAdmin@example.com / Admin@123</p>
               </div>
-            </div>
+            </div> */}
           </div>
         </div>
       </div>

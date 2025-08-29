@@ -126,7 +126,7 @@ const AdminDashboard = () => {
 
   React.useEffect(() => {
     const currentUser = getCurrentUser()
-    if (!currentUser || currentUser.role !== 'admin') {
+    if (!currentUser || (currentUser.role !== 'admin' && currentUser.role !== 'superAdmin')) {
       window.location.href = '/login'
       return
     }
