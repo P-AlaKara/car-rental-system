@@ -438,29 +438,43 @@ export const fleetAPI = {
 
   // Create a new car
   async createCar(carData: CreateCarData): Promise<ApiResponse<Car>> {
-    console.log('🚗 Creating new car:', { make: carData.make, model: carData.model, license_plate: carData.license_plate })
+    const fullUrl = `${API_BASE_URL}/cars`
+    
+    console.log('� CREATE CAR DEBUG - START')
+    console.log('📍 ENDPOINT URL:', fullUrl)
+    console.log('📋 COMPLETE REQUEST DATA:', carData)
     
     const formData = new FormData()
     
-    // Append all car data to form data
-    formData.append('make', carData.make)
-    formData.append('model', carData.model)
-    formData.append('year', carData.year.toString())
-    formData.append('license_plate', carData.license_plate)
-    formData.append('category_id', carData.category_id.toString())
-    formData.append('transmission', carData.transmission)
-    formData.append('fuel_type', carData.fuel_type)
-    formData.append('seats', carData.seats.toString())
-    formData.append('rental_rate_per_day', carData.rental_rate_per_day.toString())
-    formData.append('agency_id', carData.agency_id.toString())
-    formData.append('vin', carData.vin)
-    formData.append('current_odometer', carData.current_odometer.toString())
-    formData.append('last_service_odometer', carData.last_service_odometer.toString())
-    formData.append('service_threshold_km', carData.service_threshold_km.toString())
-    formData.append('insurance_expiry_date', carData.insurance_expiry_date)
+    // Append all car data to form data with detailed logging
+    console.log('📝 FORM DATA CREATION:')
+    const formFields = [
+      { key: 'make', value: carData.make },
+      { key: 'model', value: carData.model },
+      { key: 'year', value: carData.year.toString() },
+      { key: 'license_plate', value: carData.license_plate },
+      { key: 'category_id', value: carData.category_id.toString() },
+      { key: 'transmission', value: carData.transmission },
+      { key: 'fuel_type', value: carData.fuel_type },
+      { key: 'seats', value: carData.seats.toString() },
+      { key: 'rental_rate_per_day', value: carData.rental_rate_per_day.toString() },
+      { key: 'agency_id', value: carData.agency_id.toString() },
+      { key: 'vin', value: carData.vin },
+      { key: 'current_odometer', value: carData.current_odometer.toString() },
+      { key: 'last_service_odometer', value: carData.last_service_odometer.toString() },
+      { key: 'service_threshold_km', value: carData.service_threshold_km.toString() },
+      { key: 'insurance_expiry_date', value: carData.insurance_expiry_date }
+    ]
     
-    // Append images
-    carData.images.forEach(image => {
+    formFields.forEach(field => {
+      console.log(`  ${field.key}: "${field.value}"`)
+      formData.append(field.key, field.value)
+    })
+    
+    // Append images with logging
+    console.log(`📸 IMAGES: ${carData.images.length} files`)
+    carData.images.forEach((image, index) => {
+      console.log(`  Image ${index + 1}: ${image.name} (${image.size} bytes, ${image.type})`)
       formData.append('images[]', image)
     })
 
@@ -471,21 +485,47 @@ export const fleetAPI = {
     
     if (token) {
       headers.Authorization = `Bearer ${token}`
+      console.log('🔑 AUTH TOKEN:', token.substring(0, 20) + '...')
+    } else {
+      console.log('❌ NO AUTH TOKEN FOUND')
+    }
+    
+    console.log('📤 REQUEST HEADERS:', headers)
+    
+    // Log FormData contents (for debugging)
+    console.log('📋 FORMDATA ENTRIES:')
+    for (const [key, value] of formData.entries()) {
+      if (value instanceof File) {
+        console.log(`  ${key}: File(${value.name}, ${value.size} bytes)`)
+      } else {
+        console.log(`  ${key}: "${value}"`)
+      }
     }
 
-    const response = await fetch(`${API_BASE_URL}/cars`, {
+    console.log('🚀 SENDING REQUEST TO:', fullUrl)
+    const response = await fetch(fullUrl, {
       method: 'POST',
       headers,
       body: formData
     })
 
+    console.log('📥 RESPONSE STATUS:', response.status)
+    console.log('📥 RESPONSE HEADERS:', Object.fromEntries(response.headers.entries()))
+    
     const data = await response.json()
-    console.log(`📥 Create car response (${response.status}):`, data)
+    console.log('📥 RESPONSE BODY:', JSON.stringify(data, null, 2))
     
     if (!response.ok) {
+      console.log('❌ REQUEST FAILED')
+      console.log('💥 ERROR MESSAGE:', data.message)
+      if (data.errors) {
+        console.log('💥 VALIDATION ERRORS:', data.errors)
+      }
       throw new Error(data.message || 'Failed to create car')
     }
 
+    console.log('✅ CAR CREATED SUCCESSFULLY')
+    console.log('🔥 CREATE CAR DEBUG - END')
     return data
   },
 

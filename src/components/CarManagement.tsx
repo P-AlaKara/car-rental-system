@@ -1,6 +1,8 @@
 import * as React from 'react'
 import { fleetAPI, type Car, type CarFilters, type CreateCarData } from '../lib/api'
 import { getCurrentUser } from '../lib/auth'
+import ImageCarousel from './ImageCarousel'
+import CarDetailModal from './CarDetailModal'
 
 interface CarFormData {
   make: string
@@ -35,13 +37,14 @@ const CarManagement = () => {
   const [totalCars, setTotalCars] = React.useState(0)
   const [error, setError] = React.useState<string>('')
   const [actionLoading, setActionLoading] = React.useState<{ [key: string]: boolean }>({})
-  
+  const [selectedCarId, setSelectedCarId] = React.useState<number | null>(null)
+  const [isCarDetailModalOpen, setIsCarDetailModalOpen] = React.useState(false)
   const [formData, setFormData] = React.useState<CarFormData>({
     make: '',
     model: '',
     year: new Date().getFullYear(),
     license_plate: '',
-    category_id: 1, // Default to Economy category
+    category_id: 2, // Default category
     transmission: 'Automatic',
     fuel_type: 'Petrol',
     seats: 5,
@@ -50,7 +53,7 @@ const CarManagement = () => {
     current_odometer: 0,
     last_service_odometer: 0,
     service_threshold_km: 5000,
-    insurance_expiry_date: '',
+    insurance_expiry_date: new Date(new Date().getFullYear() + 1, 11, 31).toISOString().split('T')[0], // Default to end of next year
     images: []
   })
 
@@ -96,7 +99,16 @@ const CarManagement = () => {
   }
 
   const handleInputChange = (field: keyof CarFormData, value: string | number | File[]) => {
-    setFormData(prev => ({ ...prev, [field]: value }))
+    setFormData(prev => {
+      // Handle numeric fields to avoid NaN
+      if (field === 'year' || field === 'seats' || field === 'rental_rate_per_day' || 
+          field === 'current_odometer' || field === 'last_service_odometer' || 
+          field === 'service_threshold_km' || field === 'category_id') {
+        const numValue = typeof value === 'string' ? parseFloat(value) : value
+        return { ...prev, [field]: isNaN(numValue as number) ? 0 : numValue }
+      }
+      return { ...prev, [field]: value }
+    })
   }
 
   const resetForm = () => {
@@ -105,7 +117,7 @@ const CarManagement = () => {
       model: '',
       year: new Date().getFullYear(),
       license_plate: '',
-      category_id: 1,
+      category_id: 2, // Default category
       transmission: 'Automatic',
       fuel_type: 'Petrol',
       seats: 5,
@@ -114,14 +126,54 @@ const CarManagement = () => {
       current_odometer: 0,
       last_service_odometer: 0,
       service_threshold_km: 5000,
-      insurance_expiry_date: '',
+      insurance_expiry_date: new Date(new Date().getFullYear() + 1, 11, 31).toISOString().split('T')[0], // Default to end of next year
       images: []
     })
   }
 
+  // Calculate if form is ready for submission
+  const isFormValid = React.useMemo(() => {
+    const requiredFields = [
+      formData.make,
+      formData.model,
+      formData.license_plate,
+      formData.vin,
+      formData.insurance_expiry_date
+    ]
+    
+    const allFieldsFilled = requiredFields.every(field => field && field.toString().trim() !== '')
+    const hasImages = formData.images.length > 0
+    const validYear = formData.year >= 2000 && formData.year <= new Date().getFullYear() + 1
+    const validRate = formData.rental_rate_per_day > 0
+    
+    return allFieldsFilled && hasImages && validYear && validRate
+  }, [formData])
+
   const handleAddCar = async () => {
     if (!userAgencyId) {
       setError('Agency ID not found. Please log in again.')
+      return
+    }
+
+    // Validate required fields
+    if (!formData.make || !formData.model || !formData.license_plate || !formData.vin || !formData.insurance_expiry_date) {
+      setError('Please fill in all required fields.')
+      return
+    }
+
+    if (formData.images.length === 0) {
+      setError('Please upload at least one image.')
+      return
+    }
+
+    // Validate numeric fields
+    if (formData.year < 2000 || formData.year > new Date().getFullYear() + 1) {
+      setError('Please enter a valid year.')
+      return
+    }
+
+    if (formData.rental_rate_per_day <= 0) {
+      setError('Rental rate must be greater than 0.')
       return
     }
 
@@ -134,17 +186,32 @@ const CarManagement = () => {
         agency_id: userAgencyId
       }
 
-      console.log('➕ Creating new car:', carData)
+      console.log('🚗 CAR MANAGEMENT - FORM DATA TO BE SENT:')
+      console.log('📋 COMPLETE FORM DATA:', JSON.stringify(carData, null, 2))
+      console.log('📸 IMAGES INFO:')
+      formData.images.forEach((image, index) => {
+        console.log(`  Image ${index + 1}:`, {
+          name: image.name,
+          size: image.size,
+          type: image.type,
+          lastModified: new Date(image.lastModified).toISOString()
+        })
+      })
       
       const response = await fleetAPI.createCar(carData)
-      console.log('✅ Car created successfully:', response.data)
+      console.log('✅ CAR MANAGEMENT - Car created successfully:', response.data)
       
       setIsAddingCar(false)
       resetForm()
       loadCars() // Reload the cars list
       
     } catch (err: any) {
-      console.error('❌ Failed to create car:', err)
+      console.error('❌ CAR MANAGEMENT - Failed to create car:', err)
+      console.error('❌ ERROR DETAILS:', {
+        message: err.message,
+        stack: err.stack,
+        cause: err.cause
+      })
       setError(err.message || 'Failed to create car. Please try again.')
     } finally {
       setActionLoading(prev => ({ ...prev, addCar: false }))
@@ -191,22 +258,14 @@ const CarManagement = () => {
     }
   }
 
-  const handleToggleMaintenance = async (carId: number) => {
-    try {
-      setActionLoading(prev => ({ ...prev, [`maintenance_${carId}`]: true }))
-      
-      console.log('🔧 Toggling car maintenance:', carId)
-      const response = await fleetAPI.toggleCarMaintenance(carId)
-      console.log('✅ Car maintenance status updated:', response.data.status)
-      
-      loadCars() // Reload the cars list
-      
-    } catch (err: any) {
-      console.error('❌ Failed to toggle car maintenance:', err)
-      setError(err.message || 'Failed to update car maintenance status. Please try again.')
-    } finally {
-      setActionLoading(prev => ({ ...prev, [`maintenance_${carId}`]: false }))
-    }
+  const openCarDetail = (carId: number) => {
+    setSelectedCarId(carId)
+    setIsCarDetailModalOpen(true)
+  }
+
+  const closeCarDetail = () => {
+    setSelectedCarId(null)
+    setIsCarDetailModalOpen(false)
   }
 
   const getStatusColor = (status: string) => {
@@ -482,13 +541,17 @@ const CarManagement = () => {
           {viewMode === 'grid' && (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredCars.map((car) => (
-                <div key={car.id} className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+                <div 
+                  key={car.id} 
+                  className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow cursor-pointer"
+                  onClick={() => openCarDetail(car.id)}
+                >
                   {/* Car Image */}
                   <div className="relative h-48 bg-gray-100">
-                    <img 
-                      src={car.images[0]?.image_url || '/placeholder.svg'} 
+                    <ImageCarousel
+                      images={car.images || []}
                       alt={`${car.year} ${car.make} ${car.model}`}
-                      className="w-full h-full object-cover"
+                      className="h-full"
                     />
                     <div className="absolute top-3 right-3">
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(car.status)}`}>
@@ -522,7 +585,7 @@ const CarManagement = () => {
                       </div>
                       <div className="flex justify-between text-sm">
                         <span className="text-gray-600">Odometer:</span>
-                        <span className="font-medium">{car.current_odometer.toLocaleString()} km</span>
+                        <span className="font-medium">{car.current_odometer?.toLocaleString() || 0} km</span>
                       </div>
                       <div className="flex justify-between text-sm">
                         <span className="text-gray-600">Fuel:</span>
@@ -537,7 +600,10 @@ const CarManagement = () => {
                     {/* Action Buttons */}
                     <div className="flex flex-wrap gap-2">
                       <button
-                        onClick={() => handleToggleStatus(car.id)}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleToggleStatus(car.id)
+                        }}
                         disabled={actionLoading[`status_${car.id}`]}
                         className={`flex-1 px-3 py-2 text-sm rounded-lg transition-colors ${
                           car.status === 'Available' 
@@ -548,20 +614,12 @@ const CarManagement = () => {
                         {actionLoading[`status_${car.id}`] ? 'Loading...' : 
                          car.status === 'Available' ? 'Disable' : 'Enable'}
                       </button>
+
                       <button
-                        onClick={() => handleToggleMaintenance(car.id)}
-                        disabled={actionLoading[`maintenance_${car.id}`]}
-                        className={`flex-1 px-3 py-2 text-sm rounded-lg transition-colors ${
-                          car.status === 'Under_maintenance' 
-                            ? 'bg-blue-600 text-white hover:bg-blue-700' 
-                            : 'bg-orange-600 text-white hover:bg-orange-700'
-                        } disabled:opacity-50`}
-                      >
-                        {actionLoading[`maintenance_${car.id}`] ? 'Loading...' : 
-                         car.status === 'Under_maintenance' ? 'Remove from Maintenance' : 'Send to Maintenance'}
-                      </button>
-                      <button
-                        onClick={() => handleDeleteCar(car.id)}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleDeleteCar(car.id)
+                        }}
                         disabled={actionLoading[`delete_${car.id}`]}
                         className="px-3 py-2 bg-red-600 text-white text-sm rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50"
                       >
@@ -590,14 +648,20 @@ const CarManagement = () => {
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
                     {filteredCars.map((car) => (
-                      <tr key={car.id} className="hover:bg-gray-50">
+                      <tr 
+                        key={car.id} 
+                        className="hover:bg-gray-50 cursor-pointer"
+                        onClick={() => openCarDetail(car.id)}
+                      >
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex items-center">
-                            <img 
-                              src={car.images[0]?.image_url || '/placeholder.svg'} 
-                              alt={`${car.year} ${car.make} ${car.model}`}
-                              className="w-12 h-12 rounded-lg object-cover mr-4"
-                            />
+                            <div className="w-12 h-12 rounded-lg overflow-hidden mr-4">
+                              <ImageCarousel
+                                images={car.images || []}
+                                alt={`${car.year} ${car.make} ${car.model}`}
+                                className="w-full h-full"
+                              />
+                            </div>
                             <div>
                               <div className="text-sm font-medium text-gray-900">
                                 {car.year} {car.make} {car.model}
@@ -615,7 +679,7 @@ const CarManagement = () => {
                           <div className="space-y-1">
                             <div>{car.category?.name || 'Unknown'} • {car.transmission}</div>
                             <div className="text-gray-500">{car.fuel_type} • {car.seats} seats</div>
-                            <div className="text-gray-500">{car.current_odometer.toLocaleString()} km</div>
+                            <div className="text-gray-500">{car.current_odometer?.toLocaleString() || 0} km</div>
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
@@ -625,7 +689,10 @@ const CarManagement = () => {
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                           <div className="flex gap-2">
                             <button
-                              onClick={() => handleToggleStatus(car.id)}
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                handleToggleStatus(car.id)
+                              }}
                               disabled={actionLoading[`status_${car.id}`]}
                               className={`px-3 py-1 text-xs rounded-lg transition-colors ${
                                 car.status === 'Available' 
@@ -637,19 +704,10 @@ const CarManagement = () => {
                                car.status === 'Available' ? 'Disable' : 'Enable'}
                             </button>
                             <button
-                              onClick={() => handleToggleMaintenance(car.id)}
-                              disabled={actionLoading[`maintenance_${car.id}`]}
-                              className={`px-3 py-1 text-xs rounded-lg transition-colors ${
-                                car.status === 'Under_maintenance' 
-                                  ? 'bg-blue-600 text-white hover:bg-blue-700' 
-                                  : 'bg-orange-600 text-white hover:bg-orange-700'
-                              } disabled:opacity-50`}
-                            >
-                              {actionLoading[`maintenance_${car.id}`] ? 'Loading...' : 
-                               car.status === 'Under_maintenance' ? 'Remove' : 'Maintenance'}
-                            </button>
-                            <button
-                              onClick={() => handleDeleteCar(car.id)}
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                handleDeleteCar(car.id)
+                              }}
                               disabled={actionLoading[`delete_${car.id}`]}
                               className="px-3 py-1 bg-red-600 text-white text-xs rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50"
                             >
@@ -735,8 +793,8 @@ const CarManagement = () => {
                   <label className="block text-sm font-medium text-gray-700 mb-2">Year *</label>
                   <input
                     type="number"
-                    value={formData.year}
-                    onChange={(e) => handleInputChange('year', parseInt(e.target.value))}
+                    value={formData.year || new Date().getFullYear()}
+                    onChange={(e) => handleInputChange('year', parseInt(e.target.value) || new Date().getFullYear())}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
                     min="2000"
                     max={new Date().getFullYear() + 1}
@@ -759,8 +817,8 @@ const CarManagement = () => {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Category *</label>
                   <select
-                    value={formData.category_id}
-                    onChange={(e) => handleInputChange('category_id', parseInt(e.target.value))}
+                    value={formData.category_id || 2}
+                    onChange={(e) => handleInputChange('category_id', parseInt(e.target.value) || 2)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
                     required
                   >
@@ -804,8 +862,8 @@ const CarManagement = () => {
                   <label className="block text-sm font-medium text-gray-700 mb-2">Seats *</label>
                   <input
                     type="number"
-                    value={formData.seats}
-                    onChange={(e) => handleInputChange('seats', parseInt(e.target.value))}
+                    value={formData.seats || 5}
+                    onChange={(e) => handleInputChange('seats', parseInt(e.target.value) || 5)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
                     min="2"
                     max="12"
@@ -817,8 +875,8 @@ const CarManagement = () => {
                   <label className="block text-sm font-medium text-gray-700 mb-2">Daily Rate ($) *</label>
                   <input
                     type="number"
-                    value={formData.rental_rate_per_day}
-                    onChange={(e) => handleInputChange('rental_rate_per_day', parseFloat(e.target.value))}
+                    value={formData.rental_rate_per_day || 0}
+                    onChange={(e) => handleInputChange('rental_rate_per_day', parseFloat(e.target.value) || 0)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
                     min="0"
                     step="0.01"
@@ -842,8 +900,8 @@ const CarManagement = () => {
                   <label className="block text-sm font-medium text-gray-700 mb-2">Current Odometer (km) *</label>
                   <input
                     type="number"
-                    value={formData.current_odometer}
-                    onChange={(e) => handleInputChange('current_odometer', parseInt(e.target.value))}
+                    value={formData.current_odometer || 0}
+                    onChange={(e) => handleInputChange('current_odometer', parseInt(e.target.value) || 0)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
                     min="0"
                     required
@@ -854,8 +912,8 @@ const CarManagement = () => {
                   <label className="block text-sm font-medium text-gray-700 mb-2">Last Service Odometer (km) *</label>
                   <input
                     type="number"
-                    value={formData.last_service_odometer}
-                    onChange={(e) => handleInputChange('last_service_odometer', parseInt(e.target.value))}
+                    value={formData.last_service_odometer || 0}
+                    onChange={(e) => handleInputChange('last_service_odometer', parseInt(e.target.value) || 0)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
                     min="0"
                     required
@@ -866,8 +924,8 @@ const CarManagement = () => {
                   <label className="block text-sm font-medium text-gray-700 mb-2">Service Threshold (km) *</label>
                   <input
                     type="number"
-                    value={formData.service_threshold_km}
-                    onChange={(e) => handleInputChange('service_threshold_km', parseInt(e.target.value))}
+                    value={formData.service_threshold_km || 5000}
+                    onChange={(e) => handleInputChange('service_threshold_km', parseInt(e.target.value) || 5000)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
                     min="1000"
                     required
@@ -881,6 +939,7 @@ const CarManagement = () => {
                     value={formData.insurance_expiry_date}
                     onChange={(e) => handleInputChange('insurance_expiry_date', e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
+                    min={new Date().toISOString().split('T')[0]}
                     required
                   />
                 </div>
@@ -891,13 +950,69 @@ const CarManagement = () => {
                     type="file"
                     accept="image/*"
                     multiple
-                    onChange={(e) => handleInputChange('images', Array.from(e.target.files || []))}
+                    onChange={(e) => {
+                      const newFiles = Array.from(e.target.files || [])
+                      // Add new files to existing ones instead of replacing
+                      setFormData(prev => ({
+                        ...prev,
+                        images: [...prev.images, ...newFiles]
+                      }))
+                    }}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
-                    required
                   />
                   <p className="text-xs text-gray-500 mt-1">Select one or more images for the car</p>
+                  
+                  {/* Show selected images */}
+                  {formData.images.length > 0 && (
+                    <div className="mt-3">
+                      <p className="text-sm font-medium text-gray-700 mb-2">Selected Images ({formData.images.length}):</p>
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                        {formData.images.map((image, index) => (
+                          <div key={index} className="relative">
+                            <img
+                              src={URL.createObjectURL(image)}
+                              alt={`Preview ${index + 1}`}
+                              className="w-full h-20 object-cover rounded-lg border border-gray-300"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setFormData(prev => ({
+                                  ...prev,
+                                  images: prev.images.filter((_, i) => i !== index)
+                                }))
+                              }}
+                              className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600 transition-colors"
+                            >
+                              ×
+                            </button>
+                            <div className="absolute bottom-1 left-1 bg-black bg-opacity-50 text-white text-xs px-1 rounded">
+                              {index + 1}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
+              
+              {/* Form Validation Status */}
+              {!isFormValid && (
+                <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                  <h4 className="text-sm font-medium text-yellow-800 mb-2">Please complete the following:</h4>
+                  <ul className="text-xs text-yellow-700 space-y-1">
+                    {!formData.make && <li>• Make is required</li>}
+                    {!formData.model && <li>• Model is required</li>}
+                    {!formData.license_plate && <li>• License plate is required</li>}
+                    {!formData.vin && <li>• VIN is required</li>}
+                    {!formData.insurance_expiry_date && <li>• Insurance expiry date is required</li>}
+                    {formData.images.length === 0 && <li>• At least one image is required</li>}
+                    {formData.rental_rate_per_day <= 0 && <li>• Rental rate must be greater than 0</li>}
+                    {(formData.year < 2000 || formData.year > new Date().getFullYear() + 1) && <li>• Year must be between 2000 and {new Date().getFullYear() + 1}</li>}
+                  </ul>
+                </div>
+              )}
               
               <div className="flex justify-end gap-3 mt-6 pt-4 border-t">
                 <button
@@ -910,9 +1025,21 @@ const CarManagement = () => {
                   Cancel
                 </button>
                 <button
-                  onClick={handleAddCar}
-                  disabled={actionLoading.addCar}
-                  className="px-6 py-2 bg-sky-600 text-white rounded-lg hover:bg-sky-700 transition-colors disabled:opacity-50"
+                  onClick={() => {
+                    console.log('🔥 ADD CAR BUTTON CLICKED')
+                    console.log('📋 Current form data:', formData)
+                    console.log('✅ Form valid?', isFormValid)
+                    console.log('🔒 Button disabled?', actionLoading.addCar)
+                    console.log('🏢 User Agency ID:', userAgencyId)
+                    handleAddCar()
+                  }}
+                  disabled={actionLoading.addCar || !isFormValid}
+                  className={`px-6 py-2 rounded-lg transition-colors cursor-pointer ${
+                    isFormValid && !actionLoading.addCar
+                      ? 'bg-sky-600 text-white hover:bg-sky-700' 
+                      : 'bg-gray-400 text-gray-600 cursor-not-allowed'
+                  }`}
+                  title={!isFormValid ? 'Please fill in all required fields' : ''}
                 >
                   {actionLoading.addCar ? 'Creating Car...' : 'Add Car'}
                 </button>
@@ -920,6 +1047,16 @@ const CarManagement = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Car Detail Modal */}
+      {selectedCarId && (
+        <CarDetailModal
+          carId={selectedCarId}
+          isOpen={isCarDetailModalOpen}
+          onClose={closeCarDetail}
+          onCarUpdate={loadCars}
+        />
       )}
     </div>
   )
