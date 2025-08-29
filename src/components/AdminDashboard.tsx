@@ -11,6 +11,7 @@ import DriversPage from '../pages/DriversPage'
 import PaymentsPage from '../pages/PaymentsPage'
 import MaintenancePage from '../pages/MaintenancePage'
 import ReportsPage from '../pages/ReportsPage'
+import AdminProfilePage from '../pages/AdminProfilePage'
 
 // Sidebar component
 const AdminSidebar = ({ isOpen, activeSection, onSectionChange, user }: { 
@@ -28,10 +29,16 @@ const AdminSidebar = ({ isOpen, activeSection, onSectionChange, user }: {
     { id: 'payments', label: 'Payments', icon: '💳' },
     { id: 'maintenance', label: 'Maintenance', icon: '🔧' },
     { id: 'reports', label: 'Reports', icon: '📈' },
+    { id: 'profile', label: 'Profile', icon: '👤' },
   ]
 
+  const handleLogout = () => {
+    logout()
+    window.location.href = '/login'
+  }
+
   return (
-    <div className={`bg-slate-900 text-white h-full transition-all duration-300 ${isOpen ? 'w-64' : 'w-16'}`}>
+    <div className={`bg-slate-900 text-white h-full transition-all duration-300 flex flex-col ${isOpen ? 'w-64' : 'w-16'}`}>
       <div className="p-4">
         {/* Logo */}
         <button
@@ -61,7 +68,8 @@ const AdminSidebar = ({ isOpen, activeSection, onSectionChange, user }: {
         )}
       </div>
       
-      <nav className="mt-8">
+      {/* Navigation Menu - Flex grow to push logout to bottom */}
+      <nav className="flex-1 mt-8">
         {menuItems.map((item) => (
           <button
             key={item.id}
@@ -75,15 +83,54 @@ const AdminSidebar = ({ isOpen, activeSection, onSectionChange, user }: {
           </button>
         ))}
       </nav>
+
+      {/* Logout Button at Bottom */}
+      <div className="p-4 border-t border-slate-700">
+        <button
+          onClick={handleLogout}
+          className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-red-600 transition-colors rounded-md bg-red-500"
+        >
+          <span className="text-xl">🚪</span>
+          {isOpen && <span className="text-sm">Logout</span>}
+        </button>
+      </div>
     </div>
   )
 }
 
 // Top navigation bar
-const AdminTopBar = ({ user, onToggleSidebar }: { user: Profile | null; onToggleSidebar: () => void }) => {
+const AdminTopBar = ({ 
+  user, 
+  onToggleSidebar, 
+  onSectionChange 
+}: { 
+  user: Profile | null; 
+  onToggleSidebar: () => void;
+  onSectionChange: (section: string) => void;
+}) => {
+  const [dropdownOpen, setDropdownOpen] = React.useState(false)
+  const dropdownRef = React.useRef<HTMLDivElement>(null)
+
+  // Close dropdown when clicking outside
+  React.useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setDropdownOpen(false)
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
   const handleLogout = () => {
     logout()
     window.location.href = '/login'
+  }
+
+  const handleProfileClick = () => {
+    setDropdownOpen(false)
+    onSectionChange('profile')
   }
 
   if (!user) return null
@@ -99,20 +146,46 @@ const AdminTopBar = ({ user, onToggleSidebar }: { user: Profile | null; onToggle
         </button>
         
         <div className="flex items-center gap-4">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-sky-100 rounded-full flex items-center justify-center">
-              <span className="text-sky-700 font-medium text-sm">
-                {user.first_name?.[0] || user.email[0].toUpperCase()}
+          <div className="relative" ref={dropdownRef}>
+            {/* Clickable User Icon */}
+            <button
+              onClick={() => setDropdownOpen(!dropdownOpen)}
+              className="flex items-center gap-3 p-2 rounded-md hover:bg-gray-100 transition-colors"
+            >
+              <div className="w-8 h-8 bg-sky-100 rounded-full flex items-center justify-center">
+                <span className="text-sky-700 font-medium text-sm">
+                  {user.first_name?.[0] || user.email[0].toUpperCase()}
+                </span>
+              </div>
+              <span className="text-sm text-gray-700">{user.first_name} {user.last_name}</span>
+              <span className={`text-gray-400 transition-transform ${dropdownOpen ? 'rotate-180' : ''}`}>
+                ▼
               </span>
-            </div>
-            <span className="text-sm text-gray-700">{user.first_name} {user.last_name}</span>
+            </button>
+
+            {/* Dropdown Menu */}
+            {dropdownOpen && (
+              <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg border border-gray-200 z-50">
+                <div className="py-1">
+                  <button
+                    onClick={handleProfileClick}
+                    className="flex items-center gap-3 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                  >
+                    <span className="text-sky-600">👤</span>
+                    View Profile
+                  </button>
+                  <hr className="my-1 border-gray-200" />
+                  <button
+                    onClick={handleLogout}
+                    className="flex items-center gap-3 w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                  >
+                    <span>🚪</span>
+                    Logout
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
-          <button
-            onClick={handleLogout}
-            className="px-3 py-1.5 text-sm bg-slate-600 text-white rounded-md hover:bg-slate-700"
-          >
-            Logout
-          </button>
         </div>
       </div>
     </div>
@@ -158,6 +231,8 @@ const AdminDashboard = () => {
         return <MaintenancePage />
       case 'reports':
         return <ReportsPage />
+      case 'profile':
+        return <AdminProfilePage />
       default:
         return <DashboardPage />
     }
@@ -188,7 +263,8 @@ const AdminDashboard = () => {
         {/* Top navigation */}
         <AdminTopBar 
           user={user} 
-          onToggleSidebar={() => setSidebarOpen(!sidebarOpen)} 
+          onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
+          onSectionChange={setActiveSection}
         />
         
         {/* Content */}
@@ -196,7 +272,7 @@ const AdminDashboard = () => {
           <div className="p-6">
             <div className="mb-6">
               <h1 className="text-2xl font-bold text-gray-900">
-                {activeSection.charAt(0).toUpperCase() + activeSection.slice(1)}
+                {activeSection === 'profile' ? 'Profile' : activeSection.charAt(0).toUpperCase() + activeSection.slice(1)}
               </h1>
               <div className="text-sm text-gray-500">
                 Last updated: {new Date().toLocaleString()}
