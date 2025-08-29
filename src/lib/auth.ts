@@ -1,7 +1,8 @@
-import type { Profile, Booking } from './types'
+import type { Profile, Booking, DashboardData } from './types'
 import { authAPI, type User, type LoginRequest, type RegisterRequest } from './api'
 
 const USER_KEY = 'am_user'
+const DASHBOARD_KEY = 'am_dashboard'
 const BOOKINGS_KEY = 'am_bookings'
 
 export function getCurrentUser(): Profile | null {
@@ -30,9 +31,24 @@ export function getCurrentUser(): Profile | null {
   }
 }
 
+export function getCurrentDashboard(): DashboardData | null {
+  try {
+    const dashboardData = localStorage.getItem(DASHBOARD_KEY)
+    if (!dashboardData) return null
+    return JSON.parse(dashboardData)
+  } catch {
+    return null
+  }
+}
+
 export function setCurrentUser(user: Profile | null) {
   if (user) localStorage.setItem(USER_KEY, JSON.stringify(user))
   else localStorage.removeItem(USER_KEY)
+}
+
+export function setCurrentDashboard(dashboard: DashboardData | null) {
+  if (dashboard) localStorage.setItem(DASHBOARD_KEY, JSON.stringify(dashboard))
+  else localStorage.removeItem(DASHBOARD_KEY)
 }
 
 export async function login(email: string, password: string): Promise<Profile> {
@@ -62,6 +78,12 @@ export async function login(email: string, password: string): Promise<Profile> {
   setCurrentUser(profile)
   if (response.token) {
     localStorage.setItem('auth_token', response.token)
+  }
+  
+  // Store dashboard data if present
+  if (response.dashboard) {
+    setCurrentDashboard(response.dashboard)
+    console.log('📊 Auth: Dashboard data stored:', response.dashboard.agency_name)
   }
   
   console.log('✅ Auth: Login successful, profile created and stored:', profile)
@@ -121,9 +143,10 @@ export async function logout() {
   
   // Clear local storage regardless of API call success
   setCurrentUser(null)
+  setCurrentDashboard(null)
   localStorage.removeItem('auth_token')
   
-  console.log('✅ Auth: Logout completed - user data and token cleared')
+  console.log('✅ Auth: Logout completed - user data, dashboard, and token cleared')
 }
 
 export function listBookings(): Booking[] {

@@ -32,20 +32,98 @@ export interface Agency {
 }
 
 export interface DashboardData {
-  // Customer dashboard
-  data?: string
-  // Admin dashboard
-  agency_name?: string
-  cars_count?: number
-  available_cars?: number
-  rented_cars?: number
-  under_maintenance_cars?: number
-  // SuperAdmin dashboard
-  agencies_count?: number
-  bookings_count?: number
-  total_users?: number
-  active_users?: number
-  inactive_users?: number
+  agency_name: string
+  agency_id: number
+  total_cars: number
+  available_cars: number
+  rented_cars: number
+  disabled_cars: number
+  under_maintenance_cars: number
+  cars_due_service: number
+  total_bookings: number
+  active_bookings: number
+  pending_bookings: number
+  confirmed_bookings: number
+  in_progress_bookings: number
+  completed_bookings: number
+  cancelled_bookings: number
+  total_users: number
+  active_users: number
+  inactive_users: number
+  customer_users: number
+  monthly_revenue: number
+  total_revenue: number
+  pending_payments: number
+  pending_amount: number
+  paid_amount: number
+  avg_booking_value: number
+  avg_daily_rate: number
+  fleet_utilization_rate: number
+  conversion_rate: number
+  avg_rental_duration: number
+  service_threshold_km: number
+  revenue_trend: Array<{
+    date: string
+    revenue: number
+    bookings: number
+  }>
+  booking_distribution: Array<{
+    status: string
+    count: number
+    percentage: number
+    color: string
+  }>
+  fleet_by_category: Array<{
+    category: string
+    count: number
+    available: number
+    rented: number
+    maintenance: number
+    color: string
+  }>
+  recent_activities: Array<{
+    id: number
+    type: string
+    title: string
+    description: string
+    user: {
+      id: number
+      name: string
+      email: string
+    }
+    car?: {
+      id: number
+      make: string
+      model: string
+      year: number
+    }
+    booking?: {
+      id: number
+      start_date: string
+      end_date: string
+      total_cost: string
+      status: string
+    }
+    timestamp: string
+    time_ago: string
+  }>
+  pending_actions: {
+    pending_bookings: Array<{
+      id: number
+      user_name: string
+      car_details: string
+      created_at: string
+      total_cost: string
+    }>
+    pending_payments: Array<any>
+    cars_due_service: Array<any>
+  }
+  growth_metrics: {
+    revenue_growth_percentage: number
+    booking_growth_percentage: number
+    user_growth_percentage: number
+    fleet_growth_count: number
+  }
 }
 
 export interface LoginResponse {
@@ -789,5 +867,146 @@ export const deleteAgency = agencyAPI.deleteAgency
 
 export const createAdminUser = userAPI.createAdminUser
 export const getUsers = userAPI.getUsers
+
+// ==================== BOOKING MANAGEMENT ====================
+
+export interface BookingCar {
+  id: number
+  make: string
+  model: string
+  year: number
+  license_plate: string
+  status: string
+  agency: {
+    id: number
+    name: string
+    location: string
+    postal_code: string
+    contact: string
+    email: string
+    is_active: boolean
+    created_at: string
+    updated_at: string
+  }
+}
+
+export interface BookingUser {
+  id: number
+  first_name: string
+  last_name: string
+  email: string
+  phone: string
+  role: string
+  loyalty_points: number
+  is_active: boolean
+  created_at: string
+  updated_at: string
+}
+
+export interface ApiBooking {
+  id: number
+  user: BookingUser
+  car: BookingCar
+  start_date: string
+  end_date: string
+  total_cost: string
+  status: 'pending' | 'confirmed' | 'in_progress' | 'completed' | 'cancelled'
+  created_at: string
+  updated_at: string
+}
+
+export interface BookingListResponse {
+  status: string
+  message: string
+  data: ApiBooking[]
+}
+
+export interface BookingDetailResponse {
+  status: string
+  message: string
+  data: ApiBooking
+}
+
+export interface BookingUpdateResponse {
+  status: string
+  message: string
+  data: {
+    id: number
+    car: {
+      id: number
+      make: string
+      model: string
+      year: number
+      license_plate: string
+      status: string
+    }
+    start_date: string
+    end_date: string
+    total_cost: string
+    status: string
+    created_at: string
+    updated_at: string
+  }
+}
+
+// Booking Management API functions
+export const bookingAPI = {
+  // Fetch all bookings with pagination
+  async getBookings(page = 0, size = 20): Promise<BookingListResponse> {
+    console.log(`📅 Fetching bookings (page: ${page}, size: ${size})`)
+    
+    return await apiRequest<ApiBooking[]>(`/book/my-bookings?page=${page}&size=${size}`, {
+      method: 'GET'
+    }).then(response => ({
+      status: response.status,
+      message: response.message,
+      data: response.data
+    }))
+  },
+
+  // Fetch specific booking details
+  async getBookingDetails(bookingId: number): Promise<BookingDetailResponse> {
+    console.log(`📅 Fetching booking details for ID: ${bookingId}`)
+    
+    return await apiRequest<ApiBooking>(`/book/booking/${bookingId}`, {
+      method: 'GET'
+    }).then(response => ({
+      status: response.status,
+      message: response.message,
+      data: response.data
+    }))
+  },
+
+  // Cancel a booking
+  async cancelBooking(bookingId: number): Promise<BookingUpdateResponse> {
+    console.log(`❌ Cancelling booking ID: ${bookingId}`)
+    
+    return await apiRequest<BookingUpdateResponse['data']>(`/book/cancel/${bookingId}`, {
+      method: 'PUT'
+    }).then(response => ({
+      status: response.status,
+      message: response.message,
+      data: response.data
+    }))
+  },
+
+  // Complete a booking
+  async completeBooking(bookingId: number): Promise<BookingUpdateResponse> {
+    console.log(`✅ Completing booking ID: ${bookingId}`)
+    
+    return await apiRequest<BookingUpdateResponse['data']>(`/book/complete/${bookingId}`, {
+      method: 'PUT'
+    }).then(response => ({
+      status: response.status,
+      message: response.message,
+      data: response.data
+    }))
+  }
+}
+
+export const getBookings = bookingAPI.getBookings
+export const getBookingDetails = bookingAPI.getBookingDetails
+export const cancelBooking = bookingAPI.cancelBooking
+export const completeBooking = bookingAPI.completeBooking
 
 export default authAPI

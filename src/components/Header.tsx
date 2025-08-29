@@ -4,8 +4,95 @@ import type { Profile } from '../lib/types'
 
 const Header = () => {
   const [user, setUser] = useState<Profile | null>(null)
-  useEffect(() => { setUser(getCurrentUser()) }, [])
+  const [currentPath, setCurrentPath] = useState('')
+  const [activeSection, setActiveSection] = useState('')
+  
+  useEffect(() => { 
+    setUser(getCurrentUser())
+    setCurrentPath(window.location.pathname)
+  }, [])
+
+  // Scroll detection for section highlighting
+  useEffect(() => {
+    if (currentPath !== '/') return // Only apply on homepage
+
+    const handleScroll = () => {
+      const sections = ['cars', 'about', 'contact']
+      const scrollPosition = window.scrollY + 100 // Offset for header
+
+      for (const sectionId of sections) {
+        const element = document.getElementById(sectionId)
+        if (element) {
+          const { offsetTop, offsetHeight } = element
+          if (scrollPosition >= offsetTop && scrollPosition < offsetTop + offsetHeight) {
+            setActiveSection(sectionId)
+            return
+          }
+        }
+      }
+      
+      // Default to home if above all sections
+      if (scrollPosition < 300) {
+        setActiveSection('home')
+      }
+    }
+
+    handleScroll() // Set initial state
+    window.addEventListener('scroll', handleScroll)
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [currentPath])
+  
   function handleLogout() { logout(); location.href = '/login' }
+  
+  const scrollToSection = (sectionId: string) => {
+    const element = document.getElementById(sectionId)
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth' })
+    }
+  }
+  
+  const NavLink = ({ href, children, isScroll, sectionId }: { 
+    href?: string, 
+    children: React.ReactNode, 
+    isScroll?: boolean, 
+    sectionId?: string 
+  }) => {
+    let isActive = false
+    
+    if (currentPath === '/') {
+      // On homepage, use scroll-based active detection
+      if (sectionId) {
+        isActive = activeSection === sectionId
+      } else if (href === '/') {
+        isActive = activeSection === 'home' || activeSection === ''
+      }
+    } else {
+      // On other pages, use href-based detection
+      isActive = !!(href && currentPath === href)
+    }
+    
+    const baseClasses = "text-sm font-medium transition-colors"
+    const activeClasses = isActive 
+      ? "text-sky-700 bg-sky-50 px-2 py-1 rounded-md" 
+      : "text-foreground/80 hover:text-sky-700"
+    
+    if (isScroll && sectionId) {
+      return (
+        <button 
+          onClick={() => scrollToSection(sectionId)}
+          className={`${baseClasses} ${activeClasses}`}
+        >
+          {children}
+        </button>
+      )
+    }
+    
+    return (
+      <a href={href} className={`${baseClasses} ${activeClasses}`}>
+        {children}
+      </a>
+    )
+  }
   return (
     <header className="sticky top-0 z-40 w-full border-b border-sky-100 bg-white/70 backdrop-blur-md">
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
@@ -17,10 +104,12 @@ const Header = () => {
           </div>
         </a>
         <nav className="hidden md:flex items-center gap-6">
-          <a href="/cars" className="text-sm font-medium text-foreground/80 hover:text-sky-700">Browse Cars</a>
-          <a href="/about" className="text-sm font-medium text-foreground/80 hover:text-sky-700">About</a>
-          <a href="/terms" className="text-sm font-medium text-foreground/80 hover:text-sky-700">T&Cs</a>
-          <a href="/contact" className="text-sm font-medium text-foreground/80 hover:text-sky-700">Contact</a>
+          <NavLink href="/" sectionId="home">Home</NavLink>
+          <NavLink isScroll sectionId="about">About</NavLink>
+          <NavLink isScroll sectionId="contact">Contact</NavLink>
+          <a href="/terms" className="px-3 py-1 text-xs border border-gray-300 rounded-md hover:border-sky-300 text-foreground/80 hover:text-sky-700">
+            T&Cs
+          </a>
         </nav>
         <div className="hidden md:flex items-center gap-3">
           {user ? (

@@ -3,8 +3,8 @@ import { getCurrentUser, logout } from '../lib/auth'
 import type { Profile } from '../lib/types'
 
 // Import the extracted admin pages
-import DashboardPage from '../pages/DashboardPage'
-import BookingsPage from '../pages/BookingsPage'
+import DashboardPageReal from '../pages/DashboardPageReal'
+import BookingsPageReal from '../pages/BookingsPageReal'
 import FleetPage from '../pages/FleetPage'
 import UsersPage from '../pages/UsersPage'
 import DriversPage from '../pages/DriversPage'
@@ -26,7 +26,7 @@ const AdminSidebar = ({ isOpen, activeSection, onSectionChange, user }: {
     { id: 'fleet', label: 'Fleet Management', icon: '🚗' },
     ...(user?.role === 'superAdmin' ? [{ id: 'users', label: 'Users', icon: '👥' }] : []),
     // { id: 'drivers', label: 'Driver Profiles', icon: '🪪' },
-    { id: 'payments', label: 'Payments', icon: '💳' },
+    // { id: 'payments', label: 'Payments', icon: '💳' },
     { id: 'maintenance', label: 'Maintenance', icon: '🔧' },
     { id: 'reports', label: 'Reports', icon: '📈' },
     { id: 'profile', label: 'Profile', icon: '👤' },
@@ -216,9 +216,9 @@ const AdminDashboard = () => {
   const renderContent = () => {
     switch (activeSection) {
       case 'dashboard':
-        return <DashboardPage />
+        return <DashboardPageReal onSectionChange={setActiveSection} />
       case 'bookings':
-        return <BookingsPage />
+        return <BookingsPageReal />
       case 'fleet':
         return <FleetPage />
       case 'users':
@@ -234,7 +234,7 @@ const AdminDashboard = () => {
       case 'profile':
         return <AdminProfilePage />
       default:
-        return <DashboardPage />
+        return <DashboardPageReal />
     }
   }
 

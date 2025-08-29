@@ -166,6 +166,102 @@ export type DashboardStats = {
   service_threshold_km: number
 }
 
+// Enhanced Dashboard Types for Real API
+export type DashboardData = {
+  agency_name: string
+  agency_id: number
+  total_cars: number
+  available_cars: number
+  rented_cars: number
+  disabled_cars: number
+  under_maintenance_cars: number
+  cars_due_service: number
+  total_bookings: number
+  active_bookings: number
+  pending_bookings: number
+  confirmed_bookings: number
+  in_progress_bookings: number
+  completed_bookings: number
+  cancelled_bookings: number
+  total_users: number
+  active_users: number
+  inactive_users: number
+  customer_users: number
+  monthly_revenue: number
+  total_revenue: number
+  pending_payments: number
+  pending_amount: number
+  paid_amount: number
+  avg_booking_value: number
+  avg_daily_rate: number
+  fleet_utilization_rate: number
+  conversion_rate: number
+  avg_rental_duration: number
+  service_threshold_km: number
+  revenue_trend: Array<{
+    date: string
+    revenue: number
+    bookings: number
+  }>
+  booking_distribution: Array<{
+    status: string
+    count: number
+    percentage: number
+    color: string
+  }>
+  fleet_by_category: Array<{
+    category: string
+    count: number
+    available: number
+    rented: number
+    maintenance: number
+    color: string
+  }>
+  recent_activities: Array<{
+    id: number
+    type: string
+    title: string
+    description: string
+    user: {
+      id: number
+      name: string
+      email: string
+    }
+    car?: {
+      id: number
+      make: string
+      model: string
+      year: number
+    }
+    booking?: {
+      id: number
+      start_date: string
+      end_date: string
+      total_cost: string
+      status: string
+    }
+    timestamp: string
+    time_ago: string
+  }>
+  pending_actions: {
+    pending_bookings: Array<{
+      id: number
+      user_name: string
+      car_details: string
+      created_at: string
+      total_cost: string
+    }>
+    pending_payments: Array<any>
+    cars_due_service: Array<any>
+  }
+  growth_metrics: {
+    revenue_growth_percentage: number
+    booking_growth_percentage: number
+    user_growth_percentage: number
+    fleet_growth_count: number
+  }
+}
+
 // API Response Types
 export type ApiResponse<T> = {
   status: 'success' | 'error'
