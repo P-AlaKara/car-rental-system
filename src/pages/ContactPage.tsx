@@ -47,10 +47,12 @@ function ContactPage() {
                       </label>
                       <input
                         type="text"
+                        id="name"
                         name="name"
                         value={formData.name}
                         onChange={handleChange}
                         required
+                        placeholder="Enter your full name"
                         className="w-full px-3 py-2 border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
                       />
                     </div>
@@ -60,10 +62,12 @@ function ContactPage() {
                       </label>
                       <input
                         type="email"
+                        id="email"
                         name="email"
                         value={formData.email}
                         onChange={handleChange}
                         required
+                        placeholder="Enter your email address"
                         className="w-full px-3 py-2 border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
                       />
                     </div>
@@ -87,10 +91,12 @@ function ContactPage() {
                       Subject *
                     </label>
                     <select
+                      id="subject"
                       name="subject"
                       value={formData.subject}
                       onChange={handleChange}
                       required
+                      aria-label="Select a subject"
                       className="w-full px-3 py-2 border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
                     >
                       <option value="">Select a subject</option>
@@ -157,11 +163,11 @@ function ContactPage() {
                     </div>
                     <div>
                       <h3 className="font-semibold text-slate-900 mb-1">Phone</h3>
-                      <p className="text-slate-600">
-                        <a href="tel:+61390000000" className="hover:text-sky-600 transition">
-                          +61 3 9000 0000
-                        </a>
-                      </p>
+                                          <p className="text-slate-600">
+                      <a href="tel:+61420759910" className="hover:text-sky-600 transition">
+                        +61 420 759 910
+                      </a>
+                    </p>
                     </div>
                   </div>
 
@@ -210,7 +216,7 @@ function ContactPage() {
                     For urgent issues during your rental, call our emergency line:
                   </p>
                   <p className="text-red-900 font-semibold">
-                    <a href="tel:+61400000000" className="hover:underline">+61 400 000 000</a>
+                    <a href="tel:+61420759910" className="hover:underline">+61 420 759 910</a>
                   </p>
                 </div>
               </div>

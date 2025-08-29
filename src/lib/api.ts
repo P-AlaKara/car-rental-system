@@ -155,14 +155,27 @@ const API_BASE_URL = 'https://4043f016f021.ngrok-free.app/api/v1'
 
 // Helper: build absolute image URL from API relative paths like "images/cars/xyz.png"
 export const buildImageUrl = (imagePath: string | null | undefined): string => {
-  if (!imagePath) return ''
+  if (!imagePath) return '/images/cars/sedan-silver.png'
   if (/^https?:\/\//i.test(imagePath)) return imagePath
+  
   try {
+    // For ngrok URLs, we need to handle them specially
+    if (imagePath.includes('ngrok')) {
+      return imagePath
+    }
+    
+    // Try to construct URL from API base
     const origin = new URL(API_BASE_URL).origin
     const normalized = imagePath.startsWith('/') ? imagePath.slice(1) : imagePath
-    return `${origin}/${normalized}`
-  } catch {
-    return imagePath
+    const fullUrl = `${origin}/${normalized}`
+    
+    // Log the constructed URL for debugging
+    console.log('🖼️ Constructed image URL:', { original: imagePath, constructed: fullUrl })
+    
+    return fullUrl
+  } catch (error) {
+    console.error('❌ Failed to build image URL:', { imagePath, error })
+    return '/images/cars/sedan-silver.png'
   }
 }
 

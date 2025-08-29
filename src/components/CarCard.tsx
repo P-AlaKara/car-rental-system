@@ -5,16 +5,38 @@ import { buildImageUrl } from '../lib/api'
 const CarCard: React.FC<{ car: Car }> = ({ car }) => {
   const title = `${car.year} ${car.make} ${car.model}`
   const imagePath = (car as any).images?.[0]?.image_url || (car as any).image_url
-  const image = buildImageUrl(imagePath) || '/placeholder.svg'
+  const [imageError, setImageError] = React.useState(false)
+  const [imageSrc, setImageSrc] = React.useState(() => buildImageUrl(imagePath))
+  
   const category = (car as any).category?.name || (car as any).category
   const agency = (car as any).agency?.name || (car as any).agency
+  
+  const handleImageError = () => {
+    console.warn('🖼️ Image failed to load:', imageSrc)
+    setImageError(true)
+    setImageSrc('/images/cars/sedan-silver.png')
+  }
+
   return (
     <div className="flex flex-col overflow-hidden rounded-xl border bg-white transition-all hover:-translate-y-0.5 hover:shadow-lg">
-      <img
-        src={image}
-        alt={title}
-        className="w-full h-44 object-cover bg-sky-50"
-      />
+      <div className="relative w-full h-44 bg-sky-50">
+        {!imageError ? (
+          <img
+            src={imageSrc}
+            alt={title}
+            className="w-full h-44 object-cover"
+            onError={handleImageError}
+            onLoad={() => console.log('🖼️ Image loaded successfully:', imageSrc)}
+          />
+        ) : (
+          <div className="w-full h-44 flex items-center justify-center bg-sky-100">
+            <div className="text-center text-sky-600">
+              <div className="text-2xl mb-2">🚗</div>
+              <div className="text-sm font-medium">{title}</div>
+            </div>
+          </div>
+        )}
+      </div>
       <div className="space-y-2 p-4">
         <div className="text-base font-semibold">{title}</div>
         <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">

@@ -4,11 +4,12 @@ import Header from '../components/Header'
 import Footer from '../components/Footer'
 import PaymentSection from '../components/PaymentSection'
 import { bookingAPI, fleetAPI, buildImageUrl } from '../lib/api'
+import type { Car } from '../lib/types'
 
 function BookPage() {
   const { carId } = useParams<{ carId: string }>()
   const navigate = useNavigate()
-  const [car, setCar] = React.useState<any | null>(null)
+  const [car, setCar] = React.useState<Car | null>(null)
   const [loading, setLoading] = React.useState(false)
   const [error, setError] = React.useState<string | null>(null)
   
@@ -18,6 +19,10 @@ function BookPage() {
     pickupLocation: '',
     returnLocation: '',
     phoneNumber: '',
+    driverEmail: '',
+    driverFullname: '',
+    licenseNumber: '',
+    residentialArea: '',
     specialRequests: '',
     promoCode: ''
   })
@@ -27,6 +32,66 @@ function BookPage() {
   const [selectedPaymentMethod, setSelectedPaymentMethod] = React.useState('')
   const [paymentFrequency, setPaymentFrequency] = React.useState<'3days' | 'weekly'>('weekly')
   const [isProcessing, setIsProcessing] = React.useState(false)
+
+  // Fetch car data when component mounts
+  React.useEffect(() => {
+    const fetchCar = async () => {
+      if (!carId) {
+        setError('Car ID is required')
+        return
+      }
+
+      try {
+        setLoading(true)
+        setError(null)
+        const response = await fleetAPI.getCar(Number(carId))
+        setCar(response.data)
+      } catch (e: any) {
+        console.error('Error fetching car:', e)
+        setError(e?.message || 'Failed to load car details')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchCar()
+  }, [carId])
+
+  if (loading) {
+    return (
+      <main className="min-h-screen flex flex-col bg-white">
+        <Header />
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center">
+            <h1 className="text-2xl font-semibold text-slate-900 mb-4">Loading car details...</h1>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-sky-600 mx-auto"></div>
+          </div>
+        </div>
+        <Footer />
+      </main>
+    )
+  }
+
+  if (error) {
+    return (
+      <main className="min-h-screen flex flex-col bg-white">
+        <Header />
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center">
+            <h1 className="text-2xl font-semibold text-slate-900 mb-4">Error loading car</h1>
+            <p className="text-red-600 mb-4">{error}</p>
+            <button 
+              onClick={() => navigate('/cars')}
+              className="px-4 py-2 bg-sky-600 text-white rounded-md hover:bg-sky-700 transition"
+            >
+              Back to Cars
+            </button>
+          </div>
+        </div>
+        <Footer />
+      </main>
+    )
+  }
 
   if (!car) {
     return (
@@ -66,7 +131,8 @@ function BookPage() {
     e.preventDefault()
     
     // Validate form
-    if (!formData.startDate || !formData.endDate || !formData.pickupLocation || !formData.phoneNumber) {
+    if (!formData.startDate || !formData.endDate || !formData.pickupLocation || !formData.phoneNumber || 
+        !formData.driverEmail || !formData.driverFullname || !formData.licenseNumber || !formData.residentialArea) {
       alert('Please fill in all required fields')
       return
     }
@@ -107,18 +173,16 @@ function BookPage() {
         car_id: Number(car.id),
         start_date: `${formData.startDate} 10:00:00`,
         end_date: `${formData.endDate} 10:00:00`,
-        pickup_location: formData.pickupLocation || 'Same as pickup',
-        return_location: formData.returnLocation || formData.pickupLocation || 'Same as pickup',
-        driver_email: '',
-        driver_fullname: '',
-        license_number: '',
-        residential_area: '',
+        pickup_location: formData.pickupLocation,
+        return_location: formData.returnLocation || formData.pickupLocation,
+        driver_email: formData.driverEmail,
+        driver_fullname: formData.driverFullname,
+        license_number: formData.licenseNumber,
+        residential_area: formData.residentialArea,
         special_requests: formData.specialRequests || undefined,
         total_cost: Number(totalCost),
         payment_frequency: paymentFrequency,
       }
-
-      // NOTE: you can extend the form to capture driver details. For now, sending empty strings for required fields to follow the provided API contract.
       await bookingAPI.createBooking(payload)
       handlePaymentSuccess()
     } catch (e: any) {
@@ -284,6 +348,72 @@ function BookPage() {
                         aria-label="Phone Number"
                         className="w-full px-3 py-2 border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
                       />
+                    </div>
+
+                    <div className="grid md:grid-cols-2 gap-4 mb-4">
+                      <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-2">
+                          Driver Email *
+                        </label>
+                        <input
+                          type="email"
+                          name="driverEmail"
+                          value={formData.driverEmail}
+                          onChange={handleInputChange}
+                          placeholder="driver@example.com"
+                          required
+                          aria-label="Driver Email"
+                          className="w-full px-3 py-2 border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-2">
+                          Driver Full Name *
+                        </label>
+                        <input
+                          type="text"
+                          name="driverFullname"
+                          value={formData.driverFullname}
+                          onChange={handleInputChange}
+                          placeholder="John Doe"
+                          required
+                          aria-label="Driver Full Name"
+                          className="w-full px-3 py-2 border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid md:grid-cols-2 gap-4 mb-4">
+                      <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-2">
+                          License Number *
+                        </label>
+                        <input
+                          type="text"
+                          name="licenseNumber"
+                          value={formData.licenseNumber}
+                          onChange={handleInputChange}
+                          placeholder="123456789"
+                          required
+                          aria-label="License Number"
+                          className="w-full px-3 py-2 border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-2">
+                          Residential Area *
+                        </label>
+                        <input
+                          type="text"
+                          name="residentialArea"
+                          value={formData.residentialArea}
+                          onChange={handleInputChange}
+                          placeholder="Melbourne, VIC"
+                          required
+                          aria-label="Residential Area"
+                          className="w-full px-3 py-2 border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
+                        />
+                      </div>
                     </div>
 
                     <div className="mb-4">

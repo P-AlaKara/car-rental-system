@@ -143,7 +143,7 @@ function TermsPage() {
                     123 Collins Street<br />
                     Melbourne VIC 3000<br />
                     Email: legal@smartcarrentals.com.au<br />
-                    Phone: +61 3 9000 0000
+                    Phone: +61 420 759 910
                   </p>
                 </div>
               </section>
