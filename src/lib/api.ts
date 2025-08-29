@@ -153,6 +153,19 @@ export interface LoginRequest {
 
 const API_BASE_URL = 'https://4043f016f021.ngrok-free.app/api/v1'
 
+// Helper: build absolute image URL from API relative paths like "images/cars/xyz.png"
+export const buildImageUrl = (imagePath: string | null | undefined): string => {
+  if (!imagePath) return ''
+  if (/^https?:\/\//i.test(imagePath)) return imagePath
+  try {
+    const origin = new URL(API_BASE_URL).origin
+    const normalized = imagePath.startsWith('/') ? imagePath.slice(1) : imagePath
+    return `${origin}/${normalized}`
+  } catch {
+    return imagePath
+  }
+}
+
 // Storage keys
 const TOKEN_KEY = 'am_token'
 const USER_KEY = 'am_user'
@@ -503,6 +516,57 @@ export const fleetAPI = {
       ...response,
       data: response.data
     }))
+  },
+
+  // USER-FACING: Fetch cars for frontend with simple filters (e.g., min_price, pagination)
+  async getFrontendCars(params: { min_price?: number; page?: number; size?: number } = {}): Promise<CarListResponse> {
+    const queryParams = new URLSearchParams()
+    if (params.min_price !== undefined) queryParams.append('min_price', String(params.min_price))
+    if (params.page !== undefined) queryParams.append('page', String(params.page))
+    if (params.size !== undefined) queryParams.append('size', String(params.size))
+
+    const endpoint = `/cars/frontend/list${queryParams.toString() ? `?${queryParams.toString()}` : ''}`
+    return await apiRequest<CarListResponse['data']>(endpoint, { method: 'GET' }).then(response => ({
+      status: response.status,
+      message: response.message,
+      data: response.data
+    }))
+  },
+
+  // USER-FACING: Fetch cars by category id
+  async getCarsByCategory(params: { category_id: number; page?: number; size?: number }): Promise<{
+    messages: string
+    data: Car[]
+    meta: { page: number; size: number; total_pages: number; total_elements: number }
+  }> {
+    const query = new URLSearchParams()
+    query.append('category_id', String(params.category_id))
+    if (params.page !== undefined) query.append('page', String(params.page))
+    if (params.size !== undefined) query.append('size', String(params.size))
+    const endpoint = `/cars/categories/list?${query.toString()}`
+    // This endpoint returns a slightly different envelope (messages + data + meta)
+    return await apiRequest<{
+      messages: string
+      data: Car[]
+      meta: { page: number; size: number; total_pages: number; total_elements: number }
+    }>(endpoint, { method: 'GET' }).then(r => r.data)
+  },
+
+  // USER-FACING: Fetch cars by agency id
+  async getCarsByAgency(params: { agency_id: number; page?: number; size?: number }): Promise<{
+    messages: string
+    data: Car[]
+    meta: { page: number; size: number; total_pages: number; total_elements: number }
+  }> {
+    const query = new URLSearchParams()
+    if (params.page !== undefined) query.append('page', String(params.page))
+    if (params.size !== undefined) query.append('size', String(params.size))
+    const endpoint = `/cars/list/by-agency/${params.agency_id}?${query.toString()}`
+    return await apiRequest<{
+      messages: string
+      data: Car[]
+      meta: { page: number; size: number; total_pages: number; total_elements: number }
+    }>(endpoint, { method: 'GET' }).then(r => r.data)
   },
 
   // Fetch a specific car by ID

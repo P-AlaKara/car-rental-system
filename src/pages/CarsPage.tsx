@@ -2,7 +2,7 @@ import * as React from 'react'
 import Header from '../components/Header'
 import Footer from '../components/Footer'
 import CarCard from '../components/CarCard'
-import { DEMO_CARS } from '../lib/demo-data'
+import { fleetAPI, type CarListResponse } from '../lib/api'
 
 const CARS_PER_PAGE = 12
 
@@ -20,46 +20,44 @@ function CarsPage() {
   const [searchQuery, setSearchQuery] = React.useState('')
   const [priceRange, setPriceRange] = React.useState<string>('All')
   const [currentPage, setCurrentPage] = React.useState(1)
+  const [cars, setCars] = React.useState<CarListResponse['data']['data']>([])
+  const [total, setTotal] = React.useState(0)
+  const [loading, setLoading] = React.useState(false)
+  const [error, setError] = React.useState<string | null>(null)
 
   const types = ['All', 'Sedan', 'SUV', 'Hatchback', 'Van']
   const priceRanges = ['All', 'Under $50', '$50-$100', 'Over $100']
 
-  const filteredCars = React.useMemo(() => {
-    let filtered = DEMO_CARS
-
-    if (typeFilter !== 'All') {
-      filtered = filtered.filter(car => car.category === typeFilter)
+  // Fetch from frontend cars endpoint; apply only min_price + pagination server-side for now
+  const fetchCars = React.useCallback(async () => {
+    try {
+      setLoading(true)
+      setError(null)
+      const minPrice = priceRange === 'Under $50' ? 0 : priceRange === '$50-$100' ? 50 : priceRange === 'Over $100' ? 100 : undefined
+      const resp = await fleetAPI.getFrontendCars({ min_price: minPrice, page: currentPage - 1, size: CARS_PER_PAGE })
+      setCars(resp.data.data)
+      setTotal(resp.data.meta.total)
+    } catch (e: any) {
+      setError(e?.message || 'Failed to load cars')
+    } finally {
+      setLoading(false)
     }
-
-    if (searchQuery) {
-      filtered = filtered.filter(car => 
-        car.make.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        car.model.toLowerCase().includes(searchQuery.toLowerCase())
-      )
-    }
-
-    if (priceRange !== 'All') {
-      filtered = filtered.filter(car => {
-        const price = car.rental_rate_per_day
-        switch (priceRange) {
-          case 'Under $50': return price < 50
-          case '$50-$100': return price >= 50 && price <= 100
-          case 'Over $100': return price > 100
-          default: return true
-        }
-      })
-    }
-
-    return filtered
-  }, [typeFilter, searchQuery, priceRange])
-
-  const totalPages = Math.ceil(filteredCars.length / CARS_PER_PAGE)
-  const startIndex = (currentPage - 1) * CARS_PER_PAGE
-  const paginatedCars = filteredCars.slice(startIndex, startIndex + CARS_PER_PAGE)
+  }, [priceRange, currentPage])
 
   React.useEffect(() => {
-    setCurrentPage(1)
-  }, [typeFilter, searchQuery, priceRange])
+    fetchCars()
+  }, [fetchCars])
+
+  // Client-side filter for type and search since API doesn't support them yet
+  const filteredCars = React.useMemo(() => {
+    let filtered = cars
+    if (typeFilter !== 'All') filtered = filtered.filter(car => car.category?.name === typeFilter || car.category === typeFilter)
+    if (searchQuery) filtered = filtered.filter(car => `${car.make} ${car.model}`.toLowerCase().includes(searchQuery.toLowerCase()))
+    return filtered
+  }, [cars, typeFilter, searchQuery])
+
+  const totalPages = Math.max(1, Math.ceil((total || filteredCars.length) / CARS_PER_PAGE))
+  const paginatedCars = filteredCars
 
   return (
     <main className="min-h-screen flex flex-col bg-white">
@@ -110,13 +108,19 @@ function CarsPage() {
 
           {/* Results */}
           <div className="mb-6">
-            <p className="text-slate-600">
-              Showing {paginatedCars.length} of {filteredCars.length} vehicles
-            </p>
+            {error ? (
+              <p className="text-red-600">{error}</p>
+            ) : (
+              <p className="text-slate-600">
+                Showing {paginatedCars.length} of {total || filteredCars.length} vehicles
+              </p>
+            )}
           </div>
 
           {/* Cars Grid */}
-          {paginatedCars.length > 0 ? (
+          {loading ? (
+            <div className="text-center py-12 text-slate-600">Loading cars...</div>
+          ) : paginatedCars.length > 0 ? (
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-8">
               {paginatedCars.map((car) => (
                 <CarCard key={car.id} car={car} />
