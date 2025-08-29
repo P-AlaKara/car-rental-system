@@ -86,13 +86,6 @@ const PaymentsPage = () => {
     return stats
   }, [paymentRecords])
 
-  const statusCounts = React.useMemo(() => {
-    return paymentRecords.reduce((acc, payment) => {
-      acc[payment.payment_status] = (acc[payment.payment_status] || 0) + 1
-      return acc
-    }, {} as Record<string, number>)
-  }, [paymentRecords])
-
   const openPaymentDetail = (payment: any) => {
     setSelectedPayment(payment)
     setIsDetailModalOpen(true)

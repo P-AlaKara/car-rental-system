@@ -13,7 +13,6 @@ const UsersPage = () => {
   const [isEditAgencyModalOpen, setIsEditAgencyModalOpen] = React.useState(false)
   const [selectedAgency, setSelectedAgency] = React.useState<Agency | null>(null)
   const [loading, setLoading] = React.useState(true)
-  const [currentUser, setCurrentUser] = React.useState<any>(null)
   const [activeTab, setActiveTab] = React.useState<'users' | 'agencies'>('users')
   const [roleFilter, setRoleFilter] = React.useState<'all' | 'customer' | 'admin' | 'superAdmin'>('all')
 
@@ -43,7 +42,6 @@ const UsersPage = () => {
       window.location.href = '/admin'
       return
     }
-    setCurrentUser(user)
     fetchData()
   }, [])
 
