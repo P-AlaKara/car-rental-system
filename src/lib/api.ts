@@ -184,10 +184,11 @@ const TOKEN_KEY = 'am_token'
 const USER_KEY = 'am_user'
 const DASHBOARD_KEY = 'am_dashboard'
 
-// Generic API request function
+// Generic API request function with automatic token refresh
 async function apiRequest<T>(
   endpoint: string, 
-  options: RequestInit = {}
+  options: RequestInit = {},
+  retryCount = 0
 ): Promise<ApiResponse<T>> {
   const token = localStorage.getItem(TOKEN_KEY)
   
@@ -220,6 +221,40 @@ async function apiRequest<T>(
     console.log(`📥 API Response (${response.status}):`, data)
     
     if (!response.ok) {
+      // Handle authentication errors with token refresh
+      if (response.status === 401 && retryCount === 0 && token) {
+        console.log('🔄 Token expired, attempting refresh...')
+        try {
+          const refreshResponse = await authAPI.refreshToken()
+          if (refreshResponse.data.token) {
+            localStorage.setItem(TOKEN_KEY, refreshResponse.data.token)
+            
+            // Update token expiry (extend by 24 hours)
+            const now = new Date()
+            const newExpiry = now.getTime() + (24 * 60 * 60 * 1000) // 24 hours
+            localStorage.setItem('am_token_expiry', newExpiry.toString())
+            
+            console.log('✅ Token refreshed, retrying request...')
+            console.log('⏰ Auth: New token expires at:', new Date(newExpiry).toLocaleString())
+            // Retry the original request with new token
+            return apiRequest<T>(endpoint, options, retryCount + 1)
+          }
+        } catch (refreshError) {
+          console.error('❌ Token refresh failed:', refreshError)
+          // Clear invalid session
+          localStorage.removeItem(TOKEN_KEY)
+          localStorage.removeItem(USER_KEY)
+          localStorage.removeItem(DASHBOARD_KEY)
+          localStorage.removeItem('am_session_start')
+          localStorage.removeItem('am_token_expiry')
+          
+          // Redirect to login if we're on a protected page
+          if (window.location.pathname !== '/login' && window.location.pathname !== '/register') {
+            window.location.href = '/login'
+          }
+        }
+      }
+      
       throw new Error(data.message || `HTTP error! status: ${response.status}`)
     }
     
@@ -1044,10 +1079,16 @@ export const bookingAPI = {
     payment_frequency: '3days' | 'weekly'
   }): Promise<ApiResponse<any>> {
     console.log('📝 Creating booking with data:', data)
-    return await apiRequest<any>('/book', {
+    console.log('🌐 Full API URL:', `${API_BASE_URL}/book`)
+    console.log('📤 Request body:', JSON.stringify(data, null, 2))
+    
+    const response = await apiRequest<any>('/book', {
       method: 'POST',
       body: JSON.stringify(data)
     })
+    
+    console.log('📥 Booking API response:', response)
+    return response
   },
   // Fetch all bookings with pagination
   async getBookings(page = 0, size = 20): Promise<BookingListResponse> {

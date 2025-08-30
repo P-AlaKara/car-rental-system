@@ -388,7 +388,7 @@ function HomePage() {
                     <h4 className="font-semibold text-slate-900 mb-1">Phone</h4>
                     <p className="text-slate-600">
                       <a href="tel:+61420759910" className="hover:text-sky-600 transition">
-                        +61 420 759 910
+                        0420 759 910
                       </a>
                     </p>
                   </div>
@@ -439,7 +439,7 @@ function HomePage() {
                   For urgent issues during your rental, call our emergency line:
                 </p>
                 <p className="text-red-900 font-semibold">
-                  <a href="tel:+61420759910" className="hover:underline">+61 420 759 910</a>
+                  <a href="tel:+61420759910" className="hover:underline">0420 759 910</a>
                 </p>
               </div>
             </div>

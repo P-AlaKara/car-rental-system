@@ -16,13 +16,14 @@ function LoginPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
 
-  // Handle prefilled data from registration
+  // Handle prefilled data from registration and return URL
   useEffect(() => {
     if (location.state) {
-      const { email, password, message } = location.state as { 
+      const { email, password, message, from } = location.state as { 
         email?: string, 
         password?: string, 
-        message?: string 
+        message?: string,
+        from?: { pathname: string }
       }
       
       if (email) setFormData(prev => ({ ...prev, email }))
@@ -47,16 +48,24 @@ function LoginPage() {
       
       console.log('🎯 Login successful, navigating based on role:', profile.role)
       
-      // Navigate based on user role
-      if (profile.role === 'customer') {
-        console.log('➡️ Navigating to customer dashboard (profile page)')
-        navigate('/profile')
-      } else if (profile.role === 'admin' || profile.role === 'superAdmin') {
-        console.log('➡️ Navigating to admin dashboard')
-        navigate('/admin')
+      // Check if there's a return URL from protected route
+      const returnUrl = location.state?.from?.pathname
+      
+      if (returnUrl) {
+        console.log('➡️ Navigating to return URL:', returnUrl)
+        navigate(returnUrl)
       } else {
-        console.log('➡️ Unknown role, navigating to profile page')
-        navigate('/profile')
+        // Navigate based on user role
+        if (profile.role === 'customer') {
+          console.log('➡️ Navigating to customer dashboard (profile page)')
+          navigate('/profile')
+        } else if (profile.role === 'admin' || profile.role === 'superAdmin') {
+          console.log('➡️ Navigating to admin dashboard')
+          navigate('/admin')
+        } else {
+          console.log('➡️ Unknown role, navigating to profile page')
+          navigate('/profile')
+        }
       }
     } catch (err) {
       console.error('❌ Login failed:', err)

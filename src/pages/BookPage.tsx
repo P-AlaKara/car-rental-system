@@ -2,8 +2,8 @@ import * as React from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import Header from '../components/Header'
 import Footer from '../components/Footer'
-import PaymentSection from '../components/PaymentSection'
 import { bookingAPI, fleetAPI, buildImageUrl } from '../lib/api'
+import { isAuthenticated, validateAndRefreshToken } from '../lib/auth'
 import type { Car } from '../lib/types'
 
 function BookPage() {
@@ -27,9 +27,7 @@ function BookPage() {
     promoCode: ''
   })
   
-  const [showPayment, setShowPayment] = React.useState(false)
   const [totalCost, setTotalCost] = React.useState(0)
-  const [selectedPaymentMethod, setSelectedPaymentMethod] = React.useState('')
   const [paymentFrequency, setPaymentFrequency] = React.useState<'3days' | 'weekly'>('weekly')
   const [isProcessing, setIsProcessing] = React.useState(false)
 
@@ -57,6 +55,24 @@ function BookPage() {
     fetchCar()
   }, [carId])
 
+  // Calculate total cost when dates change
+  React.useEffect(() => {
+    if (formData.startDate && formData.endDate && car) {
+      const start = new Date(formData.startDate)
+      const end = new Date(formData.endDate)
+      const days = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24))
+      setTotalCost(days > 0 ? days * Number(car.rental_rate_per_day || 0) : 0)
+    }
+  }, [formData.startDate, formData.endDate, car])
+
+  // Debug authentication status
+  React.useEffect(() => {
+    console.log('🔐 Current authentication status:', isAuthenticated() ? 'Authenticated' : 'Not authenticated')
+    console.log('🔑 Token exists:', !!localStorage.getItem('am_token'))
+    console.log('👤 User exists:', !!localStorage.getItem('am_user'))
+  }, [])
+
+  // Now we can have conditional returns after all hooks are called
   if (loading) {
     return (
       <main className="min-h-screen flex flex-col bg-white">
@@ -100,6 +116,7 @@ function BookPage() {
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center">
             <h1 className="text-2xl font-semibold text-slate-900 mb-4">Car not found</h1>
+            <p className="text-slate-600 mb-4">The requested car could not be found.</p>
             <button 
               onClick={() => navigate('/cars')}
               className="px-4 py-2 bg-sky-600 text-white rounded-md hover:bg-sky-700 transition"
@@ -113,22 +130,28 @@ function BookPage() {
     )
   }
 
-  React.useEffect(() => {
-    if (formData.startDate && formData.endDate) {
-      const start = new Date(formData.startDate)
-      const end = new Date(formData.endDate)
-      const days = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24))
-      setTotalCost(days > 0 ? days * Number(car?.rental_rate_per_day || 0) : 0)
-    }
-  }, [formData.startDate, formData.endDate, car])
-
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target
     setFormData(prev => ({ ...prev, [name]: value }))
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    
+    // Check if user is authenticated
+    if (!isAuthenticated()) {
+      alert('Please log in to book a vehicle. You will be redirected to the login page.')
+      navigate('/login')
+      return
+    }
+    
+    // Validate and refresh token if needed
+    const isValid = await validateAndRefreshToken()
+    if (!isValid) {
+      alert('Your session has expired. Please log in again.')
+      navigate('/login')
+      return
+    }
     
     // Validate form
     if (!formData.startDate || !formData.endDate || !formData.pickupLocation || !formData.phoneNumber || 
@@ -153,22 +176,11 @@ function BookPage() {
       return
     }
     
-    setShowPayment(true)
-  }
-
-  const handlePaymentSuccess = () => {
-    alert('Booking confirmed! You will receive a confirmation email shortly.')
-    navigate('/profile')
-  }
-
-  const handlePaymentMethodSelect = (method: string) => {
-    setSelectedPaymentMethod(method)
-  }
-
-  const handlePaymentSubmit = async () => {
+    // Submit booking directly
     try {
       setIsProcessing(true)
-      // Compose API payload
+      
+      // Compose API payload exactly as specified
       const payload = {
         car_id: Number(car.id),
         start_date: `${formData.startDate} 10:00:00`,
@@ -183,48 +195,35 @@ function BookPage() {
         total_cost: Number(totalCost),
         payment_frequency: paymentFrequency,
       }
-      await bookingAPI.createBooking(payload)
-      handlePaymentSuccess()
+      
+      console.log('🚀 Submitting booking with payload:', payload)
+      console.log('📞 API Endpoint: POST /book')
+      console.log('🔐 Authentication status:', isAuthenticated() ? 'Authenticated' : 'Not authenticated')
+      
+      const response = await bookingAPI.createBooking(payload)
+      console.log('✅ Booking created successfully:', response)
+      
+      alert('Booking confirmed! You will receive a confirmation email shortly.')
+      navigate('/profile')
+      
     } catch (e: any) {
-      alert(e?.message || 'Booking failed')
+      console.error('❌ Booking failed:', e)
+      
+      // Handle authentication errors specifically
+      if (e?.message?.includes('Unauthenticated')) {
+        alert('Your session has expired. Please log in again.')
+        navigate('/login')
+      } else {
+        alert(e?.message || 'Booking failed')
+      }
     } finally {
       setIsProcessing(false)
     }
   }
 
-  if (showPayment) {
-    return (
-      <main className="min-h-screen flex flex-col bg-white">
-        <Header />
-        <div className="flex-1">
-          <div className="container mx-auto px-4 py-8">
-            <PaymentSection
-              totalAmount={totalCost}
-              onPaymentMethodSelect={handlePaymentMethodSelect}
-              selectedPaymentMethod={selectedPaymentMethod}
-              onPaymentSubmit={handlePaymentSubmit}
-              isProcessing={isProcessing}
-            />
-            <div className="max-w-xl mt-6">
-              <label htmlFor="paymentFrequency" className="block text-sm font-medium text-slate-700 mb-2">Payment Frequency</label>
-              <select
-                id="paymentFrequency"
-                value={paymentFrequency}
-                onChange={(e) => setPaymentFrequency(e.target.value as '3days' | 'weekly')}
-                aria-label="Payment Frequency"
-                title="Payment Frequency"
-                className="w-full px-3 py-2 border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
-              >
-                <option value="weekly">Weekly</option>
-                <option value="3days">Every 3 days</option>
-              </select>
-            </div>
-          </div>
-        </div>
-        <Footer />
-      </main>
-    )
-  }
+
+
+
 
   const days = formData.startDate && formData.endDate ? 
     Math.ceil((new Date(formData.endDate).getTime() - new Date(formData.startDate).getTime()) / (1000 * 60 * 60 * 24)) : 0
@@ -252,6 +251,34 @@ function BookPage() {
               {/* Booking Form */}
               <div className="lg:col-span-2">
                 <form onSubmit={handleSubmit} className="space-y-6">
+                  {/* Authentication Status Banner */}
+                  {!isAuthenticated() && (
+                    <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
+                      <div className="flex items-center">
+                        <div className="flex-shrink-0">
+                          <svg className="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
+                            <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                          </svg>
+                        </div>
+                        <div className="ml-3">
+                          <h3 className="text-sm font-medium text-yellow-800">
+                            Authentication Required
+                          </h3>
+                          <div className="mt-2 text-sm text-yellow-700">
+                            <p>You need to be logged in to book a vehicle.</p>
+                            <button
+                              type="button"
+                              onClick={() => navigate('/login')}
+                              className="mt-2 text-yellow-800 underline hover:text-yellow-900"
+                            >
+                              Click here to log in
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  
                   <div className="bg-white border rounded-lg p-6">
                     <h2 className="text-xl font-semibold text-slate-900 mb-4">Rental Details</h2>
                     
@@ -445,13 +472,40 @@ function BookPage() {
                         className="w-full px-3 py-2 border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
                       />
                     </div>
+
+                    <div>
+                      <label htmlFor="paymentFrequency" className="block text-sm font-medium text-slate-700 mb-2">
+                        Payment Frequency *
+                      </label>
+                      <select
+                        id="paymentFrequency"
+                        value={paymentFrequency}
+                        onChange={(e) => setPaymentFrequency(e.target.value as '3days' | 'weekly')}
+                        required
+                        aria-label="Payment Frequency"
+                        className="w-full px-3 py-2 border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
+                      >
+                        <option value="weekly">Weekly</option>
+                        <option value="3days">Every 3 days</option>
+                      </select>
+                    </div>
                   </div>
 
                   <button
                     type="submit"
-                    className="w-full py-3 bg-sky-600 text-white rounded-md hover:bg-sky-700 transition font-medium"
+                    disabled={isProcessing || !isAuthenticated()}
+                    className="w-full py-3 bg-sky-600 text-white rounded-md hover:bg-sky-700 transition font-medium disabled:bg-slate-400 disabled:cursor-not-allowed"
                   >
-                    Proceed to Payment
+                    {isProcessing ? (
+                      <span className="flex items-center justify-center">
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                        Processing Booking...
+                      </span>
+                    ) : !isAuthenticated() ? (
+                      'Please Log In to Book'
+                    ) : (
+                      'Confirm Booking'
+                    )}
                   </button>
                 </form>
               </div>

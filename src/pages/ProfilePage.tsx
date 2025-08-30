@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Header from '../components/Header'
 import Footer from '../components/Footer'
+import SessionStatus from '../components/SessionStatus'
 import { getCurrentUser, setCurrentUser, logout } from '../lib/auth'
 import { DEMO_BOOKINGS, DEMO_CARS } from '../lib/demo-data'
 import type { Profile, Booking } from '../lib/types'
@@ -137,8 +138,11 @@ function ProfilePage() {
                     {editMode ? (
                       <input
                         type="text"
+                        id="first_name"
+                        name="first_name"
                         value={formData.first_name}
                         onChange={(e) => setFormData({ ...formData, first_name: e.target.value })}
+                        placeholder="Enter your first name"
                         className="w-full px-3 py-2 border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
                       />
                     ) : (
@@ -153,8 +157,11 @@ function ProfilePage() {
                     {editMode ? (
                       <input
                         type="text"
+                        id="last_name"
+                        name="last_name"
                         value={formData.last_name}
                         onChange={(e) => setFormData({ ...formData, last_name: e.target.value })}
+                        placeholder="Enter your last name"
                         className="w-full px-3 py-2 border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
                       />
                     ) : (
@@ -176,8 +183,11 @@ function ProfilePage() {
                     {editMode ? (
                       <input
                         type="tel"
+                        id="phone"
+                        name="phone"
                         value={formData.phone}
                         onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                        placeholder="Enter your phone number"
                         className="w-full px-3 py-2 border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
                       />
                     ) : (
@@ -297,6 +307,12 @@ function ProfilePage() {
                 <h2 className="text-xl font-semibold text-slate-900 mb-6">Account Settings</h2>
                 
                 <div className="space-y-6">
+                  <div className="border-b border-slate-200 pb-4">
+                    <h3 className="text-lg font-medium text-slate-900 mb-2">Session Information</h3>
+                    <p className="text-slate-600 mb-4">View your current session details</p>
+                    <SessionStatus showDetails={true} />
+                  </div>
+
                   <div className="border-b border-slate-200 pb-4">
                     <h3 className="text-lg font-medium text-slate-900 mb-2">Password</h3>
                     <p className="text-slate-600 mb-4">Update your password to keep your account secure</p>

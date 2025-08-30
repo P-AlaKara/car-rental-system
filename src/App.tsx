@@ -1,7 +1,10 @@
 import './App.css'
 import AdminPage from './components/AdminPage'
 import AdminSetup from './components/AdminSetup'
+import ProtectedRoute from './components/ProtectedRoute'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { useEffect } from 'react'
+import { setupTokenRefresh } from './lib/auth'
 
 // Import extracted page components
 import HomePage from './pages/HomePage'
@@ -16,6 +19,11 @@ import RegisterPage from './pages/RegisterPage'
 import ProfilePage from './pages/ProfilePage'
 
 export default function App() {
+  // Setup token refresh on app initialization
+  useEffect(() => {
+    setupTokenRefresh()
+  }, [])
+
   return (
     <BrowserRouter
       future={{
@@ -27,15 +35,31 @@ export default function App() {
         <Route path="/" element={<HomePage />} />
         <Route path="/cars" element={<CarsPage />} />
         <Route path="/car/:carId" element={<CarDetailsPage />} />
-        <Route path="/book/:carId" element={<BookPage />} />
+        <Route path="/book/:carId" element={
+          <ProtectedRoute>
+            <BookPage />
+          </ProtectedRoute>
+        } />
         <Route path="/about" element={<AboutPage />} />
         <Route path="/contact" element={<ContactPage />} />
         <Route path="/terms" element={<TermsPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
-        <Route path="/profile" element={<ProfilePage />} />
-        <Route path="/admin" element={<AdminPage />} />
-        <Route path="/admin/setup" element={<AdminSetup />} />
+        <Route path="/profile" element={
+          <ProtectedRoute>
+            <ProfilePage />
+          </ProtectedRoute>
+        } />
+        <Route path="/admin" element={
+          <ProtectedRoute>
+            <AdminPage />
+          </ProtectedRoute>
+        } />
+        <Route path="/admin/setup" element={
+          <ProtectedRoute>
+            <AdminSetup />
+          </ProtectedRoute>
+        } />
         <Route path="*" element={<HomePage />} />
       </Routes>
     </BrowserRouter>
