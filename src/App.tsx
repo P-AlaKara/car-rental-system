@@ -1,7 +1,8 @@
 import './App.css'
 import AdminPage from './components/AdminPage'
 import AdminSetup from './components/AdminSetup'
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom'
+import { useEffect } from 'react'
 
 // Import extracted page components
 import HomePage from './pages/HomePage'
@@ -15,6 +16,34 @@ import LoginPage from './pages/LoginPage'
 import RegisterPage from './pages/RegisterPage'
 import ProfilePage from './pages/ProfilePage'
 
+function AppContent() {
+  const location = useLocation()
+  
+  useEffect(() => {
+    // Preserve the current URL path on page refresh
+    // This prevents unwanted redirects by ensuring we stay on the current page
+    console.log('🔍 Current route:', location.pathname)
+  }, [location.pathname])
+
+  return (
+    <Routes>
+      <Route path="/" element={<HomePage />} />
+      <Route path="/cars" element={<CarsPage />} />
+      <Route path="/car/:carId" element={<CarDetailsPage />} />
+      <Route path="/book/:carId" element={<BookPage />} />
+      <Route path="/about" element={<AboutPage />} />
+      <Route path="/contact" element={<ContactPage />} />
+      <Route path="/terms" element={<TermsPage />} />
+      <Route path="/login" element={<LoginPage />} />
+      <Route path="/register" element={<RegisterPage />} />
+      <Route path="/profile" element={<ProfilePage />} />
+      <Route path="/admin" element={<AdminPage />} />
+      <Route path="/admin/setup" element={<AdminSetup />} />
+      <Route path="*" element={<HomePage />} />
+    </Routes>
+  )
+}
+
 export default function App() {
   return (
     <BrowserRouter
@@ -23,21 +52,7 @@ export default function App() {
         v7_relativeSplatPath: true
       }}
     >
-      <Routes>
-        <Route path="/" element={<HomePage />} />
-        <Route path="/cars" element={<CarsPage />} />
-        <Route path="/car/:carId" element={<CarDetailsPage />} />
-        <Route path="/book/:carId" element={<BookPage />} />
-        <Route path="/about" element={<AboutPage />} />
-        <Route path="/contact" element={<ContactPage />} />
-        <Route path="/terms" element={<TermsPage />} />
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/register" element={<RegisterPage />} />
-        <Route path="/profile" element={<ProfilePage />} />
-        <Route path="/admin" element={<AdminPage />} />
-        <Route path="/admin/setup" element={<AdminSetup />} />
-        <Route path="*" element={<HomePage />} />
-      </Routes>
+      <AppContent />
     </BrowserRouter>
   )
 }

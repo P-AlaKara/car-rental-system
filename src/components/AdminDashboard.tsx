@@ -33,6 +33,8 @@ const AdminSidebar = ({ isOpen, activeSection, onSectionChange, user }: {
   ]
 
   const handleLogout = () => {
+    // Clear the stored admin section on logout
+    localStorage.removeItem('admin_active_section')
     logout()
     window.location.href = '/login'
   }
@@ -124,6 +126,8 @@ const AdminTopBar = ({
   }, [])
 
   const handleLogout = () => {
+    // Clear the stored admin section on logout
+    localStorage.removeItem('admin_active_section')
     logout()
     window.location.href = '/login'
   }
@@ -195,7 +199,20 @@ const AdminTopBar = ({
 const AdminDashboard = () => {
   const [user, setUser] = React.useState<Profile | null>(null)
   const [sidebarOpen, setSidebarOpen] = React.useState(true)
-  const [activeSection, setActiveSection] = React.useState('dashboard')
+  
+  // Initialize activeSection from localStorage or default to 'dashboard'
+  const [activeSection, setActiveSection] = React.useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('admin_active_section') || 'dashboard'
+    }
+    return 'dashboard'
+  })
+
+  // Save activeSection to localStorage whenever it changes
+  const handleSectionChange = (section: string) => {
+    setActiveSection(section)
+    localStorage.setItem('admin_active_section', section)
+  }
 
   React.useEffect(() => {
     const currentUser = getCurrentUser()
@@ -216,7 +233,7 @@ const AdminDashboard = () => {
   const renderContent = () => {
     switch (activeSection) {
       case 'dashboard':
-        return <DashboardPageReal onSectionChange={setActiveSection} />
+        return <DashboardPageReal onSectionChange={handleSectionChange} />
       case 'bookings':
         return <BookingsPageReal />
       case 'fleet':
@@ -254,7 +271,7 @@ const AdminDashboard = () => {
       <AdminSidebar 
         isOpen={sidebarOpen} 
         activeSection={activeSection} 
-        onSectionChange={setActiveSection}
+        onSectionChange={handleSectionChange}
         user={user}
       />
       
@@ -264,7 +281,7 @@ const AdminDashboard = () => {
         <AdminTopBar 
           user={user} 
           onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
-          onSectionChange={setActiveSection}
+          onSectionChange={handleSectionChange}
         />
         
         {/* Content */}
