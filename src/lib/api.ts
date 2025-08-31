@@ -33,13 +33,13 @@ export interface Agency {
 
 export interface DashboardData {
   agency_name: string
-  agency_id: number
+  agency_id: number | null
   total_cars: number
   available_cars: number
   rented_cars: number
   disabled_cars: number
   under_maintenance_cars: number
-  cars_due_service: number
+  cars_due_service?: number
   total_bookings: number
   active_bookings: number
   pending_bookings: number
@@ -56,13 +56,13 @@ export interface DashboardData {
   pending_payments: number
   pending_amount: number
   paid_amount: number
-  avg_booking_value: number
+  avg_booking_value: string | number
   avg_daily_rate: number
   fleet_utilization_rate: number
   conversion_rate: number
-  avg_rental_duration: number
+  avg_rental_duration: string | number
   service_threshold_km: number
-  revenue_trend: Array<{
+  revenue_trend?: Array<{
     date: string
     revenue: number
     bookings: number
@@ -81,7 +81,7 @@ export interface DashboardData {
     maintenance: number
     color: string
   }>
-  recent_activities: Array<{
+  recent_activities?: Array<{
     id: number
     type: string
     title: string
@@ -107,7 +107,7 @@ export interface DashboardData {
     timestamp: string
     time_ago: string
   }>
-  pending_actions: {
+  pending_actions?: {
     pending_bookings: Array<{
       id: number
       user_name: string
@@ -118,7 +118,7 @@ export interface DashboardData {
     pending_payments: Array<any>
     cars_due_service: Array<any>
   }
-  growth_metrics: {
+  growth_metrics?: {
     revenue_growth_percentage: number
     booking_growth_percentage: number
     user_growth_percentage: number
@@ -910,7 +910,7 @@ export interface ApiBooking {
   start_date: string
   end_date: string
   total_cost: string
-  status: 'pending' | 'confirmed' | 'in_progress' | 'completed' | 'cancelled'
+  status: 'pending' | 'confirmed' | 'cancelled' | 'in_progress' | 'completed'
   created_at: string
   updated_at: string
 }
@@ -990,6 +990,19 @@ export const bookingAPI = {
     }))
   },
 
+  // Confirm a booking
+  async confirmBooking(bookingId: number): Promise<BookingUpdateResponse> {
+    console.log(`✅ Confirming booking ID: ${bookingId}`)
+    
+    return await apiRequest<BookingUpdateResponse['data']>(`/book/confirm/${bookingId}`, {
+      method: 'PUT'
+    }).then(response => ({
+      status: response.status,
+      message: response.message,
+      data: response.data
+    }))
+  },
+
   // Complete a booking
   async completeBooking(bookingId: number): Promise<BookingUpdateResponse> {
     console.log(`✅ Completing booking ID: ${bookingId}`)
@@ -1007,6 +1020,7 @@ export const bookingAPI = {
 export const getBookings = bookingAPI.getBookings
 export const getBookingDetails = bookingAPI.getBookingDetails
 export const cancelBooking = bookingAPI.cancelBooking
+export const confirmBooking = bookingAPI.confirmBooking
 export const completeBooking = bookingAPI.completeBooking
 
 export default authAPI

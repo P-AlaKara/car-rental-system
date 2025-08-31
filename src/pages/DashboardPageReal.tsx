@@ -196,7 +196,7 @@ const DashboardPageReal = ({ onSectionChange }: { onSectionChange?: (section: st
             </div>
           </div>
           <div className="mt-2 text-xs text-purple-600">
-            {dashboardData.growth_metrics?.booking_growth_percentage > 0 ? '+' : ''}{dashboardData.growth_metrics?.booking_growth_percentage || 0}% growth
+            {(dashboardData.growth_metrics?.booking_growth_percentage ?? 0) > 0 ? '+' : ''}{dashboardData.growth_metrics?.booking_growth_percentage ?? 0}% growth
           </div>
         </div>
         
@@ -244,7 +244,7 @@ const DashboardPageReal = ({ onSectionChange }: { onSectionChange?: (section: st
             </div>
           </div>
           <div className="mt-2 text-xs text-indigo-600">
-            {dashboardData.growth_metrics?.revenue_growth_percentage > 0 ? '+' : ''}{dashboardData.growth_metrics?.revenue_growth_percentage || 0}% growth
+            {(dashboardData.growth_metrics?.revenue_growth_percentage ?? 0) > 0 ? '+' : ''}{dashboardData.growth_metrics?.revenue_growth_percentage ?? 0}% growth
           </div>
         </div>
       </div>
@@ -340,8 +340,8 @@ const DashboardPageReal = ({ onSectionChange }: { onSectionChange?: (section: st
           </div>
           <div className="mt-4 flex items-center justify-between text-sm">
             <span className="text-gray-600">Total: ${dashboardData.total_revenue.toLocaleString()}</span>
-            <span className={`font-medium ${dashboardData.growth_metrics?.revenue_growth_percentage >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-              {dashboardData.growth_metrics?.revenue_growth_percentage > 0 ? '+' : ''}{dashboardData.growth_metrics?.revenue_growth_percentage || 0}% vs last period
+            <span className={`font-medium ${(dashboardData.growth_metrics?.revenue_growth_percentage ?? 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+              {(dashboardData.growth_metrics?.revenue_growth_percentage ?? 0) > 0 ? '+' : ''}{dashboardData.growth_metrics?.revenue_growth_percentage ?? 0}% vs last period
             </span>
           </div>
         </div>
@@ -515,7 +515,7 @@ const DashboardPageReal = ({ onSectionChange }: { onSectionChange?: (section: st
         <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Pending Actions</h3>
           <div className="space-y-4">
-            {dashboardData.pending_actions?.pending_bookings?.length > 0 && (
+            {(dashboardData.pending_actions?.pending_bookings?.length ?? 0) > 0 && (
               <div className="bg-gradient-to-r from-yellow-50 to-orange-50 border border-yellow-200 rounded-lg p-4">
                 <div className="flex items-center justify-between">
                   <div>
@@ -534,7 +534,7 @@ const DashboardPageReal = ({ onSectionChange }: { onSectionChange?: (section: st
               </div>
             )}
             
-            {dashboardData.pending_actions?.pending_payments?.length > 0 && (
+            {(dashboardData.pending_actions?.pending_payments?.length ?? 0) > 0 && (
               <div className="bg-gradient-to-r from-orange-50 to-red-50 border border-orange-200 rounded-lg p-4">
                 <div className="flex items-center justify-between">
                   <div>
@@ -550,7 +550,7 @@ const DashboardPageReal = ({ onSectionChange }: { onSectionChange?: (section: st
               </div>
             )}
             
-            {dashboardData.pending_actions?.cars_due_service?.length > 0 && (
+            {(dashboardData.pending_actions?.cars_due_service?.length ?? 0) > 0 && (
               <div className="bg-gradient-to-r from-red-50 to-pink-50 border border-red-200 rounded-lg p-4">
                 <div className="flex items-center justify-between">
                   <div>
@@ -631,7 +631,7 @@ const DashboardPageReal = ({ onSectionChange }: { onSectionChange?: (section: st
                 </div>
                 <span className="text-sm text-gray-700">Avg. Rental Duration</span>
               </div>
-              <span className="font-semibold text-gray-900">{Math.round(dashboardData.avg_rental_duration || 0)} days</span>
+              <span className="font-semibold text-gray-900">{Math.round(Number(dashboardData.avg_rental_duration) || 0)} days</span>
             </div>
           </div>
         </div>

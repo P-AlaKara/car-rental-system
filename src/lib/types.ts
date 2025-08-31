@@ -169,13 +169,13 @@ export type DashboardStats = {
 // Enhanced Dashboard Types for Real API
 export type DashboardData = {
   agency_name: string
-  agency_id: number
+  agency_id: number | null
   total_cars: number
   available_cars: number
   rented_cars: number
   disabled_cars: number
   under_maintenance_cars: number
-  cars_due_service: number
+  cars_due_service?: number
   total_bookings: number
   active_bookings: number
   pending_bookings: number
@@ -192,13 +192,13 @@ export type DashboardData = {
   pending_payments: number
   pending_amount: number
   paid_amount: number
-  avg_booking_value: number
+  avg_booking_value: string | number
   avg_daily_rate: number
   fleet_utilization_rate: number
   conversion_rate: number
-  avg_rental_duration: number
+  avg_rental_duration: string | number
   service_threshold_km: number
-  revenue_trend: Array<{
+  revenue_trend?: Array<{
     date: string
     revenue: number
     bookings: number
@@ -217,7 +217,7 @@ export type DashboardData = {
     maintenance: number
     color: string
   }>
-  recent_activities: Array<{
+  recent_activities?: Array<{
     id: number
     type: string
     title: string
@@ -243,7 +243,7 @@ export type DashboardData = {
     timestamp: string
     time_ago: string
   }>
-  pending_actions: {
+  pending_actions?: {
     pending_bookings: Array<{
       id: number
       user_name: string
@@ -254,7 +254,7 @@ export type DashboardData = {
     pending_payments: Array<any>
     cars_due_service: Array<any>
   }
-  growth_metrics: {
+  growth_metrics?: {
     revenue_growth_percentage: number
     booking_growth_percentage: number
     user_growth_percentage: number
