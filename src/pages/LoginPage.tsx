@@ -19,7 +19,7 @@ function LoginPage() {
   // Handle prefilled data from registration and return URL
   useEffect(() => {
     if (location.state) {
-      const { email, password, message, from } = location.state as { 
+      const { email, password, message } = location.state as { 
         email?: string, 
         password?: string, 
         message?: string,

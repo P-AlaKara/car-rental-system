@@ -74,7 +74,7 @@ export function calculateBookingCost(
   promoCode?: string
 ): number {
   const duration = calculateRentalDuration(startDate, endDate)
-  let totalCost = car.rental_rate_per_day * duration
+  let totalCost = Number(car.rental_rate_per_day) * duration
 
   // Apply promo code discount if provided
   if (promoCode) {

@@ -99,7 +99,7 @@ function CarDetailsPage() {
                 />
               </div>
               <div className="grid grid-cols-3 gap-2">
-                {images.map((img, index) => (
+                {images.map((img: string, index: number) => (
                   <button
                     key={index}
                     onClick={() => setSelectedImage(index)}

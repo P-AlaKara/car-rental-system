@@ -277,7 +277,7 @@ const BookingModal: React.FC<BookingModalProps> = ({
                   </h4>
                   <div className="text-sm text-gray-600 space-y-1 mt-2">
                     <div>License: {car?.license_plate || 'N/A'}</div>
-                    <div>Category: {car?.category}</div>
+                    <div>Category: {typeof car?.category === 'object' ? car.category.name : car?.category}</div>
                     <div>Transmission: {car?.transmission}</div>
                     <div>Fuel Type: {car?.fuel_type}</div>
                     <div>Seats: {car?.seats}</div>
@@ -357,12 +357,12 @@ const BookingModal: React.FC<BookingModalProps> = ({
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-600">Subtotal:</span>
-                    <span className="font-medium">${(car?.rental_rate_per_day || 0) * duration}</span>
+                    <span className="font-medium">${(Number(car?.rental_rate_per_day) || 0) * duration}</span>
                   </div>
                   {booking.promo_code && (
                     <div className="flex justify-between text-green-600">
                       <span>Promo Code ({booking.promo_code}):</span>
-                      <span>-${((car?.rental_rate_per_day || 0) * duration * 0.1).toFixed(2)}</span>
+                      <span>-${((Number(car?.rental_rate_per_day) || 0) * duration * 0.1).toFixed(2)}</span>
                     </div>
                   )}
                   <div className="border-t pt-2">

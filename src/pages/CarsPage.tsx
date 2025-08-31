@@ -2,7 +2,18 @@ import * as React from 'react'
 import Header from '../components/Header'
 import Footer from '../components/Footer'
 import CarCard from '../components/CarCard'
-import { fleetAPI, type CarListResponse, getStoredUser } from '../lib/api'
+import { fleetAPI, getStoredUser, type Car as APICar } from '../lib/api'
+import type { Car } from '../lib/types'
+
+// Convert API Car to local Car type
+function convertApiCarToLocalCar(apiCar: APICar): Car {
+  return {
+    ...apiCar,
+    agency: apiCar.agency,
+    rental_rate_per_day: Number(apiCar.rental_rate_per_day),
+    category: apiCar.category
+  }
+}
 
 const CARS_PER_PAGE = 12
 
@@ -20,7 +31,7 @@ function CarsPage() {
   const [searchQuery, setSearchQuery] = React.useState('')
   const [priceRange, setPriceRange] = React.useState<string>('All')
   const [currentPage, setCurrentPage] = React.useState(1)
-  const [cars, setCars] = React.useState<CarListResponse['data']['data']>([])
+  const [cars, setCars] = React.useState<Car[]>([])
   const [total, setTotal] = React.useState(0)
   const [loading, setLoading] = React.useState(false)
   const [error, setError] = React.useState<string | null>(null)
@@ -48,11 +59,11 @@ function CarsPage() {
       const minPrice = priceRange === 'Under $50' ? 0 : priceRange === '$50-$100' ? 50 : priceRange === 'Over $100' ? 100 : undefined
       if (onlyMyAgency && myAgencyId) {
         const resp = await fleetAPI.getCarsByAgency({ agency_id: myAgencyId, page: currentPage - 1, size: CARS_PER_PAGE })
-        setCars(resp.data)
+        setCars(resp.data.map(convertApiCarToLocalCar))
         setTotal(resp.meta.total_elements)
       } else {
         const resp = await fleetAPI.getFrontendCars({ min_price: minPrice, page: currentPage - 1, size: CARS_PER_PAGE })
-        setCars(resp.data.data)
+        setCars(resp.data.data.map(convertApiCarToLocalCar))
         setTotal(resp.data.meta.total)
       }
     } catch (e: any) {
@@ -69,7 +80,9 @@ function CarsPage() {
   // Client-side filter for type and search since API doesn't support them yet
   const filteredCars = React.useMemo(() => {
     let filtered = cars
-    if (typeFilter !== 'All') filtered = filtered.filter(car => car.category?.name === typeFilter || car.category === typeFilter)
+    if (typeFilter !== 'All') filtered = filtered.filter(car => 
+      (typeof car.category === 'object' ? car.category.name === typeFilter : car.category === typeFilter)
+    )
     if (searchQuery) filtered = filtered.filter(car => `${car.make} ${car.model}`.toLowerCase().includes(searchQuery.toLowerCase()))
     return filtered
   }, [cars, typeFilter, searchQuery])

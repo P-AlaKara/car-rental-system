@@ -67,7 +67,7 @@ const BookingCard = ({
                 {car.year} {car.make} {car.model}
               </div>
               <div className="text-sm text-gray-500">
-                {car.category} • {car.license_plate}
+                {typeof car.category === 'object' ? car.category.name : car.category} • {car.license_plate}
               </div>
             </>
           ) : (
@@ -344,7 +344,7 @@ const BookingsPage = () => {
                         {car ? (
                           <div>
                             <div className="text-sm font-medium text-gray-900">{car.year} {car.make} {car.model}</div>
-                            <div className="text-sm text-gray-500">{car.category} • {car.license_plate}</div>
+                            <div className="text-sm text-gray-500">{typeof car.category === 'object' ? car.category.name : car.category} • {car.license_plate}</div>
                           </div>
                         ) : (
                           <div className="text-sm text-gray-500">Car not found</div>
@@ -497,7 +497,9 @@ const BookingsPage = () => {
                           </div>
                           <div>
                             <span className="text-sm text-gray-500">Category:</span>
-                            <span className="ml-2 text-sm text-gray-900">{car?.category || 'N/A'}</span>
+                            <span className="ml-2 text-sm text-gray-900">
+                              {car ? (typeof car.category === 'object' ? car.category.name : car.category) : 'N/A'}
+                            </span>
                           </div>
                           <div>
                             <span className="text-sm text-gray-500">License Plate:</span>

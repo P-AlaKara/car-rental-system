@@ -365,7 +365,9 @@ const DashboardPage = () => {
                   <Pie
                     data={(() => {
                       const categories = DEMO_CARS.reduce((acc, car) => {
-                        acc[car.category] = (acc[car.category] || 0) + 1
+                        const categoryKey = typeof car.category === 'object' ? car.category?.name : car.category
+                        if (!categoryKey) return acc
+                        acc[categoryKey] = (acc[categoryKey] || 0) + 1
                         return acc
                       }, {} as Record<string, number>)
                       
@@ -386,7 +388,9 @@ const DashboardPage = () => {
                   >
                     {(() => {
                       const categories = DEMO_CARS.reduce((acc, car) => {
-                        acc[car.category] = (acc[car.category] || 0) + 1
+                        const categoryKey = typeof car.category === 'object' ? car.category?.name : car.category
+                        if (!categoryKey) return acc
+                        acc[categoryKey] = (acc[categoryKey] || 0) + 1
                         return acc
                       }, {} as Record<string, number>)
                       
@@ -411,7 +415,9 @@ const DashboardPage = () => {
             <div className="mt-3 space-y-1">
               {(() => {
                 const categories = DEMO_CARS.reduce((acc, car) => {
-                  acc[car.category] = (acc[car.category] || 0) + 1
+                  const categoryKey = typeof car.category === 'object' ? car.category?.name : car.category
+                  if (!categoryKey) return acc
+                  acc[categoryKey] = (acc[categoryKey] || 0) + 1
                   return acc
                 }, {} as Record<string, number>)
                 

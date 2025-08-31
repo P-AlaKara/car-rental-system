@@ -37,27 +37,62 @@ export type FuelType = 'Petrol' | 'Diesel' | 'Hybrid' | 'Electric'
 
 export type Transmission = 'Automatic' | 'Manual' | 'CVT'
 
+// API-compatible Agency interface
+export interface AgencyObject {
+  id: number
+  name: string
+  location: string
+  postal_code: string
+  contact: string
+  email: string
+  is_active: boolean
+  created_at: string
+  updated_at: string
+}
+
 export type Car = {
   id: number
   make: string
   model: string
   year: number
   license_plate: string
-  agency: Agency
+  agency?: Agency | AgencyObject // Support both legacy string and new object format
+  agency_id?: number
   vin?: string
   bond_amount?: number
-  category: CarCategory
-  transmission: Transmission
-  fuel_type: FuelType
+  category?: CarCategory | {
+    id: number
+    name: string
+    description: string
+    created_at: string
+    updated_at: string
+  }
+  category_id?: number
+  transmission: Transmission | string
+  fuel_type: FuelType | string
   seats: number
   rental_rate_per_day: number
-  status: CarStatus
+  status: CarStatus | string
   current_odometer: number
   last_service_odometer: number
   service_threshold_km: number
   image_url?: string
+  images?: Array<{
+    id: number
+    car_id: number
+    image_url: string
+    created_at: string
+    updated_at: string
+  }> | string[]
+  insurance_expiry_date?: string
   created_at: string
   updated_at: string
+  // Legacy demo properties for compatibility
+  pricePerDay?: number
+  fuelType?: string
+  features?: string[]
+  mileage?: number
+  location?: string
 }
 
 // Enhanced Booking System Types

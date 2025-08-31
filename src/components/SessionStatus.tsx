@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { getSessionInfo, getSessionTimeRemaining, formatTimeRemaining } from '../lib/auth'
 
 interface SessionStatusProps {

@@ -41,13 +41,16 @@ const ReportsPage = () => {
       const carBookings = DEMO_BOOKINGS.filter(b => b.car_id === car.id)
       const revenue = carBookings.reduce((sum, booking) => sum + booking.total_cost, 0)
       
-      if (!acc[car.category]) {
-        acc[car.category] = { count: 0, bookings: 0, revenue: 0 }
+      const categoryKey = typeof car.category === 'object' ? car.category?.name : car.category
+      if (!categoryKey) return acc
+      
+      if (!acc[categoryKey]) {
+        acc[categoryKey] = { count: 0, bookings: 0, revenue: 0 }
       }
       
-      acc[car.category].count += 1
-      acc[car.category].bookings += carBookings.length
-      acc[car.category].revenue += revenue
+      acc[categoryKey].count += 1
+      acc[categoryKey].bookings += carBookings.length
+      acc[categoryKey].revenue += revenue
       
       return acc
     }, {} as Record<string, { count: number; bookings: number; revenue: number }>)

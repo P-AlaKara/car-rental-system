@@ -2,7 +2,18 @@ import * as React from 'react'
 import Header from '../components/Header'
 import Footer from '../components/Footer'
 import CarCard from '../components/CarCard'
-import { fleetAPI, type CarListResponse } from '../lib/api'
+import { fleetAPI, type Car as APICar } from '../lib/api'
+import type { Car } from '../lib/types'
+
+// Convert API Car to local Car type
+function convertApiCarToLocalCar(apiCar: APICar): Car {
+  return {
+    ...apiCar,
+    agency: apiCar.agency,
+    rental_rate_per_day: Number(apiCar.rental_rate_per_day),
+    category: apiCar.category
+  }
+}
 
 const Badge = ({ children }: { children: React.ReactNode }) => (
   <span className="inline-flex items-center rounded-full bg-white/60 backdrop-blur px-3 py-1 text-xs font-medium text-sky-700 ring-1 ring-sky-100">{children}</span>
@@ -42,7 +53,7 @@ const HeroBackground = () => (
   )
 
 function HomePage() {
-  const [featuredCars, setFeaturedCars] = React.useState<CarListResponse['data']['data']>([])
+  const [featuredCars, setFeaturedCars] = React.useState<Car[]>([])
   const [loading, setLoading] = React.useState(false)
   const [error, setError] = React.useState<string | null>(null)
 
@@ -52,7 +63,7 @@ function HomePage() {
         setLoading(true)
         setError(null)
         const resp = await fleetAPI.getFrontendCars({ page: 0, size: 4 })
-        setFeaturedCars(resp.data.data)
+        setFeaturedCars(resp.data.data.map(convertApiCarToLocalCar))
       } catch (e: any) {
         setError(e?.message || 'Failed to load featured cars')
         console.error('Error fetching featured cars:', e)

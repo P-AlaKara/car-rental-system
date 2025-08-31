@@ -2,9 +2,19 @@ import * as React from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import Header from '../components/Header'
 import Footer from '../components/Footer'
-import { bookingAPI, fleetAPI, buildImageUrl } from '../lib/api'
+import { bookingAPI, fleetAPI, buildImageUrl, type Car as APICar } from '../lib/api'
 import { isAuthenticated, validateAndRefreshToken } from '../lib/auth'
 import type { Car } from '../lib/types'
+
+// Convert API Car to local Car type
+function convertApiCarToLocalCar(apiCar: APICar): Car {
+  return {
+    ...apiCar,
+    agency: apiCar.agency,
+    rental_rate_per_day: Number(apiCar.rental_rate_per_day),
+    category: apiCar.category
+  }
+}
 
 function BookPage() {
   const { carId } = useParams<{ carId: string }>()
@@ -43,7 +53,7 @@ function BookPage() {
         setLoading(true)
         setError(null)
         const response = await fleetAPI.getCar(Number(carId))
-        setCar(response.data)
+        setCar(convertApiCarToLocalCar(response.data))
       } catch (e: any) {
         console.error('Error fetching car:', e)
         setError(e?.message || 'Failed to load car details')
@@ -518,7 +528,13 @@ function BookPage() {
                   <div className="space-y-3 mb-6">
                     <div className="flex gap-3">
                       <img 
-                        src={(car.images && car.images[0]?.image_url) ? buildImageUrl(car.images[0].image_url) : '/images/cars/sedan-silver.png'} 
+                        src={
+                          car.images && car.images.length > 0 
+                            ? (typeof car.images[0] === 'string' 
+                                ? buildImageUrl(car.images[0]) 
+                                : buildImageUrl(car.images[0].image_url))
+                            : '/images/cars/sedan-silver.png'
+                        } 
                         alt={`${car.make} ${car.model}`}
                         className="w-16 h-12 object-cover rounded"
                       />
@@ -526,7 +542,9 @@ function BookPage() {
                         <p className="font-medium text-slate-900">
                           {car.year} {car.make} {car.model}
                         </p>
-                        <p className="text-sm text-slate-600">{car.category?.name || car.category}</p>
+                        <p className="text-sm text-slate-600">
+                          {typeof car.category === 'object' ? car.category.name : car.category}
+                        </p>
                       </div>
                     </div>
                   </div>

@@ -310,7 +310,7 @@ export function filterDemoCars(query: URLSearchParams) {
   if (fuel && fuel !== 'Any') data = data.filter((c) => c.fuel_type === fuel)
   if (seats) data = data.filter((c) => c.seats >= seats)
   if (status && status !== 'Any') data = data.filter((c) => c.status === status)
-  data = data.filter((c) => c.rental_rate_per_day >= min && c.rental_rate_per_day <= max)
+  data = data.filter((c) => Number(c.rental_rate_per_day) >= min && Number(c.rental_rate_per_day) <= max)
 
   const page = Number(query.get('page') || 1)
   const per_page = Number(query.get('per_page') || 12)
