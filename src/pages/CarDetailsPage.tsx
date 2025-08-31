@@ -2,22 +2,51 @@ import * as React from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import Header from '../components/Header'
 import Footer from '../components/Footer'
-import { DEMO_CARS } from '../lib/demo-data'
+import { fleetAPI, buildImageUrl } from '../lib/api'
 
 function CarDetailsPage() {
   const { carId } = useParams<{ carId: string }>()
   const navigate = useNavigate()
   const [selectedImage, setSelectedImage] = React.useState(0)
+  const [car, setCar] = React.useState<any | null>(null)
+  const [loading, setLoading] = React.useState(false)
+  const [error, setError] = React.useState<string | null>(null)
 
-  const car = DEMO_CARS.find(c => c.id === Number(carId))
+  React.useEffect(() => {
+    const id = Number(carId)
+    if (!id) return
+    ;(async () => {
+      try {
+        setLoading(true)
+        setError(null)
+        const resp = await fleetAPI.getCar(id)
+        setCar(resp.data)
+      } catch (e: any) {
+        setError(e?.message || 'Failed to load car')
+      } finally {
+        setLoading(false)
+      }
+    })()
+  }, [carId])
 
-  if (!car) {
+  if (loading) {
+    return (
+      <main className="min-h-screen flex flex-col bg-white">
+        <Header />
+        <div className="flex-1 flex items-center justify-center text-slate-600">Loading car...</div>
+        <Footer />
+      </main>
+    )
+  }
+
+  if (error || !car) {
     return (
       <main className="min-h-screen flex flex-col bg-white">
         <Header />
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center">
-            <h1 className="text-2xl font-semibold text-slate-900 mb-4">Car not found</h1>
+            <h1 className="text-2xl font-semibold text-slate-900 mb-2">Car not found</h1>
+            {error && <p className="text-red-600 mb-4">{error}</p>}
             <button 
               onClick={() => navigate('/cars')}
               className="px-4 py-2 bg-sky-600 text-white rounded-md hover:bg-sky-700 transition"
@@ -31,11 +60,13 @@ function CarDetailsPage() {
     )
   }
 
-  const images = [
-    car.image_url || '/images/cars/sedan-silver.png',
-    '/images/cars/sedan-interior.png',
-    '/images/cars/sedan-urban.png'
-  ]
+  const images = (car.images && car.images.length > 0)
+    ? car.images.map((img: any) => buildImageUrl(img.image_url) || '/images/cars/sedan-silver.png')
+    : [
+        '/images/cars/sedan-silver.png',
+        '/images/cars/sedan-interior.png',
+        '/images/cars/sedan-urban.png'
+      ]
 
   const handleBooking = () => {
     navigate(`/book/${car.id}`)
@@ -72,11 +103,12 @@ function CarDetailsPage() {
                   <button
                     key={index}
                     onClick={() => setSelectedImage(index)}
+                    aria-label={`Select image ${index + 1}`}
                     className={`aspect-video rounded-md overflow-hidden border-2 transition ${
                       selectedImage === index ? 'border-sky-500' : 'border-slate-200'
                     }`}
                   >
-                    <img src={img} alt="" className="w-full h-full object-cover" />
+                    <img src={img} alt={`Car image ${index + 1}`} className="w-full h-full object-cover" />
                   </button>
                 ))}
               </div>
@@ -85,21 +117,15 @@ function CarDetailsPage() {
             {/* Details */}
             <div className="space-y-6">
               <div>
-                <h1 className="text-3xl font-semibold text-slate-900 mb-2">
-                  {car.year} {car.make} {car.model}
-                </h1>
+                <h1 className="text-3xl font-semibold text-slate-900 mb-2">{car.year} {car.make} {car.model}</h1>
                 <div className="flex items-center gap-2 mb-4">
-                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                    car.status === 'available' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                  }`}>
-                    {car.status === 'available' ? 'Available' : 'Not Available'}
-                  </span>
+                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${String(car.status).toLowerCase().includes('available') ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>{String(car.status).toLowerCase().includes('available') ? 'Available' : 'Not Available'}</span>
                   <span className="px-2 py-1 rounded-full text-xs font-medium bg-sky-100 text-sky-800">
-                    {car.category}
+                    {car.category?.name || car.category || 'Category'}
                   </span>
                 </div>
                 <p className="text-3xl font-bold text-sky-600 mb-4">
-                  ${car.rental_rate_per_day}
+                  ${Number(car.rental_rate_per_day).toLocaleString()}
                   <span className="text-lg text-slate-600 font-normal">/day</span>
                 </p>
               </div>
@@ -130,7 +156,7 @@ function CarDetailsPage() {
                   </div>
                   <div>
                     <span className="text-sm text-slate-600">Agency</span>
-                    <p className="font-medium">{car.agency}</p>
+                    <p className="font-medium">{car.agency?.name || '—'}</p>
                   </div>
                 </div>
               </div>

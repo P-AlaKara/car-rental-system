@@ -2,7 +2,7 @@ import * as React from 'react'
 import Header from '../components/Header'
 import Footer from '../components/Footer'
 import CarCard from '../components/CarCard'
-import { DEMO_CARS } from '../lib/demo-data'
+import { fleetAPI, type CarListResponse } from '../lib/api'
 
 const Badge = ({ children }: { children: React.ReactNode }) => (
   <span className="inline-flex items-center rounded-full bg-white/60 backdrop-blur px-3 py-1 text-xs font-medium text-sky-700 ring-1 ring-sky-100">{children}</span>
@@ -42,7 +42,27 @@ const HeroBackground = () => (
   )
 
 function HomePage() {
-  const featured = DEMO_CARS.slice(0, 4)
+  const [featuredCars, setFeaturedCars] = React.useState<CarListResponse['data']['data']>([])
+  const [loading, setLoading] = React.useState(false)
+  const [error, setError] = React.useState<string | null>(null)
+
+  React.useEffect(() => {
+    const fetchFeaturedCars = async () => {
+      try {
+        setLoading(true)
+        setError(null)
+        const resp = await fleetAPI.getFrontendCars({ page: 0, size: 4 })
+        setFeaturedCars(resp.data.data)
+      } catch (e: any) {
+        setError(e?.message || 'Failed to load featured cars')
+        console.error('Error fetching featured cars:', e)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchFeaturedCars()
+  }, [])
 
   return (
     <main className="min-h-screen flex flex-col bg-white">
@@ -95,15 +115,48 @@ function HomePage() {
             <h2 className="text-2xl md:text-3xl font-semibold text-slate-900">Featured vehicles</h2>
             <p className="text-slate-600">Popular choices for our customers</p>
           </div>
-          <a href="/login" className="w-fit h-10 px-5 inline-flex items-center justify-center rounded-md border hover:border-sky-300 bg-white text-sm font-medium">
+          <a href="/cars" className="w-fit h-10 px-5 inline-flex items-center justify-center rounded-md border hover:border-sky-300 bg-white text-sm font-medium">
             View all cars →
           </a>
         </div>
-        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {featured.map((car) => (
-            <CarCard key={car.id} car={car} />
-          ))}
-        </div>
+
+        {loading && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="bg-slate-100 rounded-lg p-4 animate-pulse">
+                <div className="w-full h-32 bg-slate-200 rounded mb-3"></div>
+                <div className="h-4 bg-slate-200 rounded mb-2"></div>
+                <div className="h-3 bg-slate-200 rounded w-3/4"></div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {error && (
+          <div className="text-center py-8">
+            <p className="text-red-600 mb-4">Failed to load featured cars: {error}</p>
+            <button 
+              onClick={() => window.location.reload()} 
+              className="px-4 py-2 bg-sky-600 text-white rounded-md hover:bg-sky-700 transition"
+            >
+              Retry
+            </button>
+          </div>
+        )}
+
+        {!loading && !error && featuredCars.length > 0 && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {featuredCars.map((car) => (
+              <CarCard key={car.id} car={car} />
+            ))}
+          </div>
+        )}
+
+        {!loading && !error && featuredCars.length === 0 && (
+          <div className="text-center py-8">
+            <p className="text-slate-600">No featured cars available at the moment.</p>
+          </div>
+        )}
       </SectionContainer>
 
       {/* About Section */}
@@ -226,48 +279,7 @@ function HomePage() {
           </div>
         </div>
 
-        {/* Our Team */}
-        <div className="mb-16">
-          <h3 className="text-2xl md:text-3xl font-semibold text-slate-900 mb-8 text-center">Meet Our Team</h3>
-          <div className="grid md:grid-cols-3 gap-8 max-w-4xl mx-auto">
-            <div className="text-center">
-              <img 
-                src="/images/avatars/avatar-1.png" 
-                alt="Sarah Johnson" 
-                className="w-24 h-24 rounded-full mx-auto mb-4 object-cover"
-              />
-              <h4 className="text-lg font-semibold text-slate-900 mb-1">Sarah Johnson</h4>
-              <p className="text-sky-600 mb-2">Fleet Manager</p>
-              <p className="text-sm text-slate-600">
-                Ensures our vehicles are always in top condition and ready for your journey.
-              </p>
-            </div>
-            <div className="text-center">
-              <img 
-                src="/images/avatars/avatar-2.png" 
-                alt="Mike Chen" 
-                className="w-24 h-24 rounded-full mx-auto mb-4 object-cover"
-              />
-              <h4 className="text-lg font-semibold text-slate-900 mb-1">Mike Chen</h4>
-              <p className="text-sky-600 mb-2">Customer Support</p>
-              <p className="text-sm text-slate-600">
-                Provides exceptional customer service and support throughout your rental experience.
-              </p>
-            </div>
-            <div className="text-center">
-              <img 
-                src="/images/avatars/avatar-3.png" 
-                alt="Emma Wilson" 
-                className="w-24 h-24 rounded-full mx-auto mb-4 object-cover"
-              />
-              <h4 className="text-lg font-semibold text-slate-900 mb-1">Emma Wilson</h4>
-              <p className="text-sky-600 mb-2">Operations Manager</p>
-              <p className="text-sm text-slate-600">
-                Coordinates all operations to ensure smooth and efficient service delivery.
-              </p>
-            </div>
-          </div>
-        </div>
+
       </SectionContainer>
 
       {/* Contact Section */}
@@ -375,8 +387,8 @@ function HomePage() {
                   <div>
                     <h4 className="font-semibold text-slate-900 mb-1">Phone</h4>
                     <p className="text-slate-600">
-                      <a href="tel:+61390000000" className="hover:text-sky-600 transition">
-                        +61 3 9000 0000
+                      <a href="tel:+61420759910" className="hover:text-sky-600 transition">
+                        0420 759 910
                       </a>
                     </p>
                   </div>
@@ -427,7 +439,7 @@ function HomePage() {
                   For urgent issues during your rental, call our emergency line:
                 </p>
                 <p className="text-red-900 font-semibold">
-                  <a href="tel:+61400000000" className="hover:underline">+61 400 000 000</a>
+                  <a href="tel:+61420759910" className="hover:underline">0420 759 910</a>
                 </p>
               </div>
             </div>

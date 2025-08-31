@@ -153,15 +153,42 @@ export interface LoginRequest {
 
 const API_BASE_URL = 'https://4043f016f021.ngrok-free.app/api/v1'
 
+// Helper: build absolute image URL from API relative paths like "images/cars/xyz.png"
+export const buildImageUrl = (imagePath: string | null | undefined): string => {
+  if (!imagePath) return '/images/cars/sedan-silver.png'
+  if (/^https?:\/\//i.test(imagePath)) return imagePath
+  
+  try {
+    // For ngrok URLs, we need to handle them specially
+    if (imagePath.includes('ngrok')) {
+      return imagePath
+    }
+    
+    // Try to construct URL from API base
+    const origin = new URL(API_BASE_URL).origin
+    const normalized = imagePath.startsWith('/') ? imagePath.slice(1) : imagePath
+    const fullUrl = `${origin}/${normalized}`
+    
+    // Log the constructed URL for debugging
+    console.log('🖼️ Constructed image URL:', { original: imagePath, constructed: fullUrl })
+    
+    return fullUrl
+  } catch (error) {
+    console.error('❌ Failed to build image URL:', { imagePath, error })
+    return '/images/cars/sedan-silver.png'
+  }
+}
+
 // Storage keys
 const TOKEN_KEY = 'am_token'
 const USER_KEY = 'am_user'
 const DASHBOARD_KEY = 'am_dashboard'
 
-// Generic API request function
+// Generic API request function with automatic token refresh
 async function apiRequest<T>(
   endpoint: string, 
-  options: RequestInit = {}
+  options: RequestInit = {},
+  retryCount = 0
 ): Promise<ApiResponse<T>> {
   const token = localStorage.getItem(TOKEN_KEY)
   
@@ -194,6 +221,40 @@ async function apiRequest<T>(
     console.log(`📥 API Response (${response.status}):`, data)
     
     if (!response.ok) {
+      // Handle authentication errors with token refresh
+      if (response.status === 401 && retryCount === 0 && token) {
+        console.log('🔄 Token expired, attempting refresh...')
+        try {
+          const refreshResponse = await authAPI.refreshToken()
+          if (refreshResponse.data.token) {
+            localStorage.setItem(TOKEN_KEY, refreshResponse.data.token)
+            
+            // Update token expiry (extend by 24 hours)
+            const now = new Date()
+            const newExpiry = now.getTime() + (24 * 60 * 60 * 1000) // 24 hours
+            localStorage.setItem('am_token_expiry', newExpiry.toString())
+            
+            console.log('✅ Token refreshed, retrying request...')
+            console.log('⏰ Auth: New token expires at:', new Date(newExpiry).toLocaleString())
+            // Retry the original request with new token
+            return apiRequest<T>(endpoint, options, retryCount + 1)
+          }
+        } catch (refreshError) {
+          console.error('❌ Token refresh failed:', refreshError)
+          // Clear invalid session
+          localStorage.removeItem(TOKEN_KEY)
+          localStorage.removeItem(USER_KEY)
+          localStorage.removeItem(DASHBOARD_KEY)
+          localStorage.removeItem('am_session_start')
+          localStorage.removeItem('am_token_expiry')
+          
+          // Redirect to login if we're on a protected page
+          if (window.location.pathname !== '/login' && window.location.pathname !== '/register') {
+            window.location.href = '/login'
+          }
+        }
+      }
+      
       throw new Error(data.message || `HTTP error! status: ${response.status}`)
     }
     
@@ -503,6 +564,57 @@ export const fleetAPI = {
       ...response,
       data: response.data
     }))
+  },
+
+  // USER-FACING: Fetch cars for frontend with simple filters (e.g., min_price, pagination)
+  async getFrontendCars(params: { min_price?: number; page?: number; size?: number } = {}): Promise<CarListResponse> {
+    const queryParams = new URLSearchParams()
+    if (params.min_price !== undefined) queryParams.append('min_price', String(params.min_price))
+    if (params.page !== undefined) queryParams.append('page', String(params.page))
+    if (params.size !== undefined) queryParams.append('size', String(params.size))
+
+    const endpoint = `/cars/frontend/list${queryParams.toString() ? `?${queryParams.toString()}` : ''}`
+    return await apiRequest<CarListResponse['data']>(endpoint, { method: 'GET' }).then(response => ({
+      status: response.status,
+      message: response.message,
+      data: response.data
+    }))
+  },
+
+  // USER-FACING: Fetch cars by category id
+  async getCarsByCategory(params: { category_id: number; page?: number; size?: number }): Promise<{
+    messages: string
+    data: Car[]
+    meta: { page: number; size: number; total_pages: number; total_elements: number }
+  }> {
+    const query = new URLSearchParams()
+    query.append('category_id', String(params.category_id))
+    if (params.page !== undefined) query.append('page', String(params.page))
+    if (params.size !== undefined) query.append('size', String(params.size))
+    const endpoint = `/cars/categories/list?${query.toString()}`
+    // This endpoint returns a slightly different envelope (messages + data + meta)
+    return await apiRequest<{
+      messages: string
+      data: Car[]
+      meta: { page: number; size: number; total_pages: number; total_elements: number }
+    }>(endpoint, { method: 'GET' }).then(r => r.data)
+  },
+
+  // USER-FACING: Fetch cars by agency id
+  async getCarsByAgency(params: { agency_id: number; page?: number; size?: number }): Promise<{
+    messages: string
+    data: Car[]
+    meta: { page: number; size: number; total_pages: number; total_elements: number }
+  }> {
+    const query = new URLSearchParams()
+    if (params.page !== undefined) query.append('page', String(params.page))
+    if (params.size !== undefined) query.append('size', String(params.size))
+    const endpoint = `/cars/list/by-agency/${params.agency_id}?${query.toString()}`
+    return await apiRequest<{
+      messages: string
+      data: Car[]
+      meta: { page: number; size: number; total_pages: number; total_elements: number }
+    }>(endpoint, { method: 'GET' }).then(r => r.data)
   },
 
   // Fetch a specific car by ID
@@ -951,6 +1063,33 @@ export interface BookingUpdateResponse {
 
 // Booking Management API functions
 export const bookingAPI = {
+  // Create a new booking
+  async createBooking(data: {
+    car_id: number
+    start_date: string
+    end_date: string
+    pickup_location: string
+    return_location: string
+    driver_email: string
+    driver_fullname: string
+    license_number: string
+    residential_area: string
+    special_requests?: string
+    total_cost: number
+    payment_frequency: '3days' | 'weekly'
+  }): Promise<ApiResponse<any>> {
+    console.log('📝 Creating booking with data:', data)
+    console.log('🌐 Full API URL:', `${API_BASE_URL}/book`)
+    console.log('📤 Request body:', JSON.stringify(data, null, 2))
+    
+    const response = await apiRequest<any>('/book', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    })
+    
+    console.log('📥 Booking API response:', response)
+    return response
+  },
   // Fetch all bookings with pagination
   async getBookings(page = 0, size = 20): Promise<BookingListResponse> {
     console.log(`📅 Fetching bookings (page: ${page}, size: ${size})`)
