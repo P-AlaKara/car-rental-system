@@ -38,7 +38,7 @@ function BookPage() {
   })
   
   const [totalCost, setTotalCost] = React.useState(0)
-  const [paymentFrequency, setPaymentFrequency] = React.useState<'3days' | 'weekly'>('weekly')
+  const [paymentFrequency, setPaymentFrequency] = React.useState<'3days' | '7days' | '10days' | 'once'>('once')
   const [isProcessing, setIsProcessing] = React.useState(false)
 
   // Fetch car data when component mounts
@@ -485,19 +485,21 @@ function BookPage() {
 
                     <div>
                       <label htmlFor="paymentFrequency" className="block text-sm font-medium text-slate-700 mb-2">
-                        Payment Frequency *
+                        Payment Schedule
                       </label>
                       <select
                         id="paymentFrequency"
                         value={paymentFrequency}
-                        onChange={(e) => setPaymentFrequency(e.target.value as '3days' | 'weekly')}
-                        required
+                        onChange={(e) => setPaymentFrequency(e.target.value as '3days' | '7days' | '10days' | 'once')}
                         aria-label="Payment Frequency"
                         className="w-full px-3 py-2 border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
                       >
-                        <option value="weekly">Weekly</option>
+                        <option value="once">Single invoice</option>
                         <option value="3days">Every 3 days</option>
+                        <option value="7days">Every 7 days</option>
+                        <option value="10days">Every 10 days</option>
                       </select>
+                      <p className="mt-1 text-xs text-slate-500">If rental period is 14 days or less, a single invoice will be sent regardless of this selection.</p>
                     </div>
                   </div>
 

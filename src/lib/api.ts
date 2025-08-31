@@ -1088,6 +1088,19 @@ export const bookingAPI = {
     })
     
     console.log('📥 Booking API response:', response)
+    try {
+      // Fire-and-forget: notify invoice worker to create/send schedule
+      await fetch('/api/create-xero-invoices', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          booking: data,
+          backendBookingResponse: response
+        })
+      })
+    } catch (err) {
+      console.error('⚠️ Failed to trigger invoice creation:', err)
+    }
     return response
   },
   // Fetch all bookings with pagination

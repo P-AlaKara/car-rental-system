@@ -29,6 +29,22 @@ npm run dev
 - React Router for navigation
 - Local storage for demo data persistence
 
+## Environment (for Xero invoices)
+
+Deploy with these environment variables configured (e.g., in Vercel project settings):
+
+- `XERO_CLIENT_ID`
+- `XERO_CLIENT_SECRET`
+- `XERO_REDIRECT_URI` (can be any valid URL for server-to-server refresh, e.g., `https://example.com/callback`)
+- `XERO_TENANT_ID`
+- `XERO_REFRESH_TOKEN` (must be kept fresh with your app’s OAuth flow)
+- `XERO_BRAND_NAME` (optional branding in invoice descriptions)
+
+Serverless function: `api/create-xero-invoices.ts` creates invoices and emails them via Xero after a booking is created. Logic:
+
+- If booking length ≤ 14 days, a single invoice is created and emailed.
+- If > 14 days, invoices are split by the selected schedule (every 3/7/10 days).
+
 ## Development
 
 The project uses a modular structure with:
