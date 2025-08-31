@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { getCurrentUser, logout } from '../lib/auth'
+import SessionStatus from './SessionStatus'
 import type { Profile } from '../lib/types'
 
 const Header = () => {
@@ -111,6 +112,7 @@ const Header = () => {
         <div className="hidden md:flex items-center gap-3">
           {user ? (
             <>
+              <SessionStatus className="text-xs" />
               {(user.role === 'admin' || user.role === 'superAdmin') && (
                 <a href="/admin" className="px-3 h-8 inline-flex items-center justify-center rounded-md bg-sky-600 text-white hover:bg-sky-700 text-sm">Admin</a>
               )}

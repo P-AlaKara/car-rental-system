@@ -4,11 +4,15 @@ import { authAPI, type User, type LoginRequest, type RegisterRequest } from './a
 const USER_KEY = 'am_user'
 const DASHBOARD_KEY = 'am_dashboard'
 const BOOKINGS_KEY = 'am_bookings'
+const SESSION_START_KEY = 'am_session_start'
+const TOKEN_EXPIRY_KEY = 'am_token_expiry'
 
 export function getCurrentUser(): Profile | null {
   try { 
     const userData = localStorage.getItem(USER_KEY)
-    if (!userData) return null
+    const token = localStorage.getItem('am_token')
+    
+    if (!userData || !token) return null
     
     const user: User = JSON.parse(userData)
     
@@ -77,7 +81,18 @@ export async function login(email: string, password: string): Promise<Profile> {
   // Store user data and token in localStorage
   setCurrentUser(profile)
   if (response.token) {
-    localStorage.setItem('auth_token', response.token)
+    localStorage.setItem('am_token', response.token) // Use consistent token key
+    
+    // Set session start time and token expiry (24 hours from now)
+    const now = new Date()
+    const sessionStart = now.getTime()
+    const tokenExpiry = now.getTime() + (24 * 60 * 60 * 1000) // 24 hours
+    
+    localStorage.setItem(SESSION_START_KEY, sessionStart.toString())
+    localStorage.setItem(TOKEN_EXPIRY_KEY, tokenExpiry.toString())
+    
+    console.log('⏰ Auth: Session started at:', new Date(sessionStart).toLocaleString())
+    console.log('⏰ Auth: Token expires at:', new Date(tokenExpiry).toLocaleString())
   }
   
   // Store dashboard data if present
@@ -144,7 +159,9 @@ export async function logout() {
   // Clear local storage regardless of API call success
   setCurrentUser(null)
   setCurrentDashboard(null)
-  localStorage.removeItem('auth_token')
+  localStorage.removeItem('am_token') // Use consistent token key
+  localStorage.removeItem(SESSION_START_KEY)
+  localStorage.removeItem(TOKEN_EXPIRY_KEY)
   
   console.log('✅ Auth: Logout completed - user data, dashboard, and token cleared')
 }
@@ -167,6 +184,159 @@ export function updateBooking(id: number, updater: (b: Booking) => Booking) {
 
 export function getBooking(id: number): Booking | null {
   return listBookings().find(b => b.id === id) || null
+}
+
+// Token validation and management
+export function isAuthenticated(): boolean {
+  const token = localStorage.getItem('am_token')
+  const user = localStorage.getItem(USER_KEY)
+  const tokenExpiry = localStorage.getItem(TOKEN_EXPIRY_KEY)
+  
+  if (!token || !user) {
+    return false
+  }
+  
+  // Check if token has expired
+  if (tokenExpiry) {
+    const expiryTime = parseInt(tokenExpiry)
+    const now = new Date().getTime()
+    
+    if (now > expiryTime) {
+      console.log('🔴 Auth: Token expired, clearing session')
+      // Clear expired session
+      localStorage.removeItem('am_token')
+      localStorage.removeItem(USER_KEY)
+      localStorage.removeItem(DASHBOARD_KEY)
+      localStorage.removeItem(SESSION_START_KEY)
+      localStorage.removeItem(TOKEN_EXPIRY_KEY)
+      return false
+    }
+  }
+  
+  return true
+}
+
+export function getToken(): string | null {
+  return localStorage.getItem('am_token')
+}
+
+// Session management utilities
+export function getSessionInfo() {
+  const sessionStart = localStorage.getItem(SESSION_START_KEY)
+  const tokenExpiry = localStorage.getItem(TOKEN_EXPIRY_KEY)
+  
+  if (!sessionStart || !tokenExpiry) {
+    return null
+  }
+  
+  const startTime = parseInt(sessionStart)
+  const expiryTime = parseInt(tokenExpiry)
+  const now = new Date().getTime()
+  
+  return {
+    sessionStart: new Date(startTime),
+    tokenExpiry: new Date(expiryTime),
+    timeRemaining: expiryTime - now,
+    isExpired: now > expiryTime,
+    sessionDuration: now - startTime
+  }
+}
+
+export function getSessionTimeRemaining(): number {
+  const tokenExpiry = localStorage.getItem(TOKEN_EXPIRY_KEY)
+  if (!tokenExpiry) return 0
+  
+  const expiryTime = parseInt(tokenExpiry)
+  const now = new Date().getTime()
+  return Math.max(0, expiryTime - now)
+}
+
+export function formatTimeRemaining(milliseconds: number): string {
+  const hours = Math.floor(milliseconds / (1000 * 60 * 60))
+  const minutes = Math.floor((milliseconds % (1000 * 60 * 60)) / (1000 * 60))
+  
+  if (hours > 0) {
+    return `${hours}h ${minutes}m`
+  }
+  return `${minutes}m`
+}
+
+export async function validateAndRefreshToken(): Promise<boolean> {
+  try {
+    const token = getToken()
+    if (!token) {
+      console.log('🔴 Auth: No token found')
+      return false
+    }
+
+    // Check if token is close to expiry (within 1 hour)
+    const tokenExpiry = localStorage.getItem(TOKEN_EXPIRY_KEY)
+    if (tokenExpiry) {
+      const expiryTime = parseInt(tokenExpiry)
+      const now = new Date().getTime()
+      const oneHour = 60 * 60 * 1000
+      
+      // Only refresh if token expires within the next hour
+      if (now < expiryTime - oneHour) {
+        console.log('✅ Auth: Token still valid, no refresh needed')
+        return true
+      }
+    }
+
+    // Try to refresh the token
+    const response = await authAPI.refreshToken()
+    if (response.data.token) {
+      localStorage.setItem('am_token', response.data.token)
+      
+      // Update token expiry (extend by 24 hours)
+      const now = new Date()
+      const newExpiry = now.getTime() + (24 * 60 * 60 * 1000) // 24 hours
+      localStorage.setItem(TOKEN_EXPIRY_KEY, newExpiry.toString())
+      
+      console.log('✅ Auth: Token refreshed successfully')
+      console.log('⏰ Auth: New token expires at:', new Date(newExpiry).toLocaleString())
+      return true
+    }
+    
+    return false
+  } catch (error) {
+    console.error('🔴 Auth: Token validation failed:', error)
+    // Clear invalid token
+    localStorage.removeItem('am_token')
+    localStorage.removeItem(USER_KEY)
+    localStorage.removeItem(DASHBOARD_KEY)
+    localStorage.removeItem(SESSION_START_KEY)
+    localStorage.removeItem(TOKEN_EXPIRY_KEY)
+    return false
+  }
+}
+
+// Auto-refresh token before it expires
+export function setupTokenRefresh() {
+  console.log('🔄 Auth: Setting up token refresh system')
+  
+  // Check token every 10 minutes
+  setInterval(async () => {
+    if (isAuthenticated()) {
+      await validateAndRefreshToken()
+    }
+  }, 10 * 60 * 1000) // 10 minutes
+  
+  // Also check on page visibility change (when user returns to tab)
+  document.addEventListener('visibilitychange', async () => {
+    if (!document.hidden && isAuthenticated()) {
+      console.log('👁️ Auth: Page became visible, checking token')
+      await validateAndRefreshToken()
+    }
+  })
+  
+  // Check on window focus (when user switches back to browser)
+  window.addEventListener('focus', async () => {
+    if (isAuthenticated()) {
+      console.log('🎯 Auth: Window focused, checking token')
+      await validateAndRefreshToken()
+    }
+  })
 }
 
 
