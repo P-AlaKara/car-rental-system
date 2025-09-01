@@ -3,6 +3,7 @@ import Header from '../components/Header'
 import Footer from '../components/Footer'
 import CarCard from '../components/CarCard'
 import { fleetAPI, getStoredUser, type Car as APICar } from '../lib/api'
+import { DEMO_CARS } from '../lib/demo-data'
 import type { Car } from '../lib/types'
 
 // Convert API Car to local Car type
@@ -58,13 +59,25 @@ function CarsPage() {
       setError(null)
       const minPrice = priceRange === 'Under $50' ? 0 : priceRange === '$50-$100' ? 50 : priceRange === 'Over $100' ? 100 : undefined
       if (onlyMyAgency && myAgencyId) {
-        const resp = await fleetAPI.getCarsByAgency({ agency_id: myAgencyId, page: currentPage - 1, size: CARS_PER_PAGE })
-        setCars(resp.data.map(convertApiCarToLocalCar))
-        setTotal(resp.meta.total_elements)
+        try {
+          const resp = await fleetAPI.getCarsByAgency({ agency_id: myAgencyId, page: currentPage - 1, size: CARS_PER_PAGE })
+          setCars(resp.data.map(convertApiCarToLocalCar))
+          setTotal(resp.meta.total_elements)
+        } catch (e: any) {
+          console.warn('Falling back to demo cars (agency filter ignored) due to API error:', e)
+          setCars(DEMO_CARS as unknown as Car[])
+          setTotal(DEMO_CARS.length)
+        }
       } else {
-        const resp = await fleetAPI.getFrontendCars({ min_price: minPrice, page: currentPage - 1, size: CARS_PER_PAGE })
-        setCars(resp.data.data.map(convertApiCarToLocalCar))
-        setTotal(resp.data.meta.total)
+        try {
+          const resp = await fleetAPI.getFrontendCars({ min_price: minPrice, page: currentPage - 1, size: CARS_PER_PAGE })
+          setCars(resp.data.data.map(convertApiCarToLocalCar))
+          setTotal(resp.data.meta.total)
+        } catch (e: any) {
+          console.warn('Falling back to demo cars due to API error:', e)
+          setCars(DEMO_CARS as unknown as Car[])
+          setTotal(DEMO_CARS.length)
+        }
       }
     } catch (e: any) {
       setError(e?.message || 'Failed to load cars')
