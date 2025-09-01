@@ -1,5 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { XeroClient } from 'xero-node'
+import fs from 'node:fs/promises'
+import path from 'node:path'
 
 type PaymentFrequency = 'once' | '3days' | '7days' | '10days'
 
@@ -47,8 +49,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     XERO_BRAND_NAME
   } = process.env
 
-  if (!XERO_CLIENT_ID || !XERO_CLIENT_SECRET || !XERO_REDIRECT_URI || !XERO_TENANT_ID || !XERO_REFRESH_TOKEN) {
-    return res.status(500).json({ message: 'Missing Xero environment configuration' })
+  if (!XERO_CLIENT_ID || !XERO_CLIENT_SECRET) {
+    return res.status(500).json({ message: 'Missing Xero client credentials' })
   }
 
   let payload: CreateInvoicePayload
@@ -100,10 +102,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   // Init Xero client
+  const redirectUri = XERO_REDIRECT_URI || 'http://localhost:5173/api/xero-callback'
   const xero = new XeroClient({
     clientId: XERO_CLIENT_ID,
     clientSecret: XERO_CLIENT_SECRET,
-    redirectUris: [XERO_REDIRECT_URI],
+    redirectUris: [redirectUri],
     scopes: [
       'offline_access',
       'accounting.transactions',
@@ -114,24 +117,72 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   })
 
   try {
-    // Set the token set with refresh token
+    // Resolve tokens & tenant from persisted file or env vars
+    const DATA_DIR = path.join(process.cwd(), '.data')
+    const DATA_FILE = path.join(DATA_DIR, 'xero.json')
+
     await xero.initialize()
-    xero.setTokenSet({
-      token_type: 'Bearer',
-      scope: 'offline_access accounting.transactions accounting.contacts accounting.settings email',
-      access_token: 'dummy',
-      refresh_token: XERO_REFRESH_TOKEN,
-      expires_at: 0,
-      session_state: null as any,
-    })
+
+    let tenantId: string | undefined = undefined
+    let haveTokens = false
+
+    try {
+      const raw = await fs.readFile(DATA_FILE, 'utf8')
+      const saved = JSON.parse(raw)
+      if (saved?.tokenSet) {
+        xero.setTokenSet(saved.tokenSet)
+        haveTokens = true
+      }
+      if (saved?.tenantId) tenantId = saved.tenantId
+    } catch {}
+
+    if (!haveTokens && XERO_REFRESH_TOKEN) {
+      xero.setTokenSet({
+        token_type: 'Bearer',
+        scope: 'offline_access accounting.transactions accounting.contacts accounting.settings email',
+        access_token: 'dummy',
+        refresh_token: XERO_REFRESH_TOKEN,
+        expires_at: 0,
+        session_state: null as any,
+      })
+      haveTokens = true
+    }
+
+    if (!haveTokens) {
+      return res.status(400).json({ message: 'Xero not connected yet. Visit /api/xero-start to connect.' })
+    }
+
+    // Ensure we have a valid access token and persist refreshed tokens
     await xero.refreshToken()
+
+    if (!tenantId) {
+      const tenants = await xero.updateTenants()
+      tenantId = tenants?.[0]?.tenantId
+    }
+
+    if (!tenantId && XERO_TENANT_ID) tenantId = XERO_TENANT_ID
+
+    if (!tenantId) {
+      return res.status(400).json({ message: 'No Xero tenant found. Ensure the org is connected.' })
+    }
+
+    // Persist latest tokens and tenant locally when possible
+    try {
+      await fs.mkdir(DATA_DIR, { recursive: true })
+      const toSave = {
+        tokenSet: xero.readTokenSet(),
+        tenantId,
+        updatedAt: new Date().toISOString(),
+      }
+      await fs.writeFile(DATA_FILE, JSON.stringify(toSave, null, 2), 'utf8')
+    } catch {}
 
     // Upsert contact by email
     const contactEmail = booking.driver_email
     const contactName = booking.driver_fullname || booking.driver_email
 
     // Create or find contact
-    const contactCreateRes = await xero.accountingApi.createContacts(XERO_TENANT_ID, {
+    const contactCreateRes = await xero.accountingApi.createContacts(tenantId, {
       contacts: [{
         name: contactName,
         emailAddress: contactEmail,
@@ -143,7 +194,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Create invoices and email them
     const createdInvoices: any[] = []
     for (const inv of invoices) {
-      const createRes = await xero.accountingApi.createInvoices(XERO_TENANT_ID, {
+      const createRes = await xero.accountingApi.createInvoices(tenantId, {
         invoices: [{
           type: 'ACCREC',
           contact: { contactID: contactId },
@@ -159,7 +210,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       if (created?.invoiceID) {
         // Email invoice via Xero
         try {
-          await xero.accountingApi.emailInvoice(XERO_TENANT_ID, created.invoiceID)
+          await xero.accountingApi.emailInvoice(tenantId, created.invoiceID)
         } catch (e) {
           console.error('Failed to email invoice', e)
         }
