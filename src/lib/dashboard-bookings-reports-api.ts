@@ -26,8 +26,11 @@ import type {
 // Import the apiRequest function and base configuration from existing api.ts
 // Note: This assumes the existing api.ts exports these functions
 import { getStoredToken } from './api'
+import { API_BASE_URL as ENV_API_BASE_URL } from '../config'
 
-const API_BASE_URL = 'https://4043f016f021.ngrok-free.app/api/v1'
+const API_BASE_URL = (ENV_API_BASE_URL && ENV_API_BASE_URL.trim().length > 0)
+  ? ENV_API_BASE_URL
+  : 'http://localhost:4000/api/v1'
 
 // Generic API request function (duplicated from api.ts for standalone usage)
 async function apiRequest<T>(
