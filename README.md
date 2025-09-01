@@ -29,18 +29,34 @@ npm run dev
 - React Router for navigation
 - Local storage for demo data persistence
 
-## Environment (for Xero invoices)
+## Xero setup (OAuth + tokens)
 
-Deploy with these environment variables configured (e.g., in Vercel project settings):
+Environment variables (set in Vercel Project Settings):
 
 - `XERO_CLIENT_ID`
 - `XERO_CLIENT_SECRET`
-- `XERO_REDIRECT_URI` (can be any valid URL for server-to-server refresh, e.g., `https://example.com/callback`)
-- `XERO_TENANT_ID`
-- `XERO_REFRESH_TOKEN` (must be kept fresh with your app’s OAuth flow)
+- `XERO_REDIRECT_URI` (recommended: your deployed callback URL)
 - `XERO_BRAND_NAME` (optional branding in invoice descriptions)
 
-Serverless function: `api/create-xero-invoices.ts` creates invoices and emails them via Xero after a booking is created. Logic:
+Recommended redirect URIs to register in your Xero app:
+
+- Production: `https://YOUR-VERCEL-DOMAIN/api/xero-callback`
+- Local dev (optional): `http://localhost:5173/api/xero-callback`
+
+First-time connect flow:
+
+1. Ensure `XERO_CLIENT_ID` and `XERO_CLIENT_SECRET` are set.
+2. Optionally set `XERO_REDIRECT_URI` to the same value you registered (e.g., `https://YOUR-VERCEL-DOMAIN/api/xero-callback`). If not set, local default `http://localhost:5173/api/xero-callback` is used.
+3. Visit `/api/xero-start` to open the Xero consent screen.
+4. Approve the app; you will be redirected to `/api/xero-callback` which exchanges the code, fetches your tenant, and stores tokens at `.data/xero.json` (ignored by git).
+5. Subsequent API calls will refresh and persist tokens automatically; no need to re-authorize.
+
+Notes:
+
+- If running locally without Vercel CLI, the `/api/*` serverless routes are only available after deploy. Prefer testing the connect flow on your deployed URL.
+- If you already have a refresh token and tenant ID from elsewhere, you can still set `XERO_REFRESH_TOKEN` and `XERO_TENANT_ID` temporarily; the app will use them as a fallback and persist refreshed tokens to `.data/xero.json`.
+
+Serverless function `api/create-xero-invoices.ts` creates and emails invoices via Xero. Logic:
 
 - If booking length ≤ 14 days, a single invoice is created and emailed.
 - If > 14 days, invoices are split by the selected schedule (every 3/7/10 days).

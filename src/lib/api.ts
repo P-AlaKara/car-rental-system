@@ -1076,7 +1076,7 @@ export const bookingAPI = {
     residential_area: string
     special_requests?: string
     total_cost: number
-    payment_frequency: '3days' | 'weekly'
+    payment_frequency: '3days' | '7days' | '10days' | 'once'
   }): Promise<ApiResponse<any>> {
     console.log('📝 Creating booking with data:', data)
     console.log('🌐 Full API URL:', `${API_BASE_URL}/book`)
