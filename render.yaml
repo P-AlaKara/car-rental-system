@@ -1,0 +1,26 @@
+services:
+  - type: web
+    name: aurora-motors
+    runtime: node
+    plan: free
+    buildCommand: npm ci && npm run build
+    startCommand: npm run start
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: XERO_CLIENT_ID
+        sync: false
+      - key: XERO_CLIENT_SECRET
+        sync: false
+      - key: XERO_REDIRECT_URI
+        value: "https://YOUR-SERVICE.onrender.com/api/xero-callback"
+      - key: XERO_BRAND_NAME
+        sync: false
+      - key: XERO_TENANT_ID
+        sync: false
+      - key: XERO_REFRESH_TOKEN
+        sync: false
+    disks:
+      - name: xero-data
+        mountPath: /opt/render/project/src/.data
+        sizeGB: 1
