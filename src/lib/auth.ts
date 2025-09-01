@@ -1,5 +1,6 @@
 import type { Profile, Booking, DashboardData } from './types'
 import { authAPI, type User, type LoginRequest, type RegisterRequest } from './api'
+import { USE_DEMO } from '../config'
 
 const USER_KEY = 'am_user'
 const DASHBOARD_KEY = 'am_dashboard'
@@ -108,28 +109,31 @@ export async function login(email: string, password: string): Promise<Profile> {
     
     return profile
   } catch (err) {
-    console.warn('⚠️ Auth API login failed, enabling demo login fallback:', err)
-    // Demo fallback user to allow local exploration without backend
-    const demoProfile: Profile = {
-      id: 1,
-      email: email || 'admin@auroramotors.com',
-      first_name: 'Demo',
-      last_name: 'Admin',
-      phone: '+61000000000',
-      role: 'admin',
-      loyalty_points: 0,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
+    if (USE_DEMO) {
+      console.warn('⚠️ Auth API login failed, enabling demo login fallback:', err)
+      // Demo fallback user to allow local exploration without backend
+      const demoProfile: Profile = {
+        id: 1,
+        email: email || 'admin@auroramotors.com',
+        first_name: 'Demo',
+        last_name: 'Admin',
+        phone: '+61000000000',
+        role: 'admin',
+        loyalty_points: 0,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      }
+      setCurrentUser(demoProfile)
+      const now = new Date()
+      const sessionStart = now.getTime()
+      const tokenExpiry = now.getTime() + (24 * 60 * 60 * 1000)
+      localStorage.setItem('am_token', 'demo-token')
+      localStorage.setItem(SESSION_START_KEY, sessionStart.toString())
+      localStorage.setItem(TOKEN_EXPIRY_KEY, tokenExpiry.toString())
+      console.log('✅ Demo login active. You are signed in as an admin locally.')
+      return demoProfile
     }
-    setCurrentUser(demoProfile)
-    const now = new Date()
-    const sessionStart = now.getTime()
-    const tokenExpiry = now.getTime() + (24 * 60 * 60 * 1000)
-    localStorage.setItem('am_token', 'demo-token')
-    localStorage.setItem(SESSION_START_KEY, sessionStart.toString())
-    localStorage.setItem(TOKEN_EXPIRY_KEY, tokenExpiry.toString())
-    console.log('✅ Demo login active. You are signed in as an admin locally.')
-    return demoProfile
+    throw err
   }
 }
 

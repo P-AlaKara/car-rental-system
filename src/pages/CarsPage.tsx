@@ -4,6 +4,7 @@ import Footer from '../components/Footer'
 import CarCard from '../components/CarCard'
 import { fleetAPI, getStoredUser, type Car as APICar } from '../lib/api'
 import { DEMO_CARS } from '../lib/demo-data'
+import { USE_DEMO } from '../config'
 import type { Car } from '../lib/types'
 
 // Convert API Car to local Car type
@@ -64,9 +65,13 @@ function CarsPage() {
           setCars(resp.data.map(convertApiCarToLocalCar))
           setTotal(resp.meta.total_elements)
         } catch (e: any) {
-          console.warn('Falling back to demo cars (agency filter ignored) due to API error:', e)
-          setCars(DEMO_CARS as unknown as Car[])
-          setTotal(DEMO_CARS.length)
+          if (USE_DEMO) {
+            console.warn('Falling back to demo cars (agency filter ignored) due to API error:', e)
+            setCars(DEMO_CARS as unknown as Car[])
+            setTotal(DEMO_CARS.length)
+          } else {
+            throw e
+          }
         }
       } else {
         try {
@@ -74,9 +79,13 @@ function CarsPage() {
           setCars(resp.data.data.map(convertApiCarToLocalCar))
           setTotal(resp.data.meta.total)
         } catch (e: any) {
-          console.warn('Falling back to demo cars due to API error:', e)
-          setCars(DEMO_CARS as unknown as Car[])
-          setTotal(DEMO_CARS.length)
+          if (USE_DEMO) {
+            console.warn('Falling back to demo cars due to API error:', e)
+            setCars(DEMO_CARS as unknown as Car[])
+            setTotal(DEMO_CARS.length)
+          } else {
+            throw e
+          }
         }
       }
     } catch (e: any) {

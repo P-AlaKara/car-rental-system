@@ -151,7 +151,10 @@ export interface LoginRequest {
   password: string
 }
 
-const API_BASE_URL = 'https://dde8b3d7f823.ngrok-free.app/api/v1'
+import { API_BASE_URL as ENV_API_BASE_URL } from '../config'
+const API_BASE_URL = (ENV_API_BASE_URL && ENV_API_BASE_URL.trim().length > 0)
+  ? ENV_API_BASE_URL
+  : 'http://localhost:4000/api/v1'
 
 // Helper: build absolute image URL from API relative paths like "images/cars/xyz.png"
 export const buildImageUrl = (imagePath: string | null | undefined): string => {

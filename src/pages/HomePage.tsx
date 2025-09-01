@@ -4,6 +4,7 @@ import Footer from '../components/Footer'
 import CarCard from '../components/CarCard'
 import { fleetAPI, type Car as APICar } from '../lib/api'
 import { DEMO_CARS } from '../lib/demo-data'
+import { USE_DEMO } from '../config'
 import type { Car } from '../lib/types'
 
 // Convert API Car to local Car type
@@ -66,8 +67,12 @@ function HomePage() {
         const resp = await fleetAPI.getFrontendCars({ page: 0, size: 4 })
         setFeaturedCars(resp.data.data.map(convertApiCarToLocalCar))
       } catch (e: any) {
-        console.warn('Falling back to demo cars due to API error:', e)
-        setFeaturedCars(DEMO_CARS.slice(0, 4) as unknown as Car[])
+        if (USE_DEMO) {
+          console.warn('Falling back to demo cars due to API error:', e)
+          setFeaturedCars(DEMO_CARS.slice(0, 4) as unknown as Car[])
+        } else {
+          throw e
+        }
       } finally {
         setLoading(false)
       }
