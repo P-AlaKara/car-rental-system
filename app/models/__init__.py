@@ -1,15 +1,15 @@
 from .user import User, Role
-from .car import Car, CarCategory
+from .car import Car, CarCategory, CarStatus
 from .booking import Booking, BookingStatus
-from .driver import Driver
-from .payment import Payment, PaymentStatus
-from .maintenance import Maintenance, MaintenanceType
+from .driver import Driver, DriverStatus
+from .payment import Payment, PaymentStatus, PaymentMethod
+from .maintenance import Maintenance, MaintenanceType, MaintenanceStatus
 
 __all__ = [
     'User', 'Role',
-    'Car', 'CarCategory',
+    'Car', 'CarCategory', 'CarStatus',
     'Booking', 'BookingStatus',
-    'Driver',
-    'Payment', 'PaymentStatus',
-    'Maintenance', 'MaintenanceType'
+    'Driver', 'DriverStatus',
+    'Payment', 'PaymentStatus', 'PaymentMethod',
+    'Maintenance', 'MaintenanceType', 'MaintenanceStatus'
 ]
