@@ -1,13 +1,13 @@
 services:
   - type: web
     name: aurora-motors
-    runtime: node
+    runtime: python
     plan: free
-    buildCommand: npm ci && npm run build
-    startCommand: npm run start
+    buildCommand: pip install -r requirements.txt && npm ci && npm run build
+    startCommand: gunicorn -w 3 -b 0.0.0.0:$PORT app:app
     envVars:
-      - key: NODE_VERSION
-        value: "22"
+      - key: PYTHON_VERSION
+        value: "3.11"
       - key: XERO_CLIENT_ID
         sync: false
       - key: XERO_CLIENT_SECRET
