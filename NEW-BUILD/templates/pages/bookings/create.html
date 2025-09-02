@@ -1,0 +1,284 @@
+{% extends "base.html" %}
+
+{% block title %}New Booking - Aurora Motors{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="container">
+        <h1>Create New Booking</h1>
+        <p>Book your perfect vehicle</p>
+    </div>
+</div>
+
+<div class="container">
+    <div class="row">
+        <div class="col-8">
+            <div class="card">
+                <div class="card-header">
+                    <h3>Booking Details</h3>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('bookings.create') }}" data-validate>
+                        <div class="form-group">
+                            <label for="car_id" class="form-label">Select Vehicle</label>
+                            <select name="car_id" id="car_id" class="form-control" required>
+                                <option value="">Choose a car...</option>
+                                {% for car in cars %}
+                                <option value="{{ car.id }}" data-rate="{{ car.daily_rate }}">
+                                    {{ car.full_name }} - ${{ car.daily_rate }}/day
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-6">
+                                <div class="form-group">
+                                    <label for="pickup_date" class="form-label">Pickup Date & Time</label>
+                                    <input type="datetime-local" class="form-control" id="pickup_date" 
+                                           name="pickup_date" required data-min-today="true">
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="form-group">
+                                    <label for="return_date" class="form-label">Return Date & Time</label>
+                                    <input type="datetime-local" class="form-control" id="return_date" 
+                                           name="return_date" required>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-6">
+                                <div class="form-group">
+                                    <label for="pickup_location" class="form-label">Pickup Location</label>
+                                    <select name="pickup_location" id="pickup_location" class="form-control" required>
+                                        <option value="Main Office">Main Office</option>
+                                        <option value="Airport">Airport</option>
+                                        <option value="Downtown">Downtown</option>
+                                        <option value="Hotel Delivery">Hotel Delivery</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="form-group">
+                                    <label for="return_location" class="form-label">Return Location</label>
+                                    <select name="return_location" id="return_location" class="form-control" required>
+                                        <option value="Main Office">Main Office</option>
+                                        <option value="Airport">Airport</option>
+                                        <option value="Downtown">Downtown</option>
+                                        <option value="Hotel Pickup">Hotel Pickup</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <h4 class="mt-4 mb-3">Additional Options</h4>
+                        
+                        <div class="form-check mb-2">
+                            <input type="checkbox" class="form-check-input" id="with_driver" name="with_driver">
+                            <label class="form-check-label" for="with_driver">
+                                Include Driver (+$50/day)
+                            </label>
+                        </div>
+                        
+                        <div class="form-check mb-2">
+                            <input type="checkbox" class="form-check-input" id="insurance_opted" name="insurance_opted">
+                            <label class="form-check-label" for="insurance_opted">
+                                Additional Insurance Coverage (+$15/day)
+                            </label>
+                        </div>
+                        
+                        <div class="form-check mb-2">
+                            <input type="checkbox" class="form-check-input" id="gps_opted" name="gps_opted">
+                            <label class="form-check-label" for="gps_opted">
+                                GPS Navigation System (+$10/day)
+                            </label>
+                        </div>
+                        
+                        <div class="form-group mt-4">
+                            <label for="customer_notes" class="form-label">Special Requests (Optional)</label>
+                            <textarea class="form-control" id="customer_notes" name="customer_notes" rows="3"></textarea>
+                        </div>
+                        
+                        <input type="hidden" id="daily_rate" value="0">
+                        
+                        <div class="mt-4">
+                            <button type="submit" class="btn btn-primary btn-lg">Proceed to Payment</button>
+                            <a href="{{ url_for('cars.index') }}" class="btn btn-secondary btn-lg">Cancel</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-4">
+            <div class="card">
+                <div class="card-header">
+                    <h4>Booking Summary</h4>
+                </div>
+                <div class="card-body">
+                    <div id="price_display">
+                        <p class="text-muted">Select dates to see pricing</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h4>Important Information</h4>
+                </div>
+                <div class="card-body">
+                    <ul class="info-list">
+                        <li>Valid driver's license required</li>
+                        <li>Minimum age: 21 years</li>
+                        <li>Security deposit required</li>
+                        <li>Fuel policy: Return with same level</li>
+                        <li>Free cancellation up to 24 hours</li>
+                        <li>Late return fees apply</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const carSelect = document.getElementById('car_id');
+    const pickupDate = document.getElementById('pickup_date');
+    const returnDate = document.getElementById('return_date');
+    const dailyRateInput = document.getElementById('daily_rate');
+    const priceDisplay = document.getElementById('price_display');
+    
+    // Set minimum date to today
+    const now = new Date();
+    const minDateTime = now.toISOString().slice(0, 16);
+    pickupDate.min = minDateTime;
+    
+    // Update return date minimum when pickup date changes
+    pickupDate.addEventListener('change', function() {
+        returnDate.min = this.value;
+        calculatePrice();
+    });
+    
+    // Update daily rate when car is selected
+    carSelect.addEventListener('change', function() {
+        const selectedOption = this.options[this.selectedIndex];
+        dailyRateInput.value = selectedOption.dataset.rate || 0;
+        calculatePrice();
+    });
+    
+    // Calculate price when dates change
+    returnDate.addEventListener('change', calculatePrice);
+    
+    // Also calculate when options change
+    document.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+        checkbox.addEventListener('change', calculatePrice);
+    });
+    
+    function calculatePrice() {
+        if (pickupDate.value && returnDate.value && dailyRateInput.value > 0) {
+            const start = new Date(pickupDate.value);
+            const end = new Date(returnDate.value);
+            const days = Math.ceil((end - start) / (1000 * 60 * 60 * 24));
+            
+            if (days > 0) {
+                const dailyRate = parseFloat(dailyRateInput.value);
+                let subtotal = days * dailyRate;
+                
+                // Add optional services
+                if (document.getElementById('with_driver').checked) {
+                    subtotal += days * 50;
+                }
+                if (document.getElementById('insurance_opted').checked) {
+                    subtotal += days * 15;
+                }
+                if (document.getElementById('gps_opted').checked) {
+                    subtotal += days * 10;
+                }
+                
+                const tax = subtotal * 0.1;
+                const total = subtotal + tax;
+                
+                priceDisplay.innerHTML = `
+                    <div class="price-breakdown">
+                        <div class="price-item">
+                            <span>Rental Days:</span>
+                            <strong>${days}</strong>
+                        </div>
+                        <div class="price-item">
+                            <span>Daily Rate:</span>
+                            <strong>$${dailyRate.toFixed(2)}</strong>
+                        </div>
+                        <hr>
+                        <div class="price-item">
+                            <span>Subtotal:</span>
+                            <strong>$${subtotal.toFixed(2)}</strong>
+                        </div>
+                        <div class="price-item">
+                            <span>Tax (10%):</span>
+                            <strong>$${tax.toFixed(2)}</strong>
+                        </div>
+                        <hr>
+                        <div class="price-item total">
+                            <span>Total Amount:</span>
+                            <strong class="text-primary">$${total.toFixed(2)}</strong>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+    }
+    
+    // Copy pickup location to return location by default
+    document.getElementById('pickup_location').addEventListener('change', function() {
+        document.getElementById('return_location').value = this.value;
+    });
+});
+</script>
+
+<style>
+.info-list {
+    list-style: none;
+    padding: 0;
+}
+
+.info-list li {
+    padding: 0.5rem 0;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.info-list li:last-child {
+    border-bottom: none;
+}
+
+.info-list li::before {
+    content: "✓";
+    color: #10b981;
+    font-weight: bold;
+    margin-right: 0.5rem;
+}
+
+.price-breakdown {
+    font-size: 1rem;
+}
+
+.price-item {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 0.5rem;
+}
+
+.price-item.total {
+    font-size: 1.25rem;
+    margin-top: 0.5rem;
+}
+
+hr {
+    margin: 0.75rem 0;
+    border: none;
+    border-top: 1px solid #e5e7eb;
+}
+</style>
+{% endblock %}
