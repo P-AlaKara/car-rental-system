@@ -118,7 +118,8 @@ def process(booking_id):
             payment.processed_at = datetime.utcnow()
             
             # Update booking status
-            booking.status = 'confirmed'
+            from app.models.booking import BookingStatus
+            booking.status = BookingStatus.CONFIRMED
             
         elif payment.payment_method == PaymentMethod.CASH:
             # Cash payment - mark as pending until confirmed
@@ -212,7 +213,8 @@ def confirm(id):
     
     # Update booking status
     if payment.booking:
-        payment.booking.status = 'confirmed'
+        from app.models.booking import BookingStatus
+        payment.booking.status = BookingStatus.CONFIRMED
     
     db.session.commit()
     flash('Payment confirmed successfully!', 'success')

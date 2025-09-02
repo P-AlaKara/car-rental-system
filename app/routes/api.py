@@ -213,7 +213,8 @@ def create_booking():
     booking.generate_booking_number()
     
     # Update car status
-    car.status = 'booked'
+    from app.models.car import CarStatus
+    car.status = CarStatus.BOOKED
     
     db.session.add(booking)
     db.session.commit()
@@ -246,14 +247,16 @@ def cancel_booking(id):
         return jsonify({'error': 'Booking cannot be cancelled'}), 400
     
     from datetime import datetime
+    from app.models.booking import BookingStatus
+    from app.models.car import CarStatus
     
-    booking.status = 'cancelled'
+    booking.status = BookingStatus.CANCELLED
     booking.cancelled_at = datetime.utcnow()
     booking.cancellation_reason = request.get_json().get('reason', 'Customer requested')
     
     # Update car status
     if booking.car:
-        booking.car.status = 'available'
+        booking.car.status = CarStatus.AVAILABLE
     
     db.session.commit()
     

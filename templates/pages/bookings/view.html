@@ -251,7 +251,7 @@
                     <h5 class="mb-3">Actions</h5>
                     
                     {% if booking.status.value == 'pending' %}
-                        <a href="{{ url_for('bookings.payment', id=booking.id) }}" class="btn btn-success btn-block mb-2">
+                        <a href="{{ url_for('payments.process', booking_id=booking.id) }}" class="btn btn-success btn-block mb-2">
                             <i class="fas fa-credit-card"></i> Complete Payment
                         </a>
                     {% endif %}
