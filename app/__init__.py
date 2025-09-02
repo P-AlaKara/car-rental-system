@@ -5,6 +5,7 @@ from flask_migrate import Migrate
 from flask_cors import CORS
 from flask_mail import Mail
 from config import config
+from datetime import datetime
 
 # Initialize extensions
 db = SQLAlchemy()
@@ -51,6 +52,19 @@ def create_app(config_name='default'):
     # Register API blueprints
     from app.routes.api import api_bp
     app.register_blueprint(api_bp, url_prefix='/api')
+    
+    # Add context processor to make datetime and models available in templates
+    @app.context_processor
+    def inject_globals():
+        from app.models import Booking, Car, User, Payment, Driver
+        return {
+            'datetime': datetime,
+            'Booking': Booking,
+            'Car': Car,
+            'User': User,
+            'Payment': Payment,
+            'Driver': Driver
+        }
     
     # Create database tables
     with app.app_context():
