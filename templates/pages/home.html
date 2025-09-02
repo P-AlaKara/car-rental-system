@@ -57,9 +57,30 @@
                     {% if car.main_image %}
                     <img src="{{ car.main_image }}" alt="{{ car.full_name }}" class="card-img-top">
                     {% else %}
-                    <div class="card-img-placeholder" style="height: 200px; background: #e5e7eb; display: flex; align-items: center; justify-content: center;">
-                        <i class="fas fa-car fa-3x text-muted"></i>
-                    </div>
+                    <!-- Using placeholder images based on car model -->
+                    {% if 'Tahoe' in car.model %}
+                    <img src="https://images.unsplash.com/photo-1519641766812-1c2d06ff8684?w=400&h=300&fit=crop" alt="{{ car.full_name }}" class="card-img-top">
+                    {% elif 'Wrangler' in car.model %}
+                    <img src="https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?w=400&h=300&fit=crop" alt="{{ car.full_name }}" class="card-img-top">
+                    {% elif 'Camry' in car.model %}
+                    <img src="https://images.unsplash.com/photo-1621007947382-bb3c3994e3fb?w=400&h=300&fit=crop" alt="{{ car.full_name }}" class="card-img-top">
+                    {% elif 'Civic' in car.model %}
+                    <img src="https://images.unsplash.com/photo-1609521263047-f8f205293f24?w=400&h=300&fit=crop" alt="{{ car.full_name }}" class="card-img-top">
+                    {% elif 'Mustang' in car.model %}
+                    <img src="https://images.unsplash.com/photo-1544636331-e26879cd4d9b?w=400&h=300&fit=crop" alt="{{ car.full_name }}" class="card-img-top">
+                    {% elif 'Model 3' in car.model or 'Tesla' in car.make %}
+                    <img src="https://images.unsplash.com/photo-1560958089-b8a1929cea89?w=400&h=300&fit=crop" alt="{{ car.full_name }}" class="card-img-top">
+                    {% elif 'BMW' in car.make or '5 Series' in car.model %}
+                    <img src="https://images.unsplash.com/photo-1555215858-71bdb9fa6f10?w=400&h=300&fit=crop" alt="{{ car.full_name }}" class="card-img-top">
+                    {% elif 'Mercedes' in car.make or 'E-Class' in car.model %}
+                    <img src="https://images.unsplash.com/photo-1553440569-bcc63803a83d?w=400&h=300&fit=crop" alt="{{ car.full_name }}" class="card-img-top">
+                    {% elif 'Altima' in car.model %}
+                    <img src="https://images.unsplash.com/photo-1550355291-bbee04a92027?w=400&h=300&fit=crop" alt="{{ car.full_name }}" class="card-img-top">
+                    {% elif 'Elantra' in car.model %}
+                    <img src="https://images.unsplash.com/photo-1609521263047-f8f205293f24?w=400&h=300&fit=crop" alt="{{ car.full_name }}" class="card-img-top">
+                    {% else %}
+                    <img src="https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?w=400&h=300&fit=crop" alt="{{ car.full_name }}" class="card-img-top">
+                    {% endif %}
                     {% endif %}
                     <div class="card-body">
                         <h5 class="card-title">{{ car.full_name }}</h5>
@@ -122,42 +143,7 @@
     </div>
 </section>
 
-<!-- Services Section -->
-<section class="services-section p-5" style="background: linear-gradient(135deg, var(--primary-color), var(--secondary-color)); color: white;">
-    <div class="container">
-        <h2 class="text-center mb-5">Our Services</h2>
-        <div class="row">
-            <div class="col-3 text-center">
-                <div class="service-card">
-                    <i class="fas fa-clock fa-3x mb-3"></i>
-                    <h4>Short Term Rental</h4>
-                    <p>Daily and weekly rentals for your immediate needs</p>
-                </div>
-            </div>
-            <div class="col-3 text-center">
-                <div class="service-card">
-                    <i class="fas fa-calendar-alt fa-3x mb-3"></i>
-                    <h4>Long Term Rental</h4>
-                    <p>Monthly rentals with discounted rates</p>
-                </div>
-            </div>
-            <div class="col-3 text-center">
-                <div class="service-card">
-                    <i class="fas fa-sync-alt fa-3x mb-3"></i>
-                    <h4>Flexible Booking</h4>
-                    <p>Easy modifications and cancellations</p>
-                </div>
-            </div>
-            <div class="col-3 text-center">
-                <div class="service-card">
-                    <i class="fas fa-shopping-cart fa-3x mb-3"></i>
-                    <h4>Car Purchase</h4>
-                    <p>Buy quality pre-owned vehicles from our fleet</p>
-                </div>
-            </div>
-        </div>
-    </div>
-</section>
+
 
 <style>
 .feature-card {

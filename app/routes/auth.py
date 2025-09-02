@@ -157,7 +157,7 @@ def edit_profile():
                            'city', 'state', 'zip_code', 'country']
         
         for field in updateable_fields:
-            if field in data:
+            if field in data and data[field]:  # Only update if field has a value
                 setattr(current_user, field, data[field])
         
         # Handle password change
@@ -167,6 +167,8 @@ def edit_profile():
                 return redirect(url_for('auth.edit_profile'))
             current_user.set_password(data['new_password'])
         
+        # Ensure the user is in the session
+        db.session.add(current_user)
         db.session.commit()
         flash('Profile updated successfully!', 'success')
         return redirect(url_for('auth.profile'))
