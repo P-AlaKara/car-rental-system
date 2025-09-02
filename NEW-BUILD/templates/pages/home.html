@@ -1,0 +1,220 @@
+{% extends "base.html" %}
+
+{% block title %}Aurora Motors - Premium Car Rental Services{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="hero">
+    <div class="container">
+        <h1>Welcome to Aurora Motors</h1>
+        <p>Experience the freedom of the road with our premium car rental services</p>
+        <div class="hero-buttons">
+            <a href="{{ url_for('cars.index') }}" class="btn btn-primary btn-lg">Browse Our Fleet</a>
+            <a href="{{ url_for('bookings.create') }}" class="btn btn-outline btn-lg">Book Now</a>
+        </div>
+    </div>
+</section>
+
+<!-- Features Section -->
+<section class="features-section p-5">
+    <div class="container">
+        <h2 class="text-center mb-5">Why Choose Aurora Motors?</h2>
+        <div class="row">
+            <div class="col-4">
+                <div class="feature-card text-center">
+                    <i class="fas fa-car fa-3x text-primary mb-3"></i>
+                    <h3>Wide Selection</h3>
+                    <p>Choose from our extensive fleet of well-maintained vehicles</p>
+                </div>
+            </div>
+            <div class="col-4">
+                <div class="feature-card text-center">
+                    <i class="fas fa-dollar-sign fa-3x text-primary mb-3"></i>
+                    <h3>Best Prices</h3>
+                    <p>Competitive rates with no hidden fees</p>
+                </div>
+            </div>
+            <div class="col-4">
+                <div class="feature-card text-center">
+                    <i class="fas fa-shield-alt fa-3x text-primary mb-3"></i>
+                    <h3>Fully Insured</h3>
+                    <p>All vehicles come with comprehensive insurance coverage</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Featured Cars -->
+<section class="featured-cars p-5 bg-light">
+    <div class="container">
+        <h2 class="text-center mb-5">Featured Vehicles</h2>
+        <div class="row">
+            {% for car in featured_cars %}
+            <div class="col-4 mb-4">
+                <div class="card">
+                    {% if car.main_image %}
+                    <img src="{{ car.main_image }}" alt="{{ car.full_name }}" class="card-img-top">
+                    {% else %}
+                    <div class="card-img-placeholder" style="height: 200px; background: #e5e7eb; display: flex; align-items: center; justify-content: center;">
+                        <i class="fas fa-car fa-3x text-muted"></i>
+                    </div>
+                    {% endif %}
+                    <div class="card-body">
+                        <h5 class="card-title">{{ car.full_name }}</h5>
+                        <p class="card-text">
+                            <i class="fas fa-users"></i> {{ car.seats }} Seats<br>
+                            <i class="fas fa-cog"></i> {{ car.transmission }}<br>
+                            <i class="fas fa-gas-pump"></i> {{ car.fuel_type }}
+                        </p>
+                        <div class="price-tag">
+                            <strong>${{ car.daily_rate }}/day</strong>
+                        </div>
+                        <a href="{{ url_for('cars.view', id=car.id) }}" class="btn btn-primary btn-block mt-3">View Details</a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        <div class="text-center mt-4">
+            <a href="{{ url_for('cars.index') }}" class="btn btn-outline btn-lg">View All Cars</a>
+        </div>
+    </div>
+</section>
+
+<!-- Statistics -->
+<section class="statistics p-5">
+    <div class="container">
+        <div class="row text-center">
+            <div class="col-3">
+                <div class="stat-card">
+                    <i class="fas fa-car fa-2x text-primary mb-2"></i>
+                    <h3>{{ stats.total_cars }}+</h3>
+                    <p>Vehicles</p>
+                </div>
+            </div>
+            <div class="col-3">
+                <div class="stat-card">
+                    <i class="fas fa-users fa-2x text-primary mb-2"></i>
+                    <h3>{{ stats.happy_customers }}+</h3>
+                    <p>Happy Customers</p>
+                </div>
+            </div>
+            <div class="col-3">
+                <div class="stat-card">
+                    <i class="fas fa-calendar-check fa-2x text-primary mb-2"></i>
+                    <h3>{{ stats.total_bookings }}+</h3>
+                    <p>Successful Rentals</p>
+                </div>
+            </div>
+            <div class="col-3">
+                <div class="stat-card">
+                    <i class="fas fa-award fa-2x text-primary mb-2"></i>
+                    <h3>{{ stats.years_experience }}+</h3>
+                    <p>Years Experience</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- How It Works -->
+<section class="how-it-works p-5 bg-light">
+    <div class="container">
+        <h2 class="text-center mb-5">How It Works</h2>
+        <div class="row">
+            <div class="col-3 text-center">
+                <div class="step-card">
+                    <div class="step-number">1</div>
+                    <h4>Choose Your Car</h4>
+                    <p>Browse our fleet and select the perfect vehicle for your needs</p>
+                </div>
+            </div>
+            <div class="col-3 text-center">
+                <div class="step-card">
+                    <div class="step-number">2</div>
+                    <h4>Book Online</h4>
+                    <p>Complete your booking in minutes with our easy online system</p>
+                </div>
+            </div>
+            <div class="col-3 text-center">
+                <div class="step-card">
+                    <div class="step-number">3</div>
+                    <h4>Pick Up</h4>
+                    <p>Collect your vehicle from our convenient location</p>
+                </div>
+            </div>
+            <div class="col-3 text-center">
+                <div class="step-card">
+                    <div class="step-number">4</div>
+                    <h4>Enjoy Your Ride</h4>
+                    <p>Hit the road and enjoy your journey with peace of mind</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- CTA Section -->
+<section class="cta-section p-5" style="background: linear-gradient(135deg, var(--primary-color), var(--secondary-color)); color: white;">
+    <div class="container text-center">
+        <h2>Ready to Hit the Road?</h2>
+        <p class="mb-4">Join thousands of satisfied customers who trust Aurora Motors for their car rental needs</p>
+        <a href="{{ url_for('auth.register') }}" class="btn btn-primary btn-lg" style="background: white; color: var(--primary-color);">Get Started Today</a>
+    </div>
+</section>
+
+<style>
+.feature-card {
+    padding: 2rem;
+    transition: transform 0.3s;
+}
+
+.feature-card:hover {
+    transform: translateY(-5px);
+}
+
+.stat-card {
+    padding: 2rem;
+    background: white;
+    border-radius: 0.5rem;
+    box-shadow: var(--shadow);
+}
+
+.step-card {
+    padding: 1.5rem;
+}
+
+.step-number {
+    width: 60px;
+    height: 60px;
+    background: var(--primary-color);
+    color: white;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    font-weight: bold;
+    margin-bottom: 1rem;
+}
+
+.price-tag {
+    color: var(--primary-color);
+    font-size: 1.25rem;
+    margin-top: 1rem;
+}
+
+.hero-buttons {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    margin-top: 2rem;
+}
+
+.card-img-top {
+    height: 200px;
+    object-fit: cover;
+}
+</style>
+{% endblock %}

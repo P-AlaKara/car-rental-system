@@ -1,0 +1,263 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Aurora Motors{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="container">
+        <h1>Admin Dashboard</h1>
+        <p>Welcome back, {{ current_user.first_name }}!</p>
+    </div>
+</div>
+
+<div class="container">
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-3">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted">Total Users</h6>
+                            <h3>{{ stats.total_users }}</h3>
+                        </div>
+                        <i class="fas fa-users fa-2x text-primary"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-3">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted">Total Cars</h6>
+                            <h3>{{ stats.total_cars }}</h3>
+                            <small class="text-success">{{ stats.available_cars }} available</small>
+                        </div>
+                        <i class="fas fa-car fa-2x text-info"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-3">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted">Total Bookings</h6>
+                            <h3>{{ stats.total_bookings }}</h3>
+                            <small class="text-warning">{{ stats.active_bookings }} active</small>
+                        </div>
+                        <i class="fas fa-calendar-check fa-2x text-warning"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-3">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted">Total Revenue</h6>
+                            <h3>${{ "{:,.2f}".format(stats.total_revenue) }}</h3>
+                        </div>
+                        <i class="fas fa-dollar-sign fa-2x text-success"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Quick Actions -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h4>Quick Actions</h4>
+                </div>
+                <div class="card-body">
+                    <a href="{{ url_for('bookings.create') }}" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> New Booking
+                    </a>
+                    <a href="{{ url_for('cars.create') }}" class="btn btn-info">
+                        <i class="fas fa-car"></i> Add Car
+                    </a>
+                    <a href="{{ url_for('users.create') }}" class="btn btn-success">
+                        <i class="fas fa-user-plus"></i> Add User
+                    </a>
+                    <a href="{{ url_for('drivers.create') }}" class="btn btn-warning">
+                        <i class="fas fa-id-card"></i> Register Driver
+                    </a>
+                    <a href="{{ url_for('reports.index') }}" class="btn btn-secondary">
+                        <i class="fas fa-chart-bar"></i> View Reports
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Charts Row -->
+    <div class="row mb-4">
+        <div class="col-6">
+            <div class="card">
+                <div class="card-header">
+                    <h4>Revenue (Last 7 Days)</h4>
+                </div>
+                <div class="card-body">
+                    <canvas id="revenueChart"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-6">
+            <div class="card">
+                <div class="card-header">
+                    <h4>Bookings (Last 7 Days)</h4>
+                </div>
+                <div class="card-body">
+                    <canvas id="bookingsChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Recent Bookings -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h4>Recent Bookings</h4>
+                    <a href="{{ url_for('bookings.index') }}" class="btn btn-sm btn-outline">View All</a>
+                </div>
+                <div class="card-body">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Booking #</th>
+                                <th>Customer</th>
+                                <th>Car</th>
+                                <th>Pickup Date</th>
+                                <th>Return Date</th>
+                                <th>Status</th>
+                                <th>Amount</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for booking in recent_bookings %}
+                            <tr>
+                                <td>{{ booking.booking_number }}</td>
+                                <td>{{ booking.customer.full_name if booking.customer else 'N/A' }}</td>
+                                <td>{{ booking.car.full_name if booking.car else 'N/A' }}</td>
+                                <td>{{ booking.pickup_date.strftime('%Y-%m-%d') if booking.pickup_date else '' }}</td>
+                                <td>{{ booking.return_date.strftime('%Y-%m-%d') if booking.return_date else '' }}</td>
+                                <td><span class="status-badge">{{ booking.status.value }}</span></td>
+                                <td>${{ "{:.2f}".format(booking.total_amount) }}</td>
+                                <td>
+                                    <a href="{{ url_for('bookings.view', id=booking.id) }}" class="btn btn-sm btn-primary">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+// Revenue Chart
+const revenueCtx = document.getElementById('revenueChart').getContext('2d');
+const revenueData = {{ revenue_data|tojson }};
+new Chart(revenueCtx, {
+    type: 'line',
+    data: {
+        labels: revenueData.map(d => d.date),
+        datasets: [{
+            label: 'Revenue ($)',
+            data: revenueData.map(d => d.revenue),
+            borderColor: 'rgb(37, 99, 235)',
+            backgroundColor: 'rgba(37, 99, 235, 0.1)',
+            tension: 0.4
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            legend: {
+                display: false
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                ticks: {
+                    callback: function(value) {
+                        return '$' + value.toFixed(0);
+                    }
+                }
+            }
+        }
+    }
+});
+
+// Bookings Chart
+const bookingsCtx = document.getElementById('bookingsChart').getContext('2d');
+const bookingData = {{ booking_data|tojson }};
+new Chart(bookingsCtx, {
+    type: 'bar',
+    data: {
+        labels: bookingData.map(d => d.date),
+        datasets: [{
+            label: 'Bookings',
+            data: bookingData.map(d => d.count),
+            backgroundColor: 'rgba(16, 185, 129, 0.8)'
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            legend: {
+                display: false
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                ticks: {
+                    stepSize: 1
+                }
+            }
+        }
+    }
+});
+</script>
+
+<style>
+.d-flex {
+    display: flex;
+}
+
+.justify-content-between {
+    justify-content: space-between;
+}
+
+.align-items-center {
+    align-items: center;
+}
+
+.btn-sm {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.875rem;
+}
+
+canvas {
+    max-height: 300px;
+}
+</style>
+{% endblock %}
