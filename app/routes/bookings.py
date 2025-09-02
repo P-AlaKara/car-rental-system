@@ -79,7 +79,8 @@ def create():
         booking.generate_booking_number()
         
         # Update car status
-        car.status = 'booked'
+        from app.models.car import CarStatus
+        car.status = CarStatus.BOOKED
         
         db.session.add(booking)
         db.session.commit()
@@ -94,7 +95,8 @@ def create():
         selected_car = Car.query.get(car_id)
     
     # Get available cars
-    available_cars = Car.query.filter_by(status='available', is_active=True).all()
+    from app.models.car import CarStatus
+    available_cars = Car.query.filter_by(status=CarStatus.AVAILABLE, is_active=True).all()
     
     # If a car was selected but not in available list, add it (for pre-selection)
     if selected_car and selected_car not in available_cars and selected_car.is_active:
@@ -193,7 +195,8 @@ def cancel(id):
     
     # Update car status
     if booking.car:
-        booking.car.status = 'available'
+        from app.models.car import CarStatus
+        booking.car.status = CarStatus.AVAILABLE
     
     db.session.commit()
     flash('Booking cancelled successfully.', 'info')
@@ -234,7 +237,8 @@ def complete(id):
     
     # Update car status
     if booking.car:
-        booking.car.status = 'available'
+        from app.models.car import CarStatus
+        booking.car.status = CarStatus.AVAILABLE
     
     db.session.commit()
     flash('Booking completed successfully!', 'success')
