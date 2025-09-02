@@ -1,0 +1,363 @@
+{% extends "base.html" %}
+
+{% block title %}My Bookings - Smart Car Rentals{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="container">
+        <h1>My Bookings</h1>
+        <nav class="breadcrumb">
+            <a href="{{ url_for('main.index') }}">Home</a>
+            <span>/</span>
+            <span>My Bookings</span>
+        </nav>
+    </div>
+</div>
+
+<section class="bookings-section py-5">
+    <div class="container">
+        <div class="row mb-4">
+            <div class="col-md-8">
+                <div class="booking-filters">
+                    <form method="GET" action="{{ url_for('bookings.index') }}" class="d-flex gap-3">
+                        <select name="status" class="form-control" onchange="this.form.submit()">
+                            <option value="">All Bookings</option>
+                            <option value="pending" {% if request.args.get('status') == 'pending' %}selected{% endif %}>Pending</option>
+                            <option value="confirmed" {% if request.args.get('status') == 'confirmed' %}selected{% endif %}>Confirmed</option>
+                            <option value="in_progress" {% if request.args.get('status') == 'in_progress' %}selected{% endif %}>In Progress</option>
+                            <option value="completed" {% if request.args.get('status') == 'completed' %}selected{% endif %}>Completed</option>
+                            <option value="cancelled" {% if request.args.get('status') == 'cancelled' %}selected{% endif %}>Cancelled</option>
+                        </select>
+                        <input type="text" name="search" class="form-control" placeholder="Search by booking number..." value="{{ request.args.get('search', '') }}">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-search"></i> Search
+                        </button>
+                    </form>
+                </div>
+            </div>
+            <div class="col-md-4 text-end">
+                <a href="{{ url_for('cars.index') }}" class="btn btn-success">
+                    <i class="fas fa-plus"></i> New Booking
+                </a>
+            </div>
+        </div>
+
+        {% if bookings.items %}
+            <div class="bookings-list">
+                {% for booking in bookings.items %}
+                    <div class="booking-card mb-4">
+                        <div class="booking-header">
+                            <div class="booking-number">
+                                <h5 class="mb-0">Booking #{{ booking.booking_number }}</h5>
+                                <span class="badge badge-{{ booking.status.value }}">{{ booking.status.value|replace('_', ' ')|title }}</span>
+                            </div>
+                            <div class="booking-date">
+                                <small class="text-muted">Booked on {{ booking.created_at.strftime('%B %d, %Y') }}</small>
+                            </div>
+                        </div>
+                        
+                        <div class="booking-body">
+                            <div class="row">
+                                <div class="col-md-3">
+                                    <div class="car-image">
+                                        {% if booking.car.images %}
+                                            <img src="{{ booking.car.images[0] }}" alt="{{ booking.car.make }} {{ booking.car.model }}" class="img-fluid rounded">
+                                        {% else %}
+                                            <img src="https://via.placeholder.com/300x200?text=No+Image" alt="No Image" class="img-fluid rounded">
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                
+                                <div class="col-md-6">
+                                    <h6 class="car-name">{{ booking.car.make }} {{ booking.car.model }} ({{ booking.car.year }})</h6>
+                                    <div class="booking-details">
+                                        <div class="detail-item">
+                                            <i class="fas fa-calendar-alt text-primary"></i>
+                                            <span><strong>Pickup:</strong> {{ booking.pickup_date.strftime('%b %d, %Y at %I:%M %p') }}</span>
+                                        </div>
+                                        <div class="detail-item">
+                                            <i class="fas fa-calendar-check text-primary"></i>
+                                            <span><strong>Return:</strong> {{ booking.return_date.strftime('%b %d, %Y at %I:%M %p') }}</span>
+                                        </div>
+                                        <div class="detail-item">
+                                            <i class="fas fa-map-marker-alt text-primary"></i>
+                                            <span><strong>Pickup Location:</strong> {{ booking.pickup_location }}</span>
+                                        </div>
+                                        <div class="detail-item">
+                                            <i class="fas fa-clock text-primary"></i>
+                                            <span><strong>Duration:</strong> {{ booking.total_days }} day(s)</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-md-3">
+                                    <div class="booking-price">
+                                        <h4 class="text-primary">${{ "%.2f"|format(booking.total_amount) }}</h4>
+                                        <small class="text-muted">Total Amount</small>
+                                    </div>
+                                    
+                                    <div class="booking-actions mt-3">
+                                        <a href="{{ url_for('bookings.view', id=booking.id) }}" class="btn btn-primary btn-sm btn-block mb-2">
+                                            <i class="fas fa-eye"></i> View Details
+                                        </a>
+                                        
+                                        {% if booking.status.value in ['pending', 'confirmed'] %}
+                                            {% if booking.pickup_date > datetime.now() %}
+                                                <button class="btn btn-warning btn-sm btn-block mb-2" onclick="modifyBooking({{ booking.id }})">
+                                                    <i class="fas fa-edit"></i> Modify
+                                                </button>
+                                            {% endif %}
+                                            
+                                            {% if booking.status.value == 'pending' %}
+                                                <button class="btn btn-success btn-sm btn-block mb-2" onclick="confirmPayment({{ booking.id }})">
+                                                    <i class="fas fa-credit-card"></i> Pay Now
+                                                </button>
+                                            {% endif %}
+                                            
+                                            <button class="btn btn-danger btn-sm btn-block" onclick="cancelBooking({{ booking.id }})">
+                                                <i class="fas fa-times"></i> Cancel
+                                            </button>
+                                        {% endif %}
+                                        
+                                        {% if booking.status.value == 'completed' %}
+                                            <a href="{{ url_for('bookings.receipt', id=booking.id) }}" class="btn btn-info btn-sm btn-block mb-2">
+                                                <i class="fas fa-receipt"></i> Receipt
+                                            </a>
+                                            <button class="btn btn-secondary btn-sm btn-block" onclick="rebookVehicle({{ booking.car.id }})">
+                                                <i class="fas fa-redo"></i> Book Again
+                                            </button>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+            
+            <!-- Pagination -->
+            {% if bookings.pages > 1 %}
+                <nav aria-label="Page navigation">
+                    <ul class="pagination justify-content-center">
+                        {% if bookings.has_prev %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('bookings.index', page=bookings.prev_num) }}">Previous</a>
+                            </li>
+                        {% endif %}
+                        
+                        {% for page_num in bookings.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=2) %}
+                            {% if page_num %}
+                                <li class="page-item {% if page_num == bookings.page %}active{% endif %}">
+                                    <a class="page-link" href="{{ url_for('bookings.index', page=page_num) }}">{{ page_num }}</a>
+                                </li>
+                            {% else %}
+                                <li class="page-item disabled">
+                                    <span class="page-link">...</span>
+                                </li>
+                            {% endif %}
+                        {% endfor %}
+                        
+                        {% if bookings.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('bookings.index', page=bookings.next_num) }}">Next</a>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+            {% endif %}
+        {% else %}
+            <div class="empty-state text-center py-5">
+                <i class="fas fa-car fa-5x text-muted mb-4"></i>
+                <h3>No Bookings Found</h3>
+                <p class="text-muted mb-4">You haven't made any bookings yet. Start by browsing our fleet!</p>
+                <a href="{{ url_for('cars.index') }}" class="btn btn-primary btn-lg">
+                    <i class="fas fa-search"></i> Browse Vehicles
+                </a>
+            </div>
+        {% endif %}
+    </div>
+</section>
+
+<style>
+.page-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 60px 0;
+    margin-bottom: 0;
+}
+
+.breadcrumb {
+    background: transparent;
+    padding: 0;
+    margin-top: 10px;
+}
+
+.breadcrumb a {
+    color: rgba(255, 255, 255, 0.8);
+    text-decoration: none;
+}
+
+.breadcrumb a:hover {
+    color: white;
+}
+
+.breadcrumb span {
+    color: rgba(255, 255, 255, 0.8);
+    margin: 0 10px;
+}
+
+.booking-card {
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    overflow: hidden;
+    transition: transform 0.3s;
+}
+
+.booking-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+}
+
+.booking-header {
+    background: #f8f9fa;
+    padding: 15px 20px;
+    border-bottom: 1px solid #dee2e6;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.booking-number {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.booking-body {
+    padding: 20px;
+}
+
+.car-name {
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 15px;
+}
+
+.booking-details .detail-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+    font-size: 0.95rem;
+}
+
+.booking-details .detail-item i {
+    width: 20px;
+}
+
+.booking-price {
+    text-align: center;
+    padding: 15px;
+    background: #f8f9fa;
+    border-radius: 10px;
+}
+
+.booking-price h4 {
+    margin: 0;
+    font-weight: 600;
+}
+
+.btn-block {
+    width: 100%;
+}
+
+.badge {
+    padding: 5px 10px;
+    border-radius: 5px;
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+
+.badge-pending {
+    background-color: #ffc107;
+    color: #000;
+}
+
+.badge-confirmed {
+    background-color: #17a2b8;
+    color: #fff;
+}
+
+.badge-in_progress {
+    background-color: #007bff;
+    color: #fff;
+}
+
+.badge-completed {
+    background-color: #28a745;
+    color: #fff;
+}
+
+.badge-cancelled {
+    background-color: #dc3545;
+    color: #fff;
+}
+
+.empty-state {
+    padding: 60px 20px;
+}
+
+.d-flex {
+    display: flex;
+}
+
+.gap-3 {
+    gap: 1rem;
+}
+
+.text-end {
+    text-align: right;
+}
+</style>
+
+<script>
+{% import 'datetime' as datetime %}
+
+function cancelBooking(bookingId) {
+    if (confirm('Are you sure you want to cancel this booking?')) {
+        fetch(`/bookings/${bookingId}/cancel`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Booking cancelled successfully');
+                location.reload();
+            } else {
+                alert('Error cancelling booking: ' + data.message);
+            }
+        })
+        .catch(error => {
+            alert('Error cancelling booking');
+            console.error('Error:', error);
+        });
+    }
+}
+
+function modifyBooking(bookingId) {
+    window.location.href = `/bookings/${bookingId}/edit`;
+}
+
+function confirmPayment(bookingId) {
+    window.location.href = `/bookings/${bookingId}/payment`;
+}
+
+function rebookVehicle(carId) {
+    window.location.href = `/cars/${carId}`;
+}
+</script>
+{% endblock %}
