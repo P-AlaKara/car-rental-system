@@ -1,0 +1,412 @@
+{% extends "base.html" %}
+
+{% block title %}Terms and Conditions - Smart Car Rentals{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="container">
+        <h1>Terms and Conditions</h1>
+        <nav class="breadcrumb">
+            <a href="{{ url_for('main.index') }}">Home</a>
+            <span>/</span>
+            <span>Terms and Conditions</span>
+        </nav>
+    </div>
+</div>
+
+<section class="terms-section py-5">
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-3">
+                <div class="sticky-sidebar">
+                    <h4 class="mb-3">Quick Navigation</h4>
+                    <ul class="nav nav-pills flex-column">
+                        <li class="nav-item">
+                            <a class="nav-link" href="#operator">1. Registered Operator</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#rentee">2. Rentee & Vehicle Details</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#fees">3. Fees and Charges</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#period">4. Rental Period</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#provisions">5. General Provisions</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#return">6. Return of Vehicle</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#jurisdiction">7. Jurisdiction & General</a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="col-lg-9">
+                <div class="terms-content">
+                    <div class="alert alert-info mb-4">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>Last Updated:</strong> January 2024 | 
+                        <strong>Effective Date:</strong> January 1, 2024
+                    </div>
+                    
+                    <section id="operator" class="mb-5">
+                        <h2 class="mb-3">1. Registered Operator Details</h2>
+                        <div class="content-box">
+                            <p><strong>Name:</strong> Aaron Rentals (ABN 56 637 445 302)</p>
+                            <p><strong>Address:</strong> 19 Lipton Drive, Thomastown VIC 3074</p>
+                            <p><strong>Contact:</strong> 0452 600 006</p>
+                            <p><strong>Email:</strong> <a href="mailto:aaronrentals786@gmail.com">aaronrentals786@gmail.com</a></p>
+                        </div>
+                    </section>
+                    
+                    <section id="rentee" class="mb-5">
+                        <h2 class="mb-3">2. Rentee & Vehicle Details</h2>
+                        <div class="content-box">
+                            <p>These are captured in the booking process (Driver Details) and the vehicle selected. Required information includes:</p>
+                            <ul>
+                                <li>Full name and residential address</li>
+                                <li>Date of birth</li>
+                                <li>Driver's licence number and state of issue</li>
+                                <li>Vehicle make, model, year</li>
+                                <li>Vehicle Identification Number (VIN)</li>
+                                <li>Vehicle colour and registration number</li>
+                            </ul>
+                        </div>
+                    </section>
+                    
+                    <section id="fees" class="mb-5">
+                        <h2 class="mb-3">3. Fees and Charges</h2>
+                        <div class="content-box">
+                            <h4 class="mb-3">Base Rental Fees</h4>
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Item</th>
+                                        <th>Amount (incl. GST)</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>Base Fee</td>
+                                        <td>$1.00 per day</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Fuel</td>
+                                        <td>Rentee pays for fuel used</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Fuel Return Charge</td>
+                                        <td>$20 filling charge + fuel per litre</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                            
+                            <h4 class="mb-3 mt-4">Excess Amounts</h4>
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Type</th>
+                                        <th>Amount</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>Standard Excess</td>
+                                        <td>$5,000</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Age Excess (under 25)</td>
+                                        <td>+$500</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Unlisted Drivers Excess</td>
+                                        <td>$5,000</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                            
+                            <h4 class="mb-3 mt-4">Additional Fees</h4>
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Service</th>
+                                        <th>Daily Rate</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>Admin Fees</td>
+                                        <td>$165.00</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Registration Recovery</td>
+                                        <td>$8.80</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Roadside Assistance</td>
+                                        <td>$11.00</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Cleaning Fees</td>
+                                        <td>$110.00</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Excess Reduction</td>
+                                        <td>$44.00</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                            
+                            <div class="alert alert-warning mt-3">
+                                <i class="fas fa-exclamation-triangle me-2"></i>
+                                <strong>Note:</strong> All prices include GST. Insurance coverage applies within Victoria only.
+                            </div>
+                        </div>
+                    </section>
+                    
+                    <section id="period" class="mb-5">
+                        <h2 class="mb-3">4. Rental Period</h2>
+                        <div class="content-box">
+                            <p>Start and end dates are defined during the booking process. The vehicle must be returned to the designated pickup location on or before the agreed date and time.</p>
+                            <ul>
+                                <li>Early returns do not qualify for refunds unless otherwise agreed</li>
+                                <li>Extensions must be requested and approved before the original return date</li>
+                                <li>Late returns may incur additional charges</li>
+                            </ul>
+                        </div>
+                    </section>
+                    
+                    <section id="provisions" class="mb-5">
+                        <h2 class="mb-3">5. Definitions, Use, Maintenance, Travel Limits, Damage/Loss, Fines & Penalties</h2>
+                        <div class="content-box">
+                            <h4 class="mb-3">Vehicle Use</h4>
+                            <ul>
+                                <li>Vehicles must be used lawfully and in accordance with all traffic regulations</li>
+                                <li>The rentee is responsible for all traffic violations and parking fines</li>
+                                <li>Vehicles must not be used for illegal activities or racing</li>
+                                <li>Smoking is prohibited in all vehicles</li>
+                            </ul>
+                            
+                            <h4 class="mb-3 mt-4">Maintenance Responsibilities</h4>
+                            <ul>
+                                <li>Regular checks of oil, water, and tyre pressure</li>
+                                <li>Immediate reporting of any mechanical issues</li>
+                                <li>No unauthorized repairs or modifications</li>
+                            </ul>
+                            
+                            <h4 class="mb-3 mt-4">Travel Limits</h4>
+                            <ul>
+                                <li>Weekly distance limit: 3,000 km</li>
+                                <li>Excess kilometer charge: $0.70/km</li>
+                                <li>Vehicles must remain within the state of registration</li>
+                                <li>Vehicles must be driven on sealed roads only</li>
+                            </ul>
+                            
+                            <h4 class="mb-3 mt-4">Accident/Theft Reporting</h4>
+                            <ul>
+                                <li>All accidents must be reported immediately to both police and the operator</li>
+                                <li>The rentee must not admit liability</li>
+                                <li>Full cooperation required with insurance claims</li>
+                            </ul>
+                            
+                            <h4 class="mb-3 mt-4">Fines and Penalties</h4>
+                            <ul>
+                                <li>All fines and tolls are the rentee's responsibility</li>
+                                <li>Admin fees apply for processing fines: $50 per infringement</li>
+                            </ul>
+                        </div>
+                    </section>
+                    
+                    <section id="return" class="mb-5">
+                        <h2 class="mb-3">6. Return of Vehicle</h2>
+                        <div class="content-box">
+                            <p>Upon return of the vehicle, the rentee must:</p>
+                            <ul>
+                                <li>Return all keys, accessories, and documentation</li>
+                                <li>Ensure the vehicle is in the same condition as at pickup (fair wear and tear excepted)</li>
+                                <li>Return the vehicle with a full tank of fuel</li>
+                                <li>Remove all personal belongings</li>
+                            </ul>
+                            
+                            <div class="alert alert-danger mt-3">
+                                <i class="fas fa-exclamation-circle me-2"></i>
+                                <strong>Late Return:</strong> Late returns may incur the monthly rental rate plus a 20% penalty fee.
+                            </div>
+                        </div>
+                    </section>
+                    
+                    <section id="jurisdiction" class="mb-5">
+                        <h2 class="mb-3">7. Jurisdiction & General</h2>
+                        <div class="content-box">
+                            <ul>
+                                <li>This agreement is governed by the laws of Victoria, Australia</li>
+                                <li>Non-exclusive jurisdiction in Victoria courts</li>
+                                <li>This document constitutes the entire agreement between parties</li>
+                                <li>Any amendments must be in writing and signed by both parties</li>
+                                <li>The rentee acknowledges understanding and acceptance of all terms</li>
+                            </ul>
+                            
+                            <div class="alert alert-success mt-4">
+                                <i class="fas fa-check-circle me-2"></i>
+                                <strong>Acceptance:</strong> By completing a booking, you acknowledge that you have read, understood, and agree to be bound by these terms and conditions.
+                            </div>
+                        </div>
+                    </section>
+                    
+                    <div class="contact-box mt-5">
+                        <h3 class="mb-3">Need More Information?</h3>
+                        <p>For the complete, legally worded agreement or any questions regarding these terms, please contact the registered operator:</p>
+                        <p>
+                            <strong>Email:</strong> <a href="mailto:aaronrentals786@gmail.com">aaronrentals786@gmail.com</a><br>
+                            <strong>Phone:</strong> 0452 600 006
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<style>
+.page-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 60px 0;
+    margin-bottom: 0;
+}
+
+.breadcrumb {
+    background: transparent;
+    padding: 0;
+    margin-top: 10px;
+}
+
+.breadcrumb a {
+    color: rgba(255, 255, 255, 0.8);
+    text-decoration: none;
+}
+
+.breadcrumb a:hover {
+    color: white;
+}
+
+.breadcrumb span {
+    color: rgba(255, 255, 255, 0.8);
+    margin: 0 10px;
+}
+
+.sticky-sidebar {
+    position: sticky;
+    top: 20px;
+}
+
+.nav-pills .nav-link {
+    color: #333;
+    border-radius: 5px;
+    margin-bottom: 5px;
+}
+
+.nav-pills .nav-link:hover {
+    background-color: #f8f9fa;
+}
+
+.nav-pills .nav-link.active {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.content-box {
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 10px;
+    border-left: 4px solid #667eea;
+}
+
+.terms-content h2 {
+    color: #333;
+    font-weight: 600;
+    padding-top: 20px;
+}
+
+.terms-content h4 {
+    color: #667eea;
+    font-weight: 500;
+}
+
+.contact-box {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 30px;
+    border-radius: 10px;
+}
+
+.contact-box a {
+    color: white;
+    text-decoration: underline;
+}
+
+.contact-box a:hover {
+    color: #f0f0f0;
+}
+
+.me-2 {
+    margin-right: 0.5rem;
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+section[id] {
+    scroll-margin-top: 80px;
+}
+</style>
+
+<script>
+// Add smooth scrolling and active link highlighting
+document.addEventListener('DOMContentLoaded', function() {
+    const navLinks = document.querySelectorAll('.nav-pills .nav-link');
+    
+    navLinks.forEach(link => {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            const targetId = this.getAttribute('href');
+            const targetSection = document.querySelector(targetId);
+            
+            if (targetSection) {
+                targetSection.scrollIntoView({ behavior: 'smooth' });
+                
+                // Update active state
+                navLinks.forEach(l => l.classList.remove('active'));
+                this.classList.add('active');
+            }
+        });
+    });
+    
+    // Update active link on scroll
+    window.addEventListener('scroll', function() {
+        let current = '';
+        const sections = document.querySelectorAll('section[id]');
+        
+        sections.forEach(section => {
+            const sectionTop = section.offsetTop;
+            const sectionHeight = section.clientHeight;
+            if (pageYOffset >= sectionTop - 100) {
+                current = section.getAttribute('id');
+            }
+        });
+        
+        navLinks.forEach(link => {
+            link.classList.remove('active');
+            if (link.getAttribute('href') === '#' + current) {
+                link.classList.add('active');
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

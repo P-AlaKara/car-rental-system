@@ -1,0 +1,220 @@
+{% extends "base.html" %}
+
+{% block title %}About Us - Smart Car Rentals{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="container">
+        <h1>About Smart Car Rentals</h1>
+        <nav class="breadcrumb">
+            <a href="{{ url_for('main.index') }}">Home</a>
+            <span>/</span>
+            <span>About Us</span>
+        </nav>
+    </div>
+</div>
+
+<section class="about-intro py-5">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-6">
+                <h2 class="mb-4">Welcome to Smart Car Rentals</h2>
+                <p class="lead">Smart Car Rentals Pty Ltd is dedicated to providing affordable, reliable, and flexible car rental solutions tailored for rideshare, private use, and long-term customers across Melbourne.</p>
+                <p>With years of experience in the car rental industry, we understand the diverse needs of our customers. Whether you're a rideshare driver looking for a reliable vehicle, a family needing a car for a vacation, or a business requiring long-term rental solutions, we have the perfect vehicle for you.</p>
+                <p>Our commitment to excellence has made us one of Melbourne's most trusted car rental services, serving thousands of satisfied customers every year.</p>
+            </div>
+            <div class="col-lg-6">
+                <img src="{{ url_for('static', filename='images/about-hero.jpg') }}" alt="Smart Car Rentals" class="img-fluid rounded shadow" onerror="this.src='https://via.placeholder.com/600x400?text=Smart+Car+Rentals'">
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="mission-vision py-5 bg-light">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-6 mb-4">
+                <div class="card h-100 shadow-sm">
+                    <div class="card-body">
+                        <div class="icon-box mb-3">
+                            <i class="fas fa-bullseye fa-3x text-primary"></i>
+                        </div>
+                        <h3 class="card-title">Our Mission</h3>
+                        <p class="card-text">To provide affordable, reliable, and flexible car rental solutions tailored for rideshare, private use, and long-term customers.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6 mb-4">
+                <div class="card h-100 shadow-sm">
+                    <div class="card-body">
+                        <div class="icon-box mb-3">
+                            <i class="fas fa-eye fa-3x text-primary"></i>
+                        </div>
+                        <h3 class="card-title">Our Vision</h3>
+                        <p class="card-text">To be the leading choice for car rentals in Melbourne by focusing on customer satisfaction, vehicle quality, and seamless booking experiences.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="our-values py-5">
+    <div class="container">
+        <h2 class="text-center mb-5">Our Core Values</h2>
+        <div class="row">
+            <div class="col-md-3 col-sm-6 mb-4">
+                <div class="value-card text-center">
+                    <div class="value-icon mb-3">
+                        <i class="fas fa-shield-alt fa-3x text-primary"></i>
+                    </div>
+                    <h4>Reliability</h4>
+                    <p>We ensure our vehicles are well-maintained and ready when you need them.</p>
+                </div>
+            </div>
+            <div class="col-md-3 col-sm-6 mb-4">
+                <div class="value-card text-center">
+                    <div class="value-icon mb-3">
+                        <i class="fas fa-dollar-sign fa-3x text-success"></i>
+                    </div>
+                    <h4>Affordability</h4>
+                    <p>Competitive pricing without compromising on quality or service.</p>
+                </div>
+            </div>
+            <div class="col-md-3 col-sm-6 mb-4">
+                <div class="value-card text-center">
+                    <div class="value-icon mb-3">
+                        <i class="fas fa-smile fa-3x text-warning"></i>
+                    </div>
+                    <h4>Customer Satisfaction</h4>
+                    <p>Your satisfaction is our priority. We go above and beyond to meet your needs.</p>
+                </div>
+            </div>
+            <div class="col-md-3 col-sm-6 mb-4">
+                <div class="value-card text-center">
+                    <div class="value-icon mb-3">
+                        <i class="fas fa-lightbulb fa-3x text-info"></i>
+                    </div>
+                    <h4>Innovation</h4>
+                    <p>Continuously improving our services with the latest technology and solutions.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="why-choose-us py-5 bg-light">
+    <div class="container">
+        <h2 class="text-center mb-5">Why Choose Smart Car Rentals?</h2>
+        <div class="row">
+            <div class="col-lg-4 mb-4">
+                <div class="feature-box">
+                    <i class="fas fa-car fa-2x text-primary mb-3"></i>
+                    <h4>Wide Range of Vehicles</h4>
+                    <p>From economy cars to luxury vehicles, we have options for every need and budget.</p>
+                </div>
+            </div>
+            <div class="col-lg-4 mb-4">
+                <div class="feature-box">
+                    <i class="fas fa-clock fa-2x text-primary mb-3"></i>
+                    <h4>Flexible Rental Terms</h4>
+                    <p>Daily, weekly, or monthly rentals with customizable options to suit your schedule.</p>
+                </div>
+            </div>
+            <div class="col-lg-4 mb-4">
+                <div class="feature-box">
+                    <i class="fas fa-headset fa-2x text-primary mb-3"></i>
+                    <h4>24/7 Customer Support</h4>
+                    <p>Our dedicated support team is always available to assist you.</p>
+                </div>
+            </div>
+            <div class="col-lg-4 mb-4">
+                <div class="feature-box">
+                    <i class="fas fa-map-marker-alt fa-2x text-primary mb-3"></i>
+                    <h4>Multiple Locations</h4>
+                    <p>Convenient pickup and drop-off locations across Melbourne.</p>
+                </div>
+            </div>
+            <div class="col-lg-4 mb-4">
+                <div class="feature-box">
+                    <i class="fas fa-check-circle fa-2x text-primary mb-3"></i>
+                    <h4>Easy Booking Process</h4>
+                    <p>Simple online booking with instant confirmation.</p>
+                </div>
+            </div>
+            <div class="col-lg-4 mb-4">
+                <div class="feature-box">
+                    <i class="fas fa-award fa-2x text-primary mb-3"></i>
+                    <h4>Best Price Guarantee</h4>
+                    <p>Competitive rates with no hidden fees.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="cta-section py-5 text-white" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+    <div class="container text-center">
+        <h2 class="mb-4">Ready to Start Your Journey?</h2>
+        <p class="lead mb-4">Experience the Smart Car Rentals difference today!</p>
+        <a href="{{ url_for('cars.index') }}" class="btn btn-light btn-lg me-3">Browse Our Fleet</a>
+        <a href="{{ url_for('main.contact') }}" class="btn btn-outline-light btn-lg">Contact Us</a>
+    </div>
+</section>
+
+<style>
+.page-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 60px 0;
+    margin-bottom: 0;
+}
+
+.breadcrumb {
+    background: transparent;
+    padding: 0;
+    margin-top: 10px;
+}
+
+.breadcrumb a {
+    color: rgba(255, 255, 255, 0.8);
+    text-decoration: none;
+}
+
+.breadcrumb a:hover {
+    color: white;
+}
+
+.breadcrumb span {
+    color: rgba(255, 255, 255, 0.8);
+    margin: 0 10px;
+}
+
+.value-card, .feature-box {
+    padding: 20px;
+    transition: transform 0.3s;
+}
+
+.value-card:hover, .feature-box:hover {
+    transform: translateY(-5px);
+}
+
+.icon-box {
+    display: inline-block;
+}
+
+.btn-outline-light {
+    border: 2px solid white;
+    color: white;
+}
+
+.btn-outline-light:hover {
+    background: white;
+    color: #667eea;
+}
+
+.me-3 {
+    margin-right: 1rem;
+}
+</style>
+{% endblock %}

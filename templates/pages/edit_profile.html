@@ -1,0 +1,617 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Profile - Smart Car Rentals{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="container">
+        <h1>Account Settings</h1>
+        <nav class="breadcrumb">
+            <a href="{{ url_for('main.index') }}">Home</a>
+            <span>/</span>
+            <a href="{{ url_for('auth.profile') }}">Profile</a>
+            <span>/</span>
+            <span>Settings</span>
+        </nav>
+    </div>
+</div>
+
+<section class="settings-section py-5">
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-3">
+                <div class="settings-sidebar">
+                    <ul class="nav nav-pills flex-column">
+                        <li class="nav-item">
+                            <a class="nav-link active" href="#personal" data-toggle="tab">
+                                <i class="fas fa-user"></i> Personal Info
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#address" data-toggle="tab">
+                                <i class="fas fa-map-marker-alt"></i> Address
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#license" data-toggle="tab">
+                                <i class="fas fa-id-card"></i> Driver's License
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#password" data-toggle="tab">
+                                <i class="fas fa-lock"></i> Password
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#preferences" data-toggle="tab">
+                                <i class="fas fa-cog"></i> Preferences
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#notifications" data-toggle="tab">
+                                <i class="fas fa-bell"></i> Notifications
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="col-lg-9">
+                <form method="POST" action="{{ url_for('auth.edit_profile') }}" class="settings-form">
+                    <div class="tab-content">
+                        <!-- Personal Information Tab -->
+                        <div class="tab-pane fade show active" id="personal">
+                            <div class="settings-card">
+                                <div class="card-header">
+                                    <h4><i class="fas fa-user"></i> Personal Information</h4>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3">
+                                            <label for="first_name" class="form-label">First Name *</label>
+                                            <input type="text" class="form-control" id="first_name" name="first_name" 
+                                                   value="{{ user.first_name }}" required>
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <label for="last_name" class="form-label">Last Name *</label>
+                                            <input type="text" class="form-control" id="last_name" name="last_name" 
+                                                   value="{{ user.last_name }}" required>
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <label for="email" class="form-label">Email Address *</label>
+                                            <input type="email" class="form-control" id="email" 
+                                                   value="{{ user.email }}" disabled>
+                                            <small class="text-muted">Email cannot be changed</small>
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <label for="phone" class="form-label">Phone Number</label>
+                                            <input type="tel" class="form-control" id="phone" name="phone" 
+                                                   value="{{ user.phone or '' }}" placeholder="+61 4XX XXX XXX">
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <label for="date_of_birth" class="form-label">Date of Birth</label>
+                                            <input type="date" class="form-control" id="date_of_birth" name="date_of_birth" 
+                                                   value="{{ user.date_of_birth.strftime('%Y-%m-%d') if user.date_of_birth else '' }}">
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <label for="gender" class="form-label">Gender</label>
+                                            <select class="form-control" id="gender" name="gender">
+                                                <option value="">Prefer not to say</option>
+                                                <option value="male" {% if user.gender == 'male' %}selected{% endif %}>Male</option>
+                                                <option value="female" {% if user.gender == 'female' %}selected{% endif %}>Female</option>
+                                                <option value="other" {% if user.gender == 'other' %}selected{% endif %}>Other</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Address Tab -->
+                        <div class="tab-pane fade" id="address">
+                            <div class="settings-card">
+                                <div class="card-header">
+                                    <h4><i class="fas fa-map-marker-alt"></i> Address Information</h4>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-md-12 mb-3">
+                                            <label for="address" class="form-label">Street Address</label>
+                                            <input type="text" class="form-control" id="address" name="address" 
+                                                   value="{{ user.address or '' }}" placeholder="123 Main Street">
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <label for="city" class="form-label">City</label>
+                                            <input type="text" class="form-control" id="city" name="city" 
+                                                   value="{{ user.city or '' }}" placeholder="Melbourne">
+                                        </div>
+                                        <div class="col-md-3 mb-3">
+                                            <label for="state" class="form-label">State</label>
+                                            <select class="form-control" id="state" name="state">
+                                                <option value="">Select State</option>
+                                                <option value="VIC" {% if user.state == 'VIC' %}selected{% endif %}>Victoria</option>
+                                                <option value="NSW" {% if user.state == 'NSW' %}selected{% endif %}>New South Wales</option>
+                                                <option value="QLD" {% if user.state == 'QLD' %}selected{% endif %}>Queensland</option>
+                                                <option value="WA" {% if user.state == 'WA' %}selected{% endif %}>Western Australia</option>
+                                                <option value="SA" {% if user.state == 'SA' %}selected{% endif %}>South Australia</option>
+                                                <option value="TAS" {% if user.state == 'TAS' %}selected{% endif %}>Tasmania</option>
+                                                <option value="ACT" {% if user.state == 'ACT' %}selected{% endif %}>Australian Capital Territory</option>
+                                                <option value="NT" {% if user.state == 'NT' %}selected{% endif %}>Northern Territory</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-3 mb-3">
+                                            <label for="zip_code" class="form-label">ZIP/Postal Code</label>
+                                            <input type="text" class="form-control" id="zip_code" name="zip_code" 
+                                                   value="{{ user.zip_code or '' }}" placeholder="3000">
+                                        </div>
+                                        <div class="col-md-12 mb-3">
+                                            <label for="country" class="form-label">Country</label>
+                                            <select class="form-control" id="country" name="country">
+                                                <option value="Australia" {% if user.country == 'Australia' or not user.country %}selected{% endif %}>Australia</option>
+                                                <option value="New Zealand" {% if user.country == 'New Zealand' %}selected{% endif %}>New Zealand</option>
+                                                <option value="Other" {% if user.country and user.country not in ['Australia', 'New Zealand'] %}selected{% endif %}>Other</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Driver's License Tab -->
+                        <div class="tab-pane fade" id="license">
+                            <div class="settings-card">
+                                <div class="card-header">
+                                    <h4><i class="fas fa-id-card"></i> Driver's License Information</h4>
+                                </div>
+                                <div class="card-body">
+                                    <div class="alert alert-info">
+                                        <i class="fas fa-info-circle"></i> 
+                                        This information is required to complete car bookings. Please ensure all details match your physical driver's license.
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3">
+                                            <label for="license_number" class="form-label">License Number</label>
+                                            <input type="text" class="form-control" id="license_number" name="license_number" 
+                                                   value="{{ user.license_number or '' }}" placeholder="Enter license number">
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <label for="license_state" class="form-label">License State/Territory</label>
+                                            <select class="form-control" id="license_state" name="license_state">
+                                                <option value="">Select State</option>
+                                                <option value="VIC" {% if user.license_state == 'VIC' %}selected{% endif %}>Victoria</option>
+                                                <option value="NSW" {% if user.license_state == 'NSW' %}selected{% endif %}>New South Wales</option>
+                                                <option value="QLD" {% if user.license_state == 'QLD' %}selected{% endif %}>Queensland</option>
+                                                <option value="WA" {% if user.license_state == 'WA' %}selected{% endif %}>Western Australia</option>
+                                                <option value="SA" {% if user.license_state == 'SA' %}selected{% endif %}>South Australia</option>
+                                                <option value="TAS" {% if user.license_state == 'TAS' %}selected{% endif %}>Tasmania</option>
+                                                <option value="ACT" {% if user.license_state == 'ACT' %}selected{% endif %}>Australian Capital Territory</option>
+                                                <option value="NT" {% if user.license_state == 'NT' %}selected{% endif %}>Northern Territory</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <label for="license_expiry" class="form-label">License Expiry Date</label>
+                                            <input type="date" class="form-control" id="license_expiry" name="license_expiry" 
+                                                   value="{{ user.license_expiry.strftime('%Y-%m-%d') if user.license_expiry else '' }}">
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <label for="license_class" class="form-label">License Class</label>
+                                            <select class="form-control" id="license_class" name="license_class">
+                                                <option value="">Select Class</option>
+                                                <option value="C" {% if user.license_class == 'C' %}selected{% endif %}>C - Car</option>
+                                                <option value="LR" {% if user.license_class == 'LR' %}selected{% endif %}>LR - Light Rigid</option>
+                                                <option value="MR" {% if user.license_class == 'MR' %}selected{% endif %}>MR - Medium Rigid</option>
+                                                <option value="HR" {% if user.license_class == 'HR' %}selected{% endif %}>HR - Heavy Rigid</option>
+                                                <option value="HC" {% if user.license_class == 'HC' %}selected{% endif %}>HC - Heavy Combination</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Password Tab -->
+                        <div class="tab-pane fade" id="password">
+                            <div class="settings-card">
+                                <div class="card-header">
+                                    <h4><i class="fas fa-lock"></i> Change Password</h4>
+                                </div>
+                                <div class="card-body">
+                                    <div class="alert alert-warning">
+                                        <i class="fas fa-exclamation-triangle"></i> 
+                                        Leave these fields blank if you don't want to change your password.
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-md-12 mb-3">
+                                            <label for="current_password" class="form-label">Current Password</label>
+                                            <input type="password" class="form-control" id="current_password" name="current_password">
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <label for="new_password" class="form-label">New Password</label>
+                                            <input type="password" class="form-control" id="new_password" name="new_password">
+                                            <small class="text-muted">Minimum 8 characters</small>
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <label for="confirm_password" class="form-label">Confirm New Password</label>
+                                            <input type="password" class="form-control" id="confirm_password" name="confirm_password">
+                                        </div>
+                                    </div>
+                                    <div class="password-strength mt-2">
+                                        <div class="progress">
+                                            <div class="progress-bar" role="progressbar" style="width: 0%"></div>
+                                        </div>
+                                        <small class="text-muted">Password strength: <span id="strength-text">Enter a password</span></small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Preferences Tab -->
+                        <div class="tab-pane fade" id="preferences">
+                            <div class="settings-card">
+                                <div class="card-header">
+                                    <h4><i class="fas fa-cog"></i> Preferences</h4>
+                                </div>
+                                <div class="card-body">
+                                    <div class="preference-item">
+                                        <div class="custom-control custom-switch">
+                                            <input type="checkbox" class="custom-control-input" id="newsletter" name="newsletter" 
+                                                   {% if user.newsletter_subscribed %}checked{% endif %}>
+                                            <label class="custom-control-label" for="newsletter">
+                                                <strong>Newsletter Subscription</strong>
+                                                <p class="text-muted mb-0">Receive updates about new vehicles and special offers</p>
+                                            </label>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="preference-item">
+                                        <div class="custom-control custom-switch">
+                                            <input type="checkbox" class="custom-control-input" id="sms_notifications" name="sms_notifications" 
+                                                   {% if user.sms_notifications %}checked{% endif %}>
+                                            <label class="custom-control-label" for="sms_notifications">
+                                                <strong>SMS Notifications</strong>
+                                                <p class="text-muted mb-0">Receive booking confirmations and reminders via SMS</p>
+                                            </label>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="preference-item">
+                                        <label class="form-label"><strong>Preferred Language</strong></label>
+                                        <select class="form-control" name="language">
+                                            <option value="en" {% if user.language == 'en' or not user.language %}selected{% endif %}>English</option>
+                                            <option value="zh" {% if user.language == 'zh' %}selected{% endif %}>中文 (Chinese)</option>
+                                            <option value="hi" {% if user.language == 'hi' %}selected{% endif %}>हिन्दी (Hindi)</option>
+                                            <option value="ar" {% if user.language == 'ar' %}selected{% endif %}>العربية (Arabic)</option>
+                                        </select>
+                                    </div>
+                                    
+                                    <div class="preference-item">
+                                        <label class="form-label"><strong>Currency</strong></label>
+                                        <select class="form-control" name="currency">
+                                            <option value="AUD" {% if user.currency == 'AUD' or not user.currency %}selected{% endif %}>AUD - Australian Dollar</option>
+                                            <option value="USD" {% if user.currency == 'USD' %}selected{% endif %}>USD - US Dollar</option>
+                                            <option value="NZD" {% if user.currency == 'NZD' %}selected{% endif %}>NZD - New Zealand Dollar</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Notifications Tab -->
+                        <div class="tab-pane fade" id="notifications">
+                            <div class="settings-card">
+                                <div class="card-header">
+                                    <h4><i class="fas fa-bell"></i> Notification Settings</h4>
+                                </div>
+                                <div class="card-body">
+                                    <h5 class="mb-3">Email Notifications</h5>
+                                    <div class="notification-group mb-4">
+                                        <div class="custom-control custom-checkbox mb-2">
+                                            <input type="checkbox" class="custom-control-input" id="email_booking_confirmation" 
+                                                   name="email_booking_confirmation" checked>
+                                            <label class="custom-control-label" for="email_booking_confirmation">
+                                                Booking confirmations
+                                            </label>
+                                        </div>
+                                        <div class="custom-control custom-checkbox mb-2">
+                                            <input type="checkbox" class="custom-control-input" id="email_payment_receipts" 
+                                                   name="email_payment_receipts" checked>
+                                            <label class="custom-control-label" for="email_payment_receipts">
+                                                Payment receipts
+                                            </label>
+                                        </div>
+                                        <div class="custom-control custom-checkbox mb-2">
+                                            <input type="checkbox" class="custom-control-input" id="email_pickup_reminder" 
+                                                   name="email_pickup_reminder" checked>
+                                            <label class="custom-control-label" for="email_pickup_reminder">
+                                                Pickup reminders (24 hours before)
+                                            </label>
+                                        </div>
+                                        <div class="custom-control custom-checkbox mb-2">
+                                            <input type="checkbox" class="custom-control-input" id="email_return_reminder" 
+                                                   name="email_return_reminder" checked>
+                                            <label class="custom-control-label" for="email_return_reminder">
+                                                Return reminders (24 hours before)
+                                            </label>
+                                        </div>
+                                        <div class="custom-control custom-checkbox mb-2">
+                                            <input type="checkbox" class="custom-control-input" id="email_promotions" 
+                                                   name="email_promotions">
+                                            <label class="custom-control-label" for="email_promotions">
+                                                Promotional offers and discounts
+                                            </label>
+                                        </div>
+                                    </div>
+                                    
+                                    <h5 class="mb-3">Push Notifications</h5>
+                                    <div class="notification-group">
+                                        <div class="custom-control custom-checkbox mb-2">
+                                            <input type="checkbox" class="custom-control-input" id="push_booking_updates" 
+                                                   name="push_booking_updates">
+                                            <label class="custom-control-label" for="push_booking_updates">
+                                                Booking status updates
+                                            </label>
+                                        </div>
+                                        <div class="custom-control custom-checkbox mb-2">
+                                            <input type="checkbox" class="custom-control-input" id="push_price_alerts" 
+                                                   name="push_price_alerts">
+                                            <label class="custom-control-label" for="push_price_alerts">
+                                                Price drop alerts for saved vehicles
+                                            </label>
+                                        </div>
+                                        <div class="custom-control custom-checkbox mb-2">
+                                            <input type="checkbox" class="custom-control-input" id="push_new_vehicles" 
+                                                   name="push_new_vehicles">
+                                            <label class="custom-control-label" for="push_new_vehicles">
+                                                New vehicle additions
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Save Button -->
+                    <div class="form-actions mt-4">
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="fas fa-save"></i> Save Changes
+                        </button>
+                        <a href="{{ url_for('auth.profile') }}" class="btn btn-secondary btn-lg">
+                            <i class="fas fa-times"></i> Cancel
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</section>
+
+<style>
+.page-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 60px 0;
+    margin-bottom: 0;
+}
+
+.breadcrumb {
+    background: transparent;
+    padding: 0;
+    margin-top: 10px;
+}
+
+.breadcrumb a {
+    color: rgba(255, 255, 255, 0.8);
+    text-decoration: none;
+}
+
+.breadcrumb a:hover {
+    color: white;
+}
+
+.breadcrumb span {
+    color: rgba(255, 255, 255, 0.8);
+    margin: 0 10px;
+}
+
+.settings-sidebar {
+    background: white;
+    border-radius: 10px;
+    padding: 20px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    position: sticky;
+    top: 20px;
+}
+
+.nav-pills .nav-link {
+    color: #333;
+    border-radius: 5px;
+    margin-bottom: 5px;
+    padding: 12px 15px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.nav-pills .nav-link:hover {
+    background-color: #f8f9fa;
+}
+
+.nav-pills .nav-link.active {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.settings-card {
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    overflow: hidden;
+}
+
+.card-header {
+    background: #f8f9fa;
+    padding: 15px 20px;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.card-header h4 {
+    margin: 0;
+    font-size: 1.2rem;
+    color: #333;
+}
+
+.card-header i {
+    margin-right: 10px;
+    color: #667eea;
+}
+
+.card-body {
+    padding: 25px;
+}
+
+.preference-item {
+    padding: 15px 0;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.preference-item:last-child {
+    border-bottom: none;
+}
+
+.custom-control-label {
+    padding-left: 10px;
+    cursor: pointer;
+}
+
+.custom-control-label p {
+    font-size: 0.9rem;
+    margin-top: 5px;
+}
+
+.notification-group {
+    padding-left: 20px;
+}
+
+.form-actions {
+    text-align: center;
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: 10px;
+}
+
+.btn-lg {
+    padding: 12px 30px;
+}
+
+.progress {
+    height: 8px;
+    border-radius: 4px;
+}
+
+.progress-bar {
+    transition: width 0.3s;
+}
+
+.custom-switch {
+    padding-left: 2.25rem;
+}
+
+.custom-control-input:checked ~ .custom-control-label::before {
+    background-color: #667eea;
+    border-color: #667eea;
+}
+
+.form-control:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+}
+</style>
+
+<script>
+// Tab navigation
+document.addEventListener('DOMContentLoaded', function() {
+    const tabLinks = document.querySelectorAll('[data-toggle="tab"]');
+    const tabPanes = document.querySelectorAll('.tab-pane');
+    
+    tabLinks.forEach(link => {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            // Remove active class from all tabs and panes
+            tabLinks.forEach(l => l.classList.remove('active'));
+            tabPanes.forEach(p => p.classList.remove('show', 'active'));
+            
+            // Add active class to clicked tab
+            this.classList.add('active');
+            
+            // Show corresponding pane
+            const targetId = this.getAttribute('href');
+            const targetPane = document.querySelector(targetId);
+            if (targetPane) {
+                targetPane.classList.add('show', 'active');
+            }
+        });
+    });
+    
+    // Check for hash in URL and activate corresponding tab
+    if (window.location.hash) {
+        const hashTab = document.querySelector(`[href="${window.location.hash}"]`);
+        if (hashTab) {
+            hashTab.click();
+        }
+    }
+    
+    // Password strength checker
+    const newPasswordInput = document.getElementById('new_password');
+    const strengthBar = document.querySelector('.progress-bar');
+    const strengthText = document.getElementById('strength-text');
+    
+    if (newPasswordInput) {
+        newPasswordInput.addEventListener('input', function() {
+            const password = this.value;
+            let strength = 0;
+            
+            if (password.length >= 8) strength += 25;
+            if (password.length >= 12) strength += 25;
+            if (/[a-z]/.test(password) && /[A-Z]/.test(password)) strength += 25;
+            if (/[0-9]/.test(password)) strength += 12.5;
+            if (/[^a-zA-Z0-9]/.test(password)) strength += 12.5;
+            
+            strengthBar.style.width = strength + '%';
+            
+            if (strength < 25) {
+                strengthBar.className = 'progress-bar bg-danger';
+                strengthText.textContent = 'Weak';
+            } else if (strength < 50) {
+                strengthBar.className = 'progress-bar bg-warning';
+                strengthText.textContent = 'Fair';
+            } else if (strength < 75) {
+                strengthBar.className = 'progress-bar bg-info';
+                strengthText.textContent = 'Good';
+            } else {
+                strengthBar.className = 'progress-bar bg-success';
+                strengthText.textContent = 'Strong';
+            }
+            
+            if (password.length === 0) {
+                strengthBar.style.width = '0%';
+                strengthText.textContent = 'Enter a password';
+            }
+        });
+    }
+    
+    // Confirm password validation
+    const confirmPasswordInput = document.getElementById('confirm_password');
+    if (confirmPasswordInput) {
+        confirmPasswordInput.addEventListener('input', function() {
+            if (this.value !== newPasswordInput.value) {
+                this.setCustomValidity('Passwords do not match');
+            } else {
+                this.setCustomValidity('');
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

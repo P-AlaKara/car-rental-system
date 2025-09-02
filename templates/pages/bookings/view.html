@@ -1,0 +1,473 @@
+{% extends "base.html" %}
+
+{% block title %}Booking #{{ booking.booking_number }} - Smart Car Rentals{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="container">
+        <h1>Booking Details</h1>
+        <nav class="breadcrumb">
+            <a href="{{ url_for('main.index') }}">Home</a>
+            <span>/</span>
+            <a href="{{ url_for('bookings.index') }}">My Bookings</a>
+            <span>/</span>
+            <span>#{{ booking.booking_number }}</span>
+        </nav>
+    </div>
+</div>
+
+<section class="booking-details-section py-5">
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8">
+                <!-- Booking Status Card -->
+                <div class="detail-card mb-4">
+                    <div class="card-header">
+                        <h4>Booking Status</h4>
+                        <span class="badge badge-{{ booking.status.value }}">{{ booking.status.value|replace('_', ' ')|title }}</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <label class="text-muted">Booking Number</label>
+                                <p class="font-weight-bold">#{{ booking.booking_number }}</p>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="text-muted">Booking Date</label>
+                                <p class="font-weight-bold">{{ booking.created_at.strftime('%B %d, %Y at %I:%M %p') }}</p>
+                            </div>
+                        </div>
+                        
+                        {% if booking.status.value in ['pending', 'confirmed'] and booking.pickup_date > datetime.now() %}
+                        <div class="alert alert-info mt-3">
+                            <i class="fas fa-info-circle"></i>
+                            Your booking is scheduled for pickup on {{ booking.pickup_date.strftime('%B %d, %Y') }}.
+                            {% if booking.status.value == 'pending' %}
+                            Please complete payment to confirm your booking.
+                            {% endif %}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <!-- Vehicle Information -->
+                <div class="detail-card mb-4">
+                    <div class="card-header">
+                        <h4>Vehicle Information</h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-4">
+                                {% if booking.car.images %}
+                                    <img src="{{ booking.car.images[0] }}" alt="{{ booking.car.make }} {{ booking.car.model }}" class="img-fluid rounded">
+                                {% else %}
+                                    <img src="https://via.placeholder.com/300x200?text=No+Image" alt="No Image" class="img-fluid rounded">
+                                {% endif %}
+                            </div>
+                            <div class="col-md-8">
+                                <h5>{{ booking.car.make }} {{ booking.car.model }} ({{ booking.car.year }})</h5>
+                                <p class="text-muted">{{ booking.car.category.value|title }} • {{ booking.car.transmission|title }} • {{ booking.car.fuel_type|title }}</p>
+                                
+                                <div class="vehicle-features mt-3">
+                                    <span class="feature-badge"><i class="fas fa-users"></i> {{ booking.car.seats }} Seats</span>
+                                    <span class="feature-badge"><i class="fas fa-suitcase"></i> {{ booking.car.luggage_capacity }} Luggage</span>
+                                    <span class="feature-badge"><i class="fas fa-door-open"></i> {{ booking.car.doors }} Doors</span>
+                                    {% if booking.car.features %}
+                                        {% for feature in booking.car.features[:3] %}
+                                            <span class="feature-badge">{{ feature }}</span>
+                                        {% endfor %}
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="mt-3">
+                                    <label class="text-muted">Registration Number</label>
+                                    <p class="font-weight-bold">{{ booking.car.registration_number }}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Rental Details -->
+                <div class="detail-card mb-4">
+                    <div class="card-header">
+                        <h4>Rental Details</h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="text-muted">Pickup Date & Time</label>
+                                <p class="font-weight-bold">
+                                    <i class="fas fa-calendar-alt text-primary"></i>
+                                    {{ booking.pickup_date.strftime('%B %d, %Y at %I:%M %p') }}
+                                </p>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="text-muted">Return Date & Time</label>
+                                <p class="font-weight-bold">
+                                    <i class="fas fa-calendar-check text-primary"></i>
+                                    {{ booking.return_date.strftime('%B %d, %Y at %I:%M %p') }}
+                                </p>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="text-muted">Pickup Location</label>
+                                <p class="font-weight-bold">
+                                    <i class="fas fa-map-marker-alt text-primary"></i>
+                                    {{ booking.pickup_location }}
+                                </p>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="text-muted">Return Location</label>
+                                <p class="font-weight-bold">
+                                    <i class="fas fa-map-marker-alt text-primary"></i>
+                                    {{ booking.return_location }}
+                                </p>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="text-muted">Rental Duration</label>
+                                <p class="font-weight-bold">{{ booking.total_days }} day(s)</p>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="text-muted">Daily Rate</label>
+                                <p class="font-weight-bold">${{ "%.2f"|format(booking.daily_rate) }}</p>
+                            </div>
+                        </div>
+                        
+                        <!-- Additional Options -->
+                        {% if booking.with_driver or booking.insurance_opted or booking.gps_opted %}
+                        <div class="additional-options mt-3">
+                            <label class="text-muted">Additional Options</label>
+                            <div class="mt-2">
+                                {% if booking.with_driver %}
+                                    <span class="badge badge-info">With Driver</span>
+                                {% endif %}
+                                {% if booking.insurance_opted %}
+                                    <span class="badge badge-info">Insurance Coverage</span>
+                                {% endif %}
+                                {% if booking.gps_opted %}
+                                    <span class="badge badge-info">GPS Navigation</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        <!-- Customer Notes -->
+                        {% if booking.customer_notes %}
+                        <div class="mt-3">
+                            <label class="text-muted">Special Requests</label>
+                            <p class="font-weight-bold">{{ booking.customer_notes }}</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <!-- Driver Information -->
+                <div class="detail-card mb-4">
+                    <div class="card-header">
+                        <h4>Driver Information</h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="text-muted">Full Name</label>
+                                <p class="font-weight-bold">{{ booking.customer.first_name }} {{ booking.customer.last_name }}</p>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="text-muted">Email</label>
+                                <p class="font-weight-bold">{{ booking.customer.email }}</p>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="text-muted">Phone</label>
+                                <p class="font-weight-bold">{{ booking.customer.phone or 'Not provided' }}</p>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="text-muted">License Number</label>
+                                <p class="font-weight-bold">{{ booking.customer.license_number or 'Not provided' }}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-lg-4">
+                <!-- Pricing Summary -->
+                <div class="pricing-card mb-4">
+                    <h4 class="mb-3">Pricing Summary</h4>
+                    <div class="price-breakdown">
+                        <div class="price-item">
+                            <span>Daily Rate × {{ booking.total_days }} days</span>
+                            <span>${{ "%.2f"|format(booking.subtotal) }}</span>
+                        </div>
+                        {% if booking.with_driver %}
+                        <div class="price-item">
+                            <span>Driver Service</span>
+                            <span>$100.00</span>
+                        </div>
+                        {% endif %}
+                        {% if booking.insurance_opted %}
+                        <div class="price-item">
+                            <span>Insurance Coverage</span>
+                            <span>$44.00/day</span>
+                        </div>
+                        {% endif %}
+                        {% if booking.gps_opted %}
+                        <div class="price-item">
+                            <span>GPS Navigation</span>
+                            <span>$10.00/day</span>
+                        </div>
+                        {% endif %}
+                        <div class="price-item">
+                            <span>Registration Recovery</span>
+                            <span>${{ "%.2f"|format(8.80 * booking.total_days) }}</span>
+                        </div>
+                        <div class="price-item">
+                            <span>Tax (GST 10%)</span>
+                            <span>${{ "%.2f"|format(booking.tax_amount) }}</span>
+                        </div>
+                        <div class="price-total">
+                            <span>Total Amount</span>
+                            <span class="text-primary">${{ "%.2f"|format(booking.total_amount) }}</span>
+                        </div>
+                    </div>
+                    
+                    {% if booking.payment %}
+                    <div class="payment-status mt-3">
+                        <label class="text-muted">Payment Status</label>
+                        <p class="font-weight-bold">
+                            {% if booking.payment.status == 'completed' %}
+                                <span class="text-success"><i class="fas fa-check-circle"></i> Paid</span>
+                            {% elif booking.payment.status == 'pending' %}
+                                <span class="text-warning"><i class="fas fa-clock"></i> Pending</span>
+                            {% else %}
+                                <span class="text-danger"><i class="fas fa-times-circle"></i> {{ booking.payment.status|title }}</span>
+                            {% endif %}
+                        </p>
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <!-- Actions -->
+                <div class="action-card">
+                    <h5 class="mb-3">Actions</h5>
+                    
+                    {% if booking.status.value == 'pending' %}
+                        <a href="{{ url_for('bookings.payment', id=booking.id) }}" class="btn btn-success btn-block mb-2">
+                            <i class="fas fa-credit-card"></i> Complete Payment
+                        </a>
+                    {% endif %}
+                    
+                    {% if booking.status.value in ['pending', 'confirmed'] and booking.pickup_date > datetime.now() %}
+                        <a href="{{ url_for('bookings.edit', id=booking.id) }}" class="btn btn-warning btn-block mb-2">
+                            <i class="fas fa-edit"></i> Modify Booking
+                        </a>
+                        <button onclick="cancelBooking({{ booking.id }})" class="btn btn-danger btn-block mb-2">
+                            <i class="fas fa-times"></i> Cancel Booking
+                        </button>
+                    {% endif %}
+                    
+                    {% if booking.status.value == 'completed' %}
+                        <a href="{{ url_for('bookings.receipt', id=booking.id) }}" class="btn btn-info btn-block mb-2">
+                            <i class="fas fa-receipt"></i> Download Receipt
+                        </a>
+                        <a href="{{ url_for('cars.view', id=booking.car.id) }}" class="btn btn-primary btn-block mb-2">
+                            <i class="fas fa-redo"></i> Book Again
+                        </a>
+                    {% endif %}
+                    
+                    <a href="{{ url_for('bookings.index') }}" class="btn btn-secondary btn-block">
+                        <i class="fas fa-arrow-left"></i> Back to Bookings
+                    </a>
+                </div>
+                
+                <!-- Important Information -->
+                <div class="info-card mt-4">
+                    <h5 class="mb-3">Important Information</h5>
+                    <ul class="list-unstyled">
+                        <li class="mb-2">
+                            <i class="fas fa-check text-success"></i>
+                            Free cancellation up to 24 hours before pickup
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-check text-success"></i>
+                            Full tank of fuel required on return
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-check text-success"></i>
+                            Valid driver's license required at pickup
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-info-circle text-info"></i>
+                            Weekly distance limit: 3,000 km
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-info-circle text-info"></i>
+                            Excess km charge: $0.70/km
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<style>
+{% import 'datetime' as datetime %}
+
+.page-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 60px 0;
+    margin-bottom: 0;
+}
+
+.breadcrumb {
+    background: transparent;
+    padding: 0;
+    margin-top: 10px;
+}
+
+.breadcrumb a {
+    color: rgba(255, 255, 255, 0.8);
+    text-decoration: none;
+}
+
+.breadcrumb a:hover {
+    color: white;
+}
+
+.breadcrumb span {
+    color: rgba(255, 255, 255, 0.8);
+    margin: 0 10px;
+}
+
+.detail-card, .pricing-card, .action-card, .info-card {
+    background: white;
+    border-radius: 10px;
+    padding: 20px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.card-header {
+    background: #f8f9fa;
+    margin: -20px -20px 20px -20px;
+    padding: 15px 20px;
+    border-bottom: 1px solid #e9ecef;
+    border-radius: 10px 10px 0 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.card-header h4 {
+    margin: 0;
+    color: #333;
+}
+
+.badge {
+    padding: 5px 10px;
+    border-radius: 5px;
+    font-size: 0.85rem;
+}
+
+.badge-pending {
+    background-color: #ffc107;
+    color: #000;
+}
+
+.badge-confirmed {
+    background-color: #17a2b8;
+    color: #fff;
+}
+
+.badge-in_progress {
+    background-color: #007bff;
+    color: #fff;
+}
+
+.badge-completed {
+    background-color: #28a745;
+    color: #fff;
+}
+
+.badge-cancelled {
+    background-color: #dc3545;
+    color: #fff;
+}
+
+.badge-info {
+    background-color: #17a2b8;
+    color: #fff;
+}
+
+.feature-badge {
+    display: inline-block;
+    padding: 5px 10px;
+    background: #f8f9fa;
+    border-radius: 5px;
+    margin-right: 5px;
+    margin-bottom: 5px;
+    font-size: 0.9rem;
+}
+
+.price-breakdown {
+    border-top: 1px solid #e9ecef;
+    padding-top: 15px;
+}
+
+.price-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    font-size: 0.95rem;
+}
+
+.price-total {
+    display: flex;
+    justify-content: space-between;
+    padding: 15px 0;
+    border-top: 2px solid #e9ecef;
+    font-size: 1.2rem;
+    font-weight: 600;
+    margin-top: 10px;
+}
+
+.btn-block {
+    width: 100%;
+}
+
+.font-weight-bold {
+    font-weight: 600;
+}
+
+.text-muted {
+    color: #6c757d !important;
+    font-size: 0.9rem;
+}
+</style>
+
+<script>
+function cancelBooking(bookingId) {
+    if (confirm('Are you sure you want to cancel this booking? This action cannot be undone.')) {
+        fetch(`/bookings/${bookingId}/cancel`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Booking cancelled successfully');
+                window.location.href = '/bookings';
+            } else {
+                alert('Error cancelling booking: ' + data.message);
+            }
+        })
+        .catch(error => {
+            alert('Error cancelling booking');
+            console.error('Error:', error);
+        });
+    }
+}
+</script>
+{% endblock %}
