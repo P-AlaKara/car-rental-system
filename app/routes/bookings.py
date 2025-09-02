@@ -87,7 +87,15 @@ def create():
     # Get available cars
     available_cars = Car.query.filter_by(status='available', is_active=True).all()
     
-    return render_template('pages/bookings/create.html', cars=available_cars)
+    # Check if a specific car was requested
+    selected_car = None
+    car_id = request.args.get('car_id')
+    if car_id:
+        selected_car = Car.query.get(car_id)
+    
+    return render_template('pages/bookings/create.html', 
+                         cars=available_cars,
+                         selected_car=selected_car)
 
 
 @bp.route('/<int:id>')

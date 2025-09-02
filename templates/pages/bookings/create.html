@@ -24,7 +24,8 @@
                             <select name="car_id" id="car_id" class="form-control" required>
                                 <option value="">Choose a car...</option>
                                 {% for car in cars %}
-                                <option value="{{ car.id }}" data-rate="{{ car.daily_rate }}">
+                                <option value="{{ car.id }}" data-rate="{{ car.daily_rate }}"
+                                    {% if selected_car and selected_car.id == car.id %}selected{% endif %}>
                                     {{ car.full_name }} - ${{ car.daily_rate }}/day
                                 </option>
                                 {% endfor %}
@@ -113,6 +114,36 @@
         </div>
         
         <div class="col-4">
+            {% if selected_car %}
+            <div class="card mb-3">
+                <div class="card-header bg-primary text-white">
+                    <h4>Selected Vehicle</h4>
+                </div>
+                <div class="card-body">
+                    <img src="{{ selected_car.main_image or '/static/images/car-placeholder.png' }}" 
+                         class="img-fluid mb-3" alt="{{ selected_car.full_name }}">
+                    <h5>{{ selected_car.full_name }}</h5>
+                    <p class="text-muted">{{ selected_car.category.value }} • {{ selected_car.year }}</p>
+                    <div class="car-details">
+                        <div class="detail-item">
+                            <i class="fas fa-users"></i> {{ selected_car.seats }} seats
+                        </div>
+                        <div class="detail-item">
+                            <i class="fas fa-cog"></i> {{ selected_car.transmission }}
+                        </div>
+                        <div class="detail-item">
+                            <i class="fas fa-gas-pump"></i> {{ selected_car.fuel_type }}
+                        </div>
+                    </div>
+                    <hr>
+                    <div class="price-highlight">
+                        <strong>Daily Rate:</strong>
+                        <span class="text-primary">${{ selected_car.daily_rate }}</span>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            
             <div class="card">
                 <div class="card-header">
                     <h4>Booking Summary</h4>
@@ -150,6 +181,11 @@ document.addEventListener('DOMContentLoaded', function() {
     const returnDate = document.getElementById('return_date');
     const dailyRateInput = document.getElementById('daily_rate');
     const priceDisplay = document.getElementById('price_display');
+    
+    // If a car is pre-selected, set its daily rate
+    {% if selected_car %}
+    dailyRateInput.value = {{ selected_car.daily_rate }};
+    {% endif %}
     
     // Set minimum date to today
     const now = new Date();
@@ -279,6 +315,37 @@ hr {
     margin: 0.75rem 0;
     border: none;
     border-top: 1px solid #e5e7eb;
+}
+
+.car-details {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin: 1rem 0;
+}
+
+.detail-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #6c757d;
+    font-size: 0.9rem;
+}
+
+.detail-item i {
+    color: #007bff;
+}
+
+.price-highlight {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 1.1rem;
+}
+
+.price-highlight .text-primary {
+    font-size: 1.3rem;
+    font-weight: bold;
 }
 </style>
 {% endblock %}
