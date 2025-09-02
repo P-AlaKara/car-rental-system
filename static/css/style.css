@@ -6,24 +6,29 @@
 }
 
 :root {
-    /* Aurora-inspired color palette - sophisticated and modern */
-    --primary-color: #1a1f3a;  /* Deep midnight blue */
-    --secondary-color: #d4af37; /* Luxurious gold */
-    --accent-color: #6b46c1;    /* Aurora purple */
+    /* Ethereal Blue Color Palette - Modern and Sophisticated */
+    --primary-color: #0ea5e9;   /* Sky blue */
+    --secondary-color: #3b82f6;  /* Royal blue */
+    --accent-color: #06b6d4;     /* Cyan blue */
+    --deep-blue: #1e40af;        /* Deep blue */
+    --light-blue: #dbeafe;       /* Light blue */
+    --pale-blue: #eff6ff;        /* Pale blue */
     --success-color: #10b981;
     --danger-color: #ef4444;
     --warning-color: #f59e0b;
-    --info-color: #3b82f6;
+    --info-color: #06b6d4;
     --dark-color: #0f172a;
     --light-color: #f8fafc;
     --white: #ffffff;
-    --border-color: #e2e8f0;
+    --border-color: #e0f2fe;
     --text-muted: #64748b;
-    --gradient-primary: linear-gradient(135deg, #1a1f3a 0%, #6b46c1 100%);
-    --gradient-secondary: linear-gradient(135deg, #d4af37 0%, #f59e0b 100%);
-    --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-    --shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-    --shadow-xl: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    --gradient-primary: linear-gradient(135deg, #0284c7 0%, #0ea5e9 50%, #38bdf8 100%);
+    --gradient-secondary: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%);
+    --gradient-ethereal: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 25%, #93c5fd 50%, #60a5fa 75%, #3b82f6 100%);
+    --gradient-soft: linear-gradient(180deg, #eff6ff 0%, #dbeafe 50%, #bfdbfe 100%);
+    --shadow: 0 4px 6px -1px rgba(14, 165, 233, 0.1), 0 2px 4px -1px rgba(14, 165, 233, 0.06);
+    --shadow-lg: 0 20px 25px -5px rgba(14, 165, 233, 0.1), 0 10px 10px -5px rgba(14, 165, 233, 0.04);
+    --shadow-xl: 0 25px 50px -12px rgba(14, 165, 233, 0.15);
     --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
@@ -38,11 +43,11 @@ body {
 
 /* Typography Enhancement */
 h1, h2, h3, h4, h5, h6 {
-    font-family: 'Playfair Display', serif;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     font-weight: 700;
     letter-spacing: -0.025em;
     line-height: 1.2;
-    color: var(--primary-color);
+    color: var(--dark-color);
 }
 
 h1 { font-size: 3rem; }
@@ -99,7 +104,7 @@ h6 { font-size: 1.125rem; }
     align-items: center;
     gap: 0.75rem;
     transition: var(--transition);
-    font-family: 'Playfair Display', serif;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     letter-spacing: -0.025em;
 }
 
@@ -214,12 +219,13 @@ h6 { font-size: 1.125rem; }
 .btn-primary {
     background: var(--gradient-primary);
     color: var(--white);
-    box-shadow: 0 4px 15px rgba(107, 70, 193, 0.3);
+    box-shadow: 0 4px 15px rgba(14, 165, 233, 0.3);
 }
 
 .btn-primary:hover {
     transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(107, 70, 193, 0.4);
+    box-shadow: 0 6px 20px rgba(14, 165, 233, 0.4);
+    background: linear-gradient(135deg, #0284c7 0%, #38bdf8 100%);
 }
 
 .btn-secondary {
@@ -238,14 +244,14 @@ h6 { font-size: 1.125rem; }
     color: var(--primary-color);
     border: 2px solid var(--white);
     font-weight: 700;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 15px rgba(14, 165, 233, 0.1);
 }
 
 .btn-outline:hover {
     background: var(--white);
     color: var(--primary-color);
     transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 6px 20px rgba(14, 165, 233, 0.15);
 }
 
 .btn-outline-primary {
@@ -255,9 +261,10 @@ h6 { font-size: 1.125rem; }
 }
 
 .btn-outline-primary:hover {
-    background: var(--primary-color);
+    background: var(--gradient-primary);
     color: var(--white);
     transform: translateY(-2px);
+    border-color: transparent;
 }
 
 .btn-outline-secondary {
@@ -290,6 +297,12 @@ h6 { font-size: 1.125rem; }
     overflow: hidden;
     transition: var(--transition);
     position: relative;
+}
+
+.card-title, .card h5, .card h4, .card h3 {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+    font-weight: 600;
+    color: var(--dark-color);
 }
 
 .card::before {
@@ -756,11 +769,17 @@ select.form-control {
     font-size: 2rem;
     font-weight: 700;
     color: var(--primary-color);
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
 }
 
 .price-period {
     color: var(--text-muted);
     font-size: 0.875rem;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+}
+
+.price-tag, .price-section {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
 }
 
 /* Grid System */
