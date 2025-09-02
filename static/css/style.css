@@ -460,9 +460,10 @@ select.form-control {
 .hero {
     background: var(--gradient-primary);
     color: var(--white);
-    padding: 6rem 0;
+    padding: 8rem 0;
     position: relative;
     overflow: hidden;
+    min-height: 500px;
 }
 
 .hero::before {
@@ -1098,4 +1099,33 @@ html {
 
 ::-webkit-scrollbar-thumb:hover {
     background: var(--secondary-color);
+}
+
+/* Remove bullet points from profile and settings lists */
+.quick-links ul,
+.quick-links ul li,
+.settings-sidebar ul,
+.settings-sidebar ul li,
+.nav.nav-pills li,
+.list-unstyled,
+.list-unstyled li {
+    list-style: none !important;
+    list-style-type: none !important;
+}
+
+.quick-links ul,
+.settings-sidebar ul,
+.nav.nav-pills,
+.list-unstyled {
+    padding-left: 0 !important;
+}
+
+.quick-links ul li a {
+    text-decoration: none;
+    color: var(--text-color);
+    transition: color 0.3s;
+}
+
+.quick-links ul li a:hover {
+    color: var(--primary-color);
 }

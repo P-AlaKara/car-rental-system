@@ -7,10 +7,11 @@
 <section class="hero">
     <div class="container">
         <h1>Welcome to Aurora Motors</h1>
-        <p>Experience the freedom of the road with our premium car rental services</p>
+        <h2>Drive Smart, Rent Smart.</h2>
+        <p>Affordable, reliable, and flexible rentals for rideshare, private use, and long-term customers.</p>
         <div class="hero-buttons">
             <a href="{{ url_for('cars.index') }}" class="btn btn-primary btn-lg">Browse Our Fleet</a>
-            <a href="{{ url_for('bookings.create') }}" class="btn btn-outline btn-lg">Book Now</a>
+            <a href="{{ url_for('cars.index') }}" class="btn btn-outline btn-lg">Book Now</a>
         </div>
     </div>
 </section>
@@ -36,9 +37,9 @@
             </div>
             <div class="col-4">
                 <div class="feature-card text-center">
-                    <i class="fas fa-shield-alt fa-3x text-primary mb-3"></i>
-                    <h3>Fully Insured</h3>
-                    <p>All vehicles come with comprehensive insurance coverage</p>
+                    <i class="fas fa-laptop fa-3x text-primary mb-3"></i>
+                    <h3>Online Booking</h3>
+                    <p>Easy and convenient online booking system available 24/7</p>
                 </div>
             </div>
         </div>
@@ -82,41 +83,7 @@
     </div>
 </section>
 
-<!-- Statistics -->
-<section class="statistics p-5">
-    <div class="container">
-        <div class="row text-center">
-            <div class="col-3">
-                <div class="stat-card">
-                    <i class="fas fa-car fa-2x text-primary mb-2"></i>
-                    <h3>{{ stats.total_cars }}+</h3>
-                    <p>Vehicles</p>
-                </div>
-            </div>
-            <div class="col-3">
-                <div class="stat-card">
-                    <i class="fas fa-users fa-2x text-primary mb-2"></i>
-                    <h3>{{ stats.happy_customers }}+</h3>
-                    <p>Happy Customers</p>
-                </div>
-            </div>
-            <div class="col-3">
-                <div class="stat-card">
-                    <i class="fas fa-calendar-check fa-2x text-primary mb-2"></i>
-                    <h3>{{ stats.total_bookings }}+</h3>
-                    <p>Successful Rentals</p>
-                </div>
-            </div>
-            <div class="col-3">
-                <div class="stat-card">
-                    <i class="fas fa-award fa-2x text-primary mb-2"></i>
-                    <h3>{{ stats.years_experience }}+</h3>
-                    <p>Years Experience</p>
-                </div>
-            </div>
-        </div>
-    </div>
-</section>
+
 
 <!-- How It Works -->
 <section class="how-it-works p-5 bg-light">
@@ -155,12 +122,40 @@
     </div>
 </section>
 
-<!-- CTA Section -->
-<section class="cta-section p-5" style="background: linear-gradient(135deg, var(--primary-color), var(--secondary-color)); color: white;">
-    <div class="container text-center">
-        <h2>Ready to Hit the Road?</h2>
-        <p class="mb-4">Join thousands of satisfied customers who trust Aurora Motors for their car rental needs</p>
-        <a href="{{ url_for('auth.register') }}" class="btn btn-primary btn-lg" style="background: white; color: var(--primary-color);">Get Started Today</a>
+<!-- Services Section -->
+<section class="services-section p-5" style="background: linear-gradient(135deg, var(--primary-color), var(--secondary-color)); color: white;">
+    <div class="container">
+        <h2 class="text-center mb-5">Our Services</h2>
+        <div class="row">
+            <div class="col-3 text-center">
+                <div class="service-card">
+                    <i class="fas fa-clock fa-3x mb-3"></i>
+                    <h4>Short Term Rental</h4>
+                    <p>Daily and weekly rentals for your immediate needs</p>
+                </div>
+            </div>
+            <div class="col-3 text-center">
+                <div class="service-card">
+                    <i class="fas fa-calendar-alt fa-3x mb-3"></i>
+                    <h4>Long Term Rental</h4>
+                    <p>Monthly rentals with discounted rates</p>
+                </div>
+            </div>
+            <div class="col-3 text-center">
+                <div class="service-card">
+                    <i class="fas fa-sync-alt fa-3x mb-3"></i>
+                    <h4>Flexible Booking</h4>
+                    <p>Easy modifications and cancellations</p>
+                </div>
+            </div>
+            <div class="col-3 text-center">
+                <div class="service-card">
+                    <i class="fas fa-shopping-cart fa-3x mb-3"></i>
+                    <h4>Car Purchase</h4>
+                    <p>Buy quality pre-owned vehicles from our fleet</p>
+                </div>
+            </div>
+        </div>
     </div>
 </section>
 
@@ -174,11 +169,22 @@
     transform: translateY(-5px);
 }
 
-.stat-card {
+.service-card {
     padding: 2rem;
-    background: white;
+    background: rgba(255, 255, 255, 0.1);
     border-radius: 0.5rem;
-    box-shadow: var(--shadow);
+    transition: transform 0.3s, background 0.3s;
+}
+
+.service-card:hover {
+    transform: translateY(-5px);
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.hero h2 {
+    font-size: 1.8rem;
+    margin: 1rem 0;
+    font-weight: 500;
 }
 
 .step-card {

@@ -19,8 +19,8 @@
         <div class="row mb-4">
             <div class="col-md-8">
                 <div class="booking-filters">
-                    <form method="GET" action="{{ url_for('bookings.index') }}" class="d-flex gap-3">
-                        <select name="status" class="form-control" onchange="this.form.submit()">
+                    <form method="GET" action="{{ url_for('bookings.index') }}" class="d-flex gap-3 align-items-center">
+                        <select name="status" class="form-control" onchange="this.form.submit()" style="max-width: 200px;">
                             <option value="">All Bookings</option>
                             <option value="pending" {% if request.args.get('status') == 'pending' %}selected{% endif %}>Pending</option>
                             <option value="confirmed" {% if request.args.get('status') == 'confirmed' %}selected{% endif %}>Confirmed</option>
@@ -28,9 +28,10 @@
                             <option value="completed" {% if request.args.get('status') == 'completed' %}selected{% endif %}>Completed</option>
                             <option value="cancelled" {% if request.args.get('status') == 'cancelled' %}selected{% endif %}>Cancelled</option>
                         </select>
-                        <input type="text" name="search" class="form-control" placeholder="Search by booking number..." value="{{ request.args.get('search', '') }}">
-                        <button type="submit" class="btn btn-primary">
-                            <i class="fas fa-search"></i> Search
+                        <input type="text" name="search" class="form-control" placeholder="Search by booking number..." value="{{ request.args.get('search', '') }}" style="max-width: 300px;">
+                        <button type="submit" class="btn btn-primary" style="white-space: nowrap; padding: 0.375rem 1.5rem; display: inline-flex; align-items: center; gap: 0.5rem;">
+                            <i class="fas fa-search"></i>
+                            <span>Search</span>
                         </button>
                     </form>
                 </div>
