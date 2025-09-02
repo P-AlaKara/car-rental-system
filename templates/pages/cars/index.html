@@ -56,9 +56,21 @@
                 {% if car.main_image %}
                 <img src="{{ car.main_image }}" alt="{{ car.full_name }}" class="card-img-top">
                 {% else %}
-                <div class="car-placeholder">
-                    <i class="fas fa-car fa-4x"></i>
-                </div>
+                <!-- Using placeholder images based on category -->
+                {% set category_images = {
+                    'economy': 'https://images.unsplash.com/photo-1552519507-da3b142c6e3d?w=400&h=300&fit=crop',
+                    'compact': 'https://images.unsplash.com/photo-1609521263047-f8f205293f24?w=400&h=300&fit=crop',
+                    'midsize': 'https://images.unsplash.com/photo-1550355291-bbee04a92027?w=400&h=300&fit=crop',
+                    'fullsize': 'https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?w=400&h=300&fit=crop',
+                    'luxury': 'https://images.unsplash.com/photo-1563720223185-11003d516935?w=400&h=300&fit=crop',
+                    'suv': 'https://images.unsplash.com/photo-1519641766812-1c2d06ff8684?w=400&h=300&fit=crop',
+                    'minivan': 'https://images.unsplash.com/photo-1569240651611-302c9897bde5?w=400&h=300&fit=crop',
+                    'convertible': 'https://images.unsplash.com/photo-1544636331-e26879cd4d9b?w=400&h=300&fit=crop',
+                    'sports': 'https://images.unsplash.com/photo-1525609004556-c46c7d6cf023?w=400&h=300&fit=crop',
+                    'electric': 'https://images.unsplash.com/photo-1560958089-b8a1929cea89?w=400&h=300&fit=crop'
+                } %}
+                <img src="{{ category_images.get(car.category.value, 'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?w=400&h=300&fit=crop') }}" 
+                     alt="{{ car.full_name }}" class="card-img-top">
                 {% endif %}
                 
                 <div class="card-body">

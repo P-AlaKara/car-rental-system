@@ -53,48 +53,17 @@
                             <div class="col-6">
                                 <div class="form-group">
                                     <label for="pickup_location" class="form-label">Pickup Location</label>
-                                    <select name="pickup_location" id="pickup_location" class="form-control" required>
-                                        <option value="Main Office">Main Office</option>
-                                        <option value="Airport">Airport</option>
-                                        <option value="Downtown">Downtown</option>
-                                        <option value="Hotel Delivery">Hotel Delivery</option>
-                                    </select>
+                                    <input type="text" name="pickup_location" id="pickup_location" class="form-control" 
+                                           value="Dandenong VIC 3175" readonly required>
                                 </div>
                             </div>
                             <div class="col-6">
                                 <div class="form-group">
                                     <label for="return_location" class="form-label">Return Location</label>
-                                    <select name="return_location" id="return_location" class="form-control" required>
-                                        <option value="Main Office">Main Office</option>
-                                        <option value="Airport">Airport</option>
-                                        <option value="Downtown">Downtown</option>
-                                        <option value="Hotel Pickup">Hotel Pickup</option>
-                                    </select>
+                                    <input type="text" name="return_location" id="return_location" class="form-control" 
+                                           value="Dandenong VIC 3175" readonly required>
                                 </div>
                             </div>
-                        </div>
-                        
-                        <h4 class="mt-4 mb-3">Additional Options</h4>
-                        
-                        <div class="form-check mb-2">
-                            <input type="checkbox" class="form-check-input" id="with_driver" name="with_driver">
-                            <label class="form-check-label" for="with_driver">
-                                Include Driver (+$50/day)
-                            </label>
-                        </div>
-                        
-                        <div class="form-check mb-2">
-                            <input type="checkbox" class="form-check-input" id="insurance_opted" name="insurance_opted">
-                            <label class="form-check-label" for="insurance_opted">
-                                Additional Insurance Coverage (+$15/day)
-                            </label>
-                        </div>
-                        
-                        <div class="form-check mb-2">
-                            <input type="checkbox" class="form-check-input" id="gps_opted" name="gps_opted">
-                            <label class="form-check-label" for="gps_opted">
-                                GPS Navigation System (+$10/day)
-                            </label>
                         </div>
                         
                         <div class="form-group mt-4">
@@ -105,7 +74,7 @@
                         <input type="hidden" id="daily_rate" value="0">
                         
                         <div class="mt-4">
-                            <button type="submit" class="btn btn-primary btn-lg">Proceed to Payment</button>
+                            <button type="submit" class="btn btn-primary btn-lg">Confirm Booking</button>
                             <a href="{{ url_for('cars.index') }}" class="btn btn-secondary btn-lg">Cancel</a>
                         </div>
                     </form>
