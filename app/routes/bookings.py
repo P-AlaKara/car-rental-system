@@ -39,9 +39,12 @@ def create():
             flash('This car is not available for booking.', 'error')
             return redirect(url_for('bookings.create'))
         
-        # Parse dates
-        pickup_date = datetime.strptime(data['pickup_date'], '%Y-%m-%d %H:%M')
-        return_date = datetime.strptime(data['return_date'], '%Y-%m-%d %H:%M')
+        # Parse dates - handle both formats (with T separator and space separator)
+        pickup_date_str = data['pickup_date'].replace('T', ' ') if 'T' in data['pickup_date'] else data['pickup_date']
+        return_date_str = data['return_date'].replace('T', ' ') if 'T' in data['return_date'] else data['return_date']
+        
+        pickup_date = datetime.strptime(pickup_date_str, '%Y-%m-%d %H:%M')
+        return_date = datetime.strptime(return_date_str, '%Y-%m-%d %H:%M')
         
         # Calculate rental details
         total_days = (return_date - pickup_date).days
@@ -135,11 +138,13 @@ def edit(id):
     if request.method == 'POST':
         data = request.form.to_dict()
         
-        # Update booking fields
+        # Update booking fields - handle both date formats
         if data.get('pickup_date'):
-            booking.pickup_date = datetime.strptime(data['pickup_date'], '%Y-%m-%d %H:%M')
+            pickup_date_str = data['pickup_date'].replace('T', ' ') if 'T' in data['pickup_date'] else data['pickup_date']
+            booking.pickup_date = datetime.strptime(pickup_date_str, '%Y-%m-%d %H:%M')
         if data.get('return_date'):
-            booking.return_date = datetime.strptime(data['return_date'], '%Y-%m-%d %H:%M')
+            return_date_str = data['return_date'].replace('T', ' ') if 'T' in data['return_date'] else data['return_date']
+            booking.return_date = datetime.strptime(return_date_str, '%Y-%m-%d %H:%M')
         
         booking.pickup_location = data.get('pickup_location', booking.pickup_location)
         booking.return_location = data.get('return_location', booking.return_location)
