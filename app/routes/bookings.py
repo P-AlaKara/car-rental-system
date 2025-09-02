@@ -84,14 +84,18 @@ def create():
         flash(f'Booking {booking.booking_number} created successfully!', 'success')
         return redirect(url_for('bookings.view', id=booking.id))
     
-    # Get available cars
-    available_cars = Car.query.filter_by(status='available', is_active=True).all()
-    
     # Check if a specific car was requested
     selected_car = None
     car_id = request.args.get('car_id')
     if car_id:
         selected_car = Car.query.get(car_id)
+    
+    # Get available cars
+    available_cars = Car.query.filter_by(status='available', is_active=True).all()
+    
+    # If a car was selected but not in available list, add it (for pre-selection)
+    if selected_car and selected_car not in available_cars and selected_car.is_active:
+        available_cars.append(selected_car)
     
     return render_template('pages/bookings/create.html', 
                          cars=available_cars,
