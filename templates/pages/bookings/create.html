@@ -24,7 +24,8 @@
                             <select name="car_id" id="car_id" class="form-control" required>
                                 <option value="">Choose a car...</option>
                                 {% for car in cars %}
-                                <option value="{{ car.id }}" data-rate="{{ car.daily_rate }}">
+                                <option value="{{ car.id }}" data-rate="{{ car.daily_rate }}"
+                                        {% if selected_car_id and selected_car_id == car.id %}selected{% endif %}>
                                     {{ car.full_name }} - ${{ car.daily_rate }}/day
                                 </option>
                                 {% endfor %}
@@ -113,11 +114,31 @@
         </div>
         
         <div class="col-4">
+            {% if selected_car %}
+            <!-- Selected Car Info -->
+            <div class="card mb-3">
+                <div class="card-header">
+                    <h4>Selected Vehicle</h4>
+                </div>
+                <div class="card-body">
+                    <h5>{{ selected_car.full_name }}</h5>
+                    <p class="text-muted">{{ selected_car.category.value }}</p>
+                    <div class="car-details">
+                        <small class="d-block"><i class="fas fa-users"></i> {{ selected_car.seats }} seats</small>
+                        <small class="d-block"><i class="fas fa-cog"></i> {{ selected_car.transmission }}</small>
+                        <small class="d-block"><i class="fas fa-gas-pump"></i> {{ selected_car.fuel_type }}</small>
+                        <small class="d-block"><i class="fas fa-dollar-sign"></i> ${{ selected_car.daily_rate }}/day</small>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            
             <div class="card">
                 <div class="card-header">
                     <h4>Booking Summary</h4>
                 </div>
                 <div class="card-body">
+                    <input type="hidden" id="daily_rate" value="{% if selected_car %}{{ selected_car.daily_rate }}{% else %}0{% endif %}">
                     <div id="price_display">
                         <p class="text-muted">Select dates to see pricing</p>
                     </div>
@@ -150,6 +171,11 @@ document.addEventListener('DOMContentLoaded', function() {
     const returnDate = document.getElementById('return_date');
     const dailyRateInput = document.getElementById('daily_rate');
     const priceDisplay = document.getElementById('price_display');
+    
+    // If a car is pre-selected, trigger the price calculation
+    {% if selected_car %}
+    calculatePrice();
+    {% endif %}
     
     // Set minimum date to today
     const now = new Date();
