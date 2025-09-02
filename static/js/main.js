@@ -1,6 +1,16 @@
 // Main JavaScript file for Aurora Motors
 
 document.addEventListener('DOMContentLoaded', function() {
+    // Navbar scroll effect
+    const navbar = document.querySelector('.navbar');
+    window.addEventListener('scroll', function() {
+        if (window.scrollY > 50) {
+            navbar.classList.add('scrolled');
+        } else {
+            navbar.classList.remove('scrolled');
+        }
+    });
+    
     // Mobile Navigation Toggle
     const navbarToggle = document.getElementById('navbarToggle');
     const navbarMenu = document.getElementById('navbarMenu');
@@ -8,6 +18,8 @@ document.addEventListener('DOMContentLoaded', function() {
     if (navbarToggle) {
         navbarToggle.addEventListener('click', function() {
             navbarMenu.classList.toggle('active');
+            // Animate hamburger menu
+            this.classList.toggle('active');
         });
     }
     
