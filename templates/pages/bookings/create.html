@@ -74,8 +74,13 @@
                         <input type="hidden" id="daily_rate" value="0">
                         
                         <div class="mt-4">
-                            <button type="submit" class="btn btn-primary btn-lg">Confirm Booking</button>
-                            <a href="{{ url_for('cars.index') }}" class="btn btn-secondary btn-lg">Cancel</a>
+                            <div class="button-group">
+                                <button type="submit" class="btn btn-primary btn-lg">Confirm Booking</button>
+                                <a href="{{ url_for('cars.index') }}" class="btn btn-secondary btn-lg">Cancel</a>
+                                <a href="{{ url_for('main.terms') }}" class="btn btn-outline btn-lg" target="_blank">
+                                    <i class="fas fa-file-contract"></i> T&Cs
+                                </a>
+                            </div>
                         </div>
                     </form>
                 </div>
@@ -315,6 +320,17 @@ hr {
 .price-highlight .text-primary {
     font-size: 1.3rem;
     font-weight: bold;
+}
+
+.button-group {
+    display: inline-flex;
+    gap: 1rem;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.button-group .btn {
+    vertical-align: middle;
 }
 </style>
 {% endblock %}
