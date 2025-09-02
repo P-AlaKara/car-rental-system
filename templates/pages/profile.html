@@ -175,9 +175,9 @@
                                         <p class="font-weight-bold">
                                             {% if user.license_expiry %}
                                                 {{ user.license_expiry.strftime('%B %d, %Y') }}
-                                                {% if user.license_expiry < datetime.now() %}
+                                                {% if user.license_expiry < datetime.now().date() %}
                                                     <span class="badge badge-danger ml-2">Expired</span>
-                                                {% elif (user.license_expiry - datetime.now()).days < 30 %}
+                                                {% elif (user.license_expiry - datetime.now().date()).days < 30 %}
                                                     <span class="badge badge-warning ml-2">Expiring Soon</span>
                                                 {% else %}
                                                     <span class="badge badge-success ml-2">Valid</span>
