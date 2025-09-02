@@ -14,6 +14,29 @@ npm install
 npm run dev
 ```
 
+## Backend (Flask)
+
+This project now serves the frontend build and API via a Python Flask server (`app.py`).
+
+- Build frontend assets:
+```bash
+npm run build
+```
+- Run Flask locally:
+```bash
+python3 app.py
+```
+- Environment variables required for Xero:
+  - `XERO_CLIENT_ID`
+  - `XERO_CLIENT_SECRET`
+  - `XERO_REDIRECT_URI` (recommended: your deployed callback URL)
+  - Optional: `XERO_BRAND_NAME`, `XERO_TENANT_ID`, `XERO_REFRESH_TOKEN`
+
+The Flask server exposes:
+- `GET /api/xero-start`
+- `GET /api/xero-callback`
+- `POST /api/create-xero-invoices`
+
 ## Features
 
 - **Vehicle Catalog**: Browse cars by category, make, transmission, fuel type, and price
@@ -27,11 +50,11 @@ npm run dev
 - Vite for fast development and building
 - Tailwind CSS v4 for styling
 - React Router for navigation
-- Local storage for demo data persistence
+- Flask for API and static serving
 
 ## Xero setup (OAuth + tokens)
 
-Environment variables (set in Vercel Project Settings):
+Environment variables (set in your deployment):
 
 - `XERO_CLIENT_ID`
 - `XERO_CLIENT_SECRET`
@@ -40,23 +63,21 @@ Environment variables (set in Vercel Project Settings):
 
 Recommended redirect URIs to register in your Xero app:
 
-- Production: `https://YOUR-VERCEL-DOMAIN/api/xero-callback`
-- Local dev (optional): `http://localhost:5173/api/xero-callback`
+- Production: `https://YOUR-DEPLOYMENT-DOMAIN/api/xero-callback`
+- Local dev (optional): `http://localhost:3000/api/xero-callback`
 
 First-time connect flow:
 
 1. Ensure `XERO_CLIENT_ID` and `XERO_CLIENT_SECRET` are set.
-2. Optionally set `XERO_REDIRECT_URI` to the same value you registered (e.g., `https://YOUR-VERCEL-DOMAIN/api/xero-callback`). If not set, local default `http://localhost:5173/api/xero-callback` is used.
-3. Visit `/api/xero-start` to open the Xero consent screen.
-4. Approve the app; you will be redirected to `/api/xero-callback` which exchanges the code, fetches your tenant, and stores tokens at `.data/xero.json` (ignored by git).
-5. Subsequent API calls will refresh and persist tokens automatically; no need to re-authorize.
+2. Visit `/api/xero-start` to open the Xero consent screen.
+3. Approve; you will be redirected to `/api/xero-callback` which exchanges the code, fetches your tenant, and stores tokens at `.data/xero.json`.
+4. Subsequent API calls will refresh and persist tokens automatically.
 
 Notes:
 
-- If running locally without Vercel CLI, the `/api/*` serverless routes are only available after deploy. Prefer testing the connect flow on your deployed URL.
 - If you already have a refresh token and tenant ID from elsewhere, you can still set `XERO_REFRESH_TOKEN` and `XERO_TENANT_ID` temporarily; the app will use them as a fallback and persist refreshed tokens to `.data/xero.json`.
 
-Serverless function `api/create-xero-invoices.ts` creates and emails invoices via Xero. Logic:
+Server function `POST /api/create-xero-invoices` creates and emails invoices via Xero. Logic:
 
 - If booking length ≤ 14 days, a single invoice is created and emailed.
 - If > 14 days, invoices are split by the selected schedule (every 3/7/10 days).
