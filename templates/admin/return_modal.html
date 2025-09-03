@@ -19,75 +19,248 @@
 
 <style>
 .return-section {
-    margin-bottom: 30px;
-    padding: 20px;
+    margin-bottom: 40px;
+    padding: 30px;
     border: 1px solid #ddd;
-    border-radius: 8px;
+    border-radius: 12px;
+    background: #ffffff;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
 .return-section h6 {
-    margin-bottom: 15px;
+    margin-bottom: 25px;
     color: #333;
     font-weight: 600;
+    font-size: 1.2rem;
+    padding-bottom: 15px;
+    border-bottom: 2px solid #f0f0f0;
 }
 
 .checklist-item {
     background: #f8f9fa;
-    padding: 15px;
-    border-radius: 5px;
-    margin-bottom: 10px;
+    padding: 20px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    transition: all 0.2s;
+}
+
+.checklist-item:hover {
+    background: #e9ecef;
 }
 
 .checklist-item .form-check {
     margin-bottom: 0;
 }
 
+.checklist-item .form-check-input {
+    width: 22px;
+    height: 22px;
+    margin-top: 0.25rem;
+}
+
+.checklist-item .form-check-label {
+    margin-left: 12px;
+    font-size: 1.05rem;
+}
+
+.checklist-item strong {
+    font-size: 1.1rem;
+}
+
 .damage-assessment {
     background: #fff3cd;
-    padding: 15px;
-    border-radius: 5px;
+    padding: 25px;
+    border-radius: 10px;
     border: 1px solid #ffc107;
+    margin-top: 20px;
 }
 
 .charges-section {
     background: #f8f9fa;
-    padding: 20px;
-    border-radius: 8px;
+    padding: 30px;
+    border-radius: 10px;
 }
 
 .charges-section .form-row {
-    margin-bottom: 15px;
+    margin-bottom: 25px;
+}
+
+.charges-section label {
+    font-size: 1rem;
+    margin-bottom: 10px;
+    font-weight: 500;
+}
+
+.charges-section .form-control {
+    font-size: 1.05rem;
+    padding: 10px 15px;
+    height: auto;
 }
 
 .total-charges {
-    font-size: 1.2em;
+    font-size: 1.4em;
     font-weight: bold;
     color: #dc3545;
-    margin-top: 15px;
-    padding-top: 15px;
+    margin-top: 25px;
+    padding-top: 20px;
     border-top: 2px solid #dee2e6;
+    text-align: right;
 }
 
 .btn-group-return {
     display: flex;
-    gap: 10px;
+    gap: 15px;
     justify-content: flex-end;
-    margin-top: 20px;
+    margin-top: 35px;
+    padding-top: 25px;
+    border-top: 2px solid #e9ecef;
+}
+
+.btn-group-return .btn {
+    padding: 12px 25px;
+    font-size: 1.05rem;
 }
 
 .vehicle-info {
     background: #e9ecef;
-    padding: 15px;
-    border-radius: 5px;
-    margin-bottom: 20px;
+    padding: 25px;
+    border-radius: 10px;
+    margin-bottom: 30px;
 }
 
 .vehicle-info .row {
-    margin-bottom: 10px;
+    margin-bottom: 20px;
 }
 
 .vehicle-info label {
     font-weight: 600;
+    font-size: 1rem;
+    margin-bottom: 5px;
+    display: block;
+    color: #495057;
+}
+
+.vehicle-info span {
+    font-size: 1.1rem;
+    color: #212529;
+}
+
+.form-group label {
+    font-size: 1rem;
+    margin-bottom: 10px;
+    font-weight: 500;
+}
+
+.form-control {
+    font-size: 1.05rem;
+    padding: 10px 15px;
+}
+
+.photo-viewer-btn {
+    margin-top: 15px;
+    padding: 10px 20px;
+    background: #17a2b8;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: background 0.3s;
+}
+
+.photo-viewer-btn:hover {
+    background: #138496;
+}
+
+.photo-viewer-btn i {
+    margin-right: 8px;
+}
+
+/* Modal for viewing collection photos */
+.photo-modal {
+    display: none;
+    position: fixed;
+    z-index: 10000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.9);
+}
+
+.photo-modal-content {
+    background-color: #fefefe;
+    margin: 2% auto;
+    padding: 20px;
+    border-radius: 10px;
+    width: 90%;
+    max-width: 1200px;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.photo-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 2px solid #e9ecef;
+}
+
+.photo-modal-close {
+    color: #aaa;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.photo-modal-close:hover,
+.photo-modal-close:focus {
+    color: #000;
+}
+
+.collection-photos-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 20px;
+    padding: 20px 0;
+}
+
+.collection-photo-item {
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    overflow: hidden;
+    background: #fff;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.collection-photo-item img {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+    cursor: pointer;
+    transition: transform 0.3s;
+}
+
+.collection-photo-item img:hover {
+    transform: scale(1.05);
+}
+
+.collection-photo-item p {
+    padding: 10px;
+    margin: 0;
+    font-size: 0.9rem;
+    color: #666;
+    text-align: center;
+    background: #f8f9fa;
+}
+
+.no-photos-message {
+    text-align: center;
+    padding: 40px;
+    color: #6c757d;
+    font-size: 1.1rem;
 }
 </style>
 
@@ -196,6 +369,9 @@ function renderReturnForm(data) {
                         <strong>Car in Good Condition</strong> - Vehicle has been inspected and is in acceptable condition
                     </label>
                 </div>
+                <button type="button" class="photo-viewer-btn" onclick="viewCollectionPhotos()">
+                    <i class="fas fa-images"></i> View Collection Photos
+                </button>
             </div>
             
             <div class="checklist-item">
@@ -391,5 +567,86 @@ function completeReturn() {
         btn.disabled = false;
         btn.innerHTML = '<i class="fas fa-check"></i> Process Return';
     });
+}
+// Function to view collection photos
+function viewCollectionPhotos() {
+    // Show loading state
+    const photosHtml = `
+        <div id="collectionPhotosModal" class="photo-modal">
+            <div class="photo-modal-content">
+                <div class="photo-modal-header">
+                    <h3><i class="fas fa-camera"></i> Collection Photos</h3>
+                    <span class="photo-modal-close" onclick="closePhotoModal()">&times;</span>
+                </div>
+                <div id="photosContainer">
+                    <div class="text-center">
+                        <i class="fas fa-spinner fa-spin fa-3x"></i>
+                        <p>Loading collection photos...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Add modal to body if it doesn't exist
+    if (!document.getElementById('collectionPhotosModal')) {
+        document.body.insertAdjacentHTML('beforeend', photosHtml);
+    }
+    
+    // Show modal
+    document.getElementById('collectionPhotosModal').style.display = 'block';
+    
+    // Fetch collection photos
+    fetch(`/admin/api/booking/${currentReturnBookingId}/collection-photos`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.photos && data.photos.length > 0) {
+                const photosGrid = `
+                    <div class="collection-photos-grid">
+                        ${data.photos.map(photo => `
+                            <div class="collection-photo-item">
+                                <img src="${photo.url}" alt="${photo.description || 'Collection photo'}" 
+                                     onclick="window.open('${photo.url}', '_blank')">
+                                <p>${photo.description || 'Collection photo'} - ${photo.timestamp || ''}</p>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+                document.getElementById('photosContainer').innerHTML = photosGrid;
+            } else {
+                document.getElementById('photosContainer').innerHTML = `
+                    <div class="no-photos-message">
+                        <i class="fas fa-image fa-3x text-muted"></i>
+                        <p>No collection photos available for this booking.</p>
+                        <small>Photos taken during vehicle handover will appear here.</small>
+                    </div>
+                `;
+            }
+        })
+        .catch(error => {
+            console.error('Error loading photos:', error);
+            document.getElementById('photosContainer').innerHTML = `
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle"></i> Unable to load collection photos.
+                    <br>Photos will be available once the system is updated.
+                </div>
+            `;
+        });
+}
+
+// Function to close photo modal
+function closePhotoModal() {
+    const modal = document.getElementById('collectionPhotosModal');
+    if (modal) {
+        modal.style.display = 'none';
+    }
+}
+
+// Close modal when clicking outside
+window.onclick = function(event) {
+    const modal = document.getElementById('collectionPhotosModal');
+    if (event.target == modal) {
+        modal.style.display = 'none';
+    }
 }
 </script>

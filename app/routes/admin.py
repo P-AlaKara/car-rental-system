@@ -1186,7 +1186,6 @@ def complete_handover(booking_id):
                 header, encoded = photo_data['data'].split(',', 1)
                 
                 # Save to file system (you might want to use cloud storage in production)
-                import uuid
                 filename = f"pickup_{booking_id}_{uuid.uuid4().hex[:8]}.jpg"
                 filepath = os.path.join(current_app.config.get('UPLOAD_FOLDER', 'uploads'), 'booking_photos', filename)
                 
@@ -1405,3 +1404,45 @@ def xero_settings():
     """Xero integration settings page."""
     callback_url = current_app.config.get('XERO_CALLBACK_URL', '')
     return render_template('admin/xero_settings.html', callback_url=callback_url)
+
+
+# API endpoint for fetching collection photos  
+@admin_bp.route('/api/booking/<int:booking_id>/collection-photos', methods=['GET'])
+@admin_required
+def get_collection_photos(booking_id):
+    """Get collection photos for a booking."""
+    from app.models import BookingPhoto
+    
+    try:
+        # Get photos from BookingPhoto model
+        booking_photos = BookingPhoto.query.filter_by(
+            booking_id=booking_id,
+            photo_type='pickup'
+        ).all()
+        
+        if booking_photos:
+            photos = []
+            for photo in booking_photos:
+                photos.append({
+                    'url': photo.photo_url,
+                    'description': photo.description or 'Collection photo',
+                    'timestamp': photo.uploaded_at.strftime('%Y-%m-%d %H:%M') if photo.uploaded_at else ''
+                })
+            
+            return jsonify({
+                'success': True,
+                'photos': photos
+            })
+        
+        return jsonify({
+            'success': True,
+            'photos': []
+        })
+            
+    except Exception as e:
+        current_app.logger.error(f"Error fetching collection photos: {str(e)}")
+        return jsonify({
+            'success': False,
+            'message': 'Error fetching photos'
+        })
+

@@ -21,15 +21,29 @@ def index():
     
     # Apply filters
     if category:
-        query = query.filter_by(category=category)
+        try:
+            # Convert string to enum
+            category_enum = CarCategory(category)
+            query = query.filter_by(category=category_enum)
+        except (ValueError, KeyError):
+            # Invalid category value, ignore filter
+            pass
     if status:
-        query = query.filter_by(status=status)
+        try:
+            # Convert string to enum
+            status_enum = CarStatus(status)
+            query = query.filter_by(status=status_enum)
+        except (ValueError, KeyError):
+            # Invalid status value, ignore filter
+            pass
     if search:
+        # Case-insensitive search
+        search_term = f"%{search}%"
         query = query.filter(
             db.or_(
-                Car.make.contains(search),
-                Car.model.contains(search),
-                Car.license_plate.contains(search)
+                Car.make.ilike(search_term),
+                Car.model.ilike(search_term),
+                Car.license_plate.ilike(search_term)
             )
         )
     

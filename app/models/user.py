@@ -45,6 +45,8 @@ class User(UserMixin, db.Model):
     date_of_birth = db.Column(db.Date)
     license_number = db.Column(db.String(50))
     license_expiry = db.Column(db.Date)
+    license_state = db.Column(db.String(50))  # State/territory where license was issued
+    license_class = db.Column(db.String(20))  # License class (C, LR, MR, etc.)
     
     # Relationships
     bookings = db.relationship('Booking', backref='customer', lazy='dynamic', 
@@ -95,7 +97,7 @@ class User(UserMixin, db.Model):
     def has_complete_driver_details(self):
         """Check if user has complete driver license and address details."""
         # Check driver license details
-        has_license = bool(self.license_number and self.license_expiry)
+        has_license = bool(self.license_number and self.license_expiry and self.license_state)
         
         # Check if license is not expired
         if has_license and self.license_expiry:
@@ -115,6 +117,8 @@ class User(UserMixin, db.Model):
         # Check driver license details
         if not self.license_number:
             missing.append("Driver's license number")
+        if not self.license_state:
+            missing.append("Driver's license state/territory")
         if not self.license_expiry:
             missing.append("Driver's license expiry date")
         elif self.license_expiry:
