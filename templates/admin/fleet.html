@@ -97,7 +97,7 @@
                         <span class="detail-value">
                             {% if car.km_until_service %}
                                 {% if car.km_until_service < 0 %}
-                                    <span class="text-danger">Overdue by {{ "{:,}".format(abs(car.km_until_service)) }} km</span>
+                                    <span class="text-danger">Overdue by {{ "{:,}".format(car.km_until_service|abs) }} km</span>
                                 {% elif car.km_until_service <= 500 %}
                                     <span class="text-warning">In {{ "{:,}".format(car.km_until_service) }} km</span>
                                 {% else %}

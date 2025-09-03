@@ -71,8 +71,8 @@
                         <td>{{ user.email }}</td>
                         <td>{{ user.phone or 'N/A' }}</td>
                         <td>
-                            <span class="badge badge-role-{{ user.role }}">
-                                {{ user.role.title() }}
+                            <span class="badge badge-role-{{ user.role.value if user.role else 'customer' }}">
+                                {{ user.role.value.title() if user.role else 'Customer' }}
                             </span>
                         </td>
                         <td>
@@ -95,7 +95,7 @@
                                     <i class="fas fa-edit"></i> Edit
                                 </a>
                                 
-                                {% if user.role != 'admin' %}
+                                {% if user.role.value != 'admin' %}
                                 <form method="POST" action="{{ url_for('admin.delete_user', user_id=user.id) }}" 
                                       style="display: inline;" 
                                       onsubmit="return confirm('Are you sure you want to delete this user?');">
@@ -176,14 +176,14 @@
         
         <div class="stat-card">
             <div class="stat-content">
-                <h3>{{ users.items | selectattr('role', 'equalto', 'customer') | list | length }}</h3>
+                <h3>{{ users.items | selectattr('role.value', 'equalto', 'customer') | list | length }}</h3>
                 <p>Customers</p>
             </div>
         </div>
         
         <div class="stat-card">
             <div class="stat-content">
-                <h3>{{ users.items | selectattr('role', 'equalto', 'staff') | list | length }}</h3>
+                <h3>{{ users.items | selectattr('role.value', 'equalto', 'driver') | list | length }}</h3>
                 <p>Staff Members</p>
             </div>
         </div>

@@ -7,71 +7,69 @@
 <div class="bookings-container">
     <!-- Filters Section -->
     <div class="filters-card">
-        <form method="get" class="filters-form">
-            <div class="filter-row">
-                <div class="filter-group">
-                    <label>User</label>
-                    <select name="user_id" class="form-control">
-                        <option value="">All Users</option>
-                        {% for user in users %}
-                        <option value="{{ user.id }}" {% if request.args.get('user_id', type=int) == user.id %}selected{% endif %}>
-                            {{ user.full_name }} ({{ user.email }})
-                        </option>
-                        {% endfor %}
-                    </select>
-                </div>
-                
-                <div class="filter-group">
-                    <label>Vehicle</label>
-                    <select name="car_id" class="form-control">
-                        <option value="">All Vehicles</option>
-                        {% for car in cars %}
-                        <option value="{{ car.id }}" {% if request.args.get('car_id', type=int) == car.id %}selected{% endif %}>
-                            {{ car.full_name }} - {{ car.license_plate }}
-                        </option>
-                        {% endfor %}
-                    </select>
-                </div>
-                
-                <div class="filter-group">
-                    <label>Status</label>
-                    <select name="status" class="form-control">
-                        <option value="">All Status</option>
-                        {% for status in BookingStatus %}
-                        <option value="{{ status.value }}" {% if request.args.get('status') == status.value %}selected{% endif %}>
-                            {{ status.value.replace('_', ' ').title() }}
-                        </option>
-                        {% endfor %}
-                    </select>
-                </div>
-                
-                <div class="filter-group">
-                    <label>From Date</label>
-                    <input type="date" name="date_from" class="form-control date-picker" 
-                           value="{{ request.args.get('date_from', '') }}">
-                </div>
-                
-                <div class="filter-group">
-                    <label>To Date</label>
-                    <input type="date" name="date_to" class="form-control date-picker" 
-                           value="{{ request.args.get('date_to', '') }}">
-                </div>
-                
-                <div class="filter-group">
-                    <label>Search</label>
-                    <input type="text" name="search" class="form-control" 
-                           placeholder="Booking #, Name, Email..." 
-                           value="{{ request.args.get('search', '') }}">
-                </div>
-                
-                <div class="filter-group filter-actions">
-                    <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-filter"></i> Filter
-                    </button>
-                    <a href="{{ url_for('admin.bookings') }}" class="btn btn-outline">
-                        <i class="fas fa-times"></i> Clear
-                    </a>
-                </div>
+        <form method="get" class="filters-form" style="display: flex; gap: 1rem; align-items: flex-end; flex-wrap: wrap;">
+            <div class="filter-group" style="flex: 1; min-width: 200px;">
+                <label>User</label>
+                <select name="user_id" class="form-control">
+                    <option value="">All Users</option>
+                    {% for user in users %}
+                    <option value="{{ user.id }}" {% if request.args.get('user_id', type=int) == user.id %}selected{% endif %}>
+                        {{ user.full_name }} ({{ user.email }})
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="filter-group" style="flex: 1; min-width: 200px;">
+                <label>Vehicle</label>
+                <select name="car_id" class="form-control">
+                    <option value="">All Vehicles</option>
+                    {% for car in cars %}
+                    <option value="{{ car.id }}" {% if request.args.get('car_id', type=int) == car.id %}selected{% endif %}>
+                        {{ car.full_name }} - {{ car.license_plate }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="filter-group" style="flex: 1; min-width: 150px;">
+                <label>Status</label>
+                <select name="status" class="form-control">
+                    <option value="">All Status</option>
+                    {% for status in BookingStatus %}
+                    <option value="{{ status.value }}" {% if request.args.get('status') == status.value %}selected{% endif %}>
+                        {{ status.value.replace('_', ' ').title() }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="filter-group" style="flex: 1; min-width: 150px;">
+                <label>From Date</label>
+                <input type="date" name="date_from" class="form-control date-picker" 
+                       value="{{ request.args.get('date_from', '') }}">
+            </div>
+            
+            <div class="filter-group" style="flex: 1; min-width: 150px;">
+                <label>To Date</label>
+                <input type="date" name="date_to" class="form-control date-picker" 
+                       value="{{ request.args.get('date_to', '') }}">
+            </div>
+            
+            <div class="filter-group" style="flex: 1; min-width: 200px;">
+                <label>Search</label>
+                <input type="text" name="search" class="form-control" 
+                       placeholder="Booking #, Name, Email..." 
+                       value="{{ request.args.get('search', '') }}">
+            </div>
+            
+            <div class="filter-group filter-actions" style="display: flex; gap: 0.5rem;">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-filter"></i> Filter
+                </button>
+                <a href="{{ url_for('admin.bookings') }}" class="btn btn-outline">
+                    <i class="fas fa-times"></i> Clear
+                </a>
             </div>
         </form>
     </div>
@@ -85,8 +83,8 @@
                         <th>Booking #</th>
                         <th>Customer</th>
                         <th>Vehicle</th>
-                        <th>Pickup</th>
-                        <th>Return</th>
+                        <th>Location</th>
+                        <th>Dates</th>
                         <th>Status</th>
                         <th>Amount</th>
                         <th>Actions</th>
@@ -111,14 +109,14 @@
                             <small class="text-muted">{{ booking.car.license_plate if booking.car else '' }}</small>
                         </td>
                         <td>
-                            {{ booking.pickup_date.strftime('%Y-%m-%d') if booking.pickup_date else '' }}
-                            <br>
-                            <small class="text-muted">{{ booking.pickup_location }}</small>
+                            {{ booking.pickup_location }}
                         </td>
                         <td>
+                            {{ booking.pickup_date.strftime('%Y-%m-%d') if booking.pickup_date else '' }}
+                            to
                             {{ booking.return_date.strftime('%Y-%m-%d') if booking.return_date else '' }}
                             <br>
-                            <small class="text-muted">{{ booking.return_location }}</small>
+                            <small class="text-muted">{{ booking.total_days }} days</small>
                         </td>
                         <td>
                             <span class="badge badge-{{ booking.status.value }}">
@@ -127,8 +125,6 @@
                         </td>
                         <td>
                             <strong>${{ "{:,.2f}".format(booking.total_amount) }}</strong>
-                            <br>
-                            <small class="text-muted">{{ booking.total_days }} days</small>
                         </td>
                         <td>
                             <div class="action-icons">

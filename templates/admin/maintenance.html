@@ -51,10 +51,13 @@
     <!-- Service Alerts -->
     <div class="service-section">
         <div class="section-card">
-            <div class="card-header">
+            <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
                 <h3><i class="fas fa-exclamation-circle"></i> Service Alerts</h3>
+                <button class="btn btn-sm btn-secondary" onclick="toggleSection('service-alerts-body')">
+                    <i class="fas fa-chevron-down" id="service-alerts-chevron"></i>
+                </button>
             </div>
-            <div class="card-body">
+            <div class="card-body" id="service-alerts-body">
                 {% if service_alerts %}
                 <div class="alert-list">
                     {% for alert in service_alerts %}
@@ -113,10 +116,13 @@
     <!-- Scheduled Maintenance -->
     <div class="scheduled-section">
         <div class="section-card">
-            <div class="card-header">
+            <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
                 <h3><i class="fas fa-tools"></i> Scheduled Maintenance</h3>
+                <button class="btn btn-sm btn-secondary" onclick="toggleSection('scheduled-maintenance-body')">
+                    <i class="fas fa-chevron-down" id="scheduled-maintenance-chevron"></i>
+                </button>
             </div>
-            <div class="card-body">
+            <div class="card-body" id="scheduled-maintenance-body">
                 {% if scheduled_maintenance %}
                 <div class="table-responsive">
                     <table class="table">
@@ -167,10 +173,13 @@
     <!-- Recent Service History -->
     <div class="history-section">
         <div class="section-card">
-            <div class="card-header">
+            <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
                 <h3><i class="fas fa-history"></i> Recent Service History</h3>
+                <button class="btn btn-sm btn-secondary" onclick="toggleSection('service-history-body')">
+                    <i class="fas fa-chevron-down" id="service-history-chevron"></i>
+                </button>
             </div>
-            <div class="card-body">
+            <div class="card-body" id="service-history-body">
                 {% if recent_services %}
                 <div class="table-responsive">
                     <table class="table">
@@ -310,6 +319,20 @@ function completeMaintenanceModal(maintenanceId) {
 
 function closeModal(modalId) {
     document.getElementById(modalId).style.display = 'none';
+}
+
+function toggleSection(sectionId) {
+    const section = document.getElementById(sectionId);
+    const chevronId = sectionId.replace('-body', '-chevron');
+    const chevron = document.getElementById(chevronId);
+    
+    if (section.style.display === 'none') {
+        section.style.display = 'block';
+        chevron.className = 'fas fa-chevron-down';
+    } else {
+        section.style.display = 'none';
+        chevron.className = 'fas fa-chevron-right';
+    }
 }
 
 // Close modal when clicking outside
