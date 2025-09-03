@@ -29,7 +29,13 @@
                 {% if car.main_image %}
                 <img src="{{ car.main_image }}" 
                      class="card-img-top" alt="{{ car.full_name }}"
-                     style="height: 400px; object-fit: cover;">
+                     style="height: 400px; object-fit: cover;"
+                     onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?w=800&h=400&fit=crop';">
+                {% elif car.images and car.images|length > 0 %}
+                <img src="{{ car.images[0] }}" 
+                     class="card-img-top" alt="{{ car.full_name }}"
+                     style="height: 400px; object-fit: cover;"
+                     onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?w=800&h=400&fit=crop';">
                 {% else %}
                 {% set category_images = {
                     'economy': 'https://images.unsplash.com/photo-1552519507-da3b142c6e3d?w=800&h=400&fit=crop',

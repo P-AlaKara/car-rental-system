@@ -94,8 +94,18 @@
                     <h4>Selected Vehicle</h4>
                 </div>
                 <div class="card-body">
-                    <img src="{{ selected_car.main_image or '/static/images/car-placeholder.png' }}" 
+                    {% if selected_car.main_image %}
+                    <img src="{{ selected_car.main_image }}" 
+                         class="img-fluid mb-3" alt="{{ selected_car.full_name }}"
+                         onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?w=400&h=300&fit=crop';">
+                    {% elif selected_car.images and selected_car.images|length > 0 %}
+                    <img src="{{ selected_car.images[0] }}" 
+                         class="img-fluid mb-3" alt="{{ selected_car.full_name }}"
+                         onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?w=400&h=300&fit=crop';">
+                    {% else %}
+                    <img src="https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?w=400&h=300&fit=crop" 
                          class="img-fluid mb-3" alt="{{ selected_car.full_name }}">
+                    {% endif %}
                     <h5>{{ selected_car.full_name }}</h5>
                     <p class="text-muted">{{ selected_car.category.value }} • {{ selected_car.year }}</p>
                     <div class="car-details">
