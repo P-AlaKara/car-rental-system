@@ -30,6 +30,12 @@ def index():
 @login_required
 def create():
     """Create a new booking."""
+    # Check if user has complete driver license and address details
+    if not current_user.has_complete_driver_details():
+        missing_details = current_user.get_missing_details()
+        flash('Please complete your profile before making a booking. Missing: ' + ', '.join(missing_details), 'warning')
+        return redirect(url_for('auth.edit_profile'))
+    
     if request.method == 'POST':
         data = request.form.to_dict()
         
