@@ -54,7 +54,11 @@
         <div class="col-4 mb-4">
             <div class="card car-card">
                 {% if car.main_image %}
-                <img src="{{ car.main_image }}" alt="{{ car.full_name }}" class="card-img-top">
+                <img src="{{ car.main_image }}" alt="{{ car.full_name }}" class="card-img-top"
+                     onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?w=400&h=300&fit=crop';">
+                {% elif car.images and car.images|length > 0 %}
+                <img src="{{ car.images[0] }}" alt="{{ car.full_name }}" class="card-img-top"
+                     onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?w=400&h=300&fit=crop';">
                 {% else %}
                 <!-- Using placeholder images based on car model -->
                 {% if 'Tahoe' in car.model %}

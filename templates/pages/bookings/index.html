@@ -61,10 +61,14 @@
                             <div class="row">
                                 <div class="col-md-3">
                                     <div class="car-image">
-                                        {% if booking.car.images %}
-                                            <img src="{{ booking.car.images[0] }}" alt="{{ booking.car.make }} {{ booking.car.model }}" class="img-fluid rounded">
+                                        {% if booking.car.main_image %}
+                                            <img src="{{ booking.car.main_image }}" alt="{{ booking.car.make }} {{ booking.car.model }}" class="img-fluid rounded"
+                                                 onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?w=300&h=200&fit=crop';">
+                                        {% elif booking.car.images and booking.car.images|length > 0 %}
+                                            <img src="{{ booking.car.images[0] }}" alt="{{ booking.car.make }} {{ booking.car.model }}" class="img-fluid rounded"
+                                                 onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?w=300&h=200&fit=crop';">
                                         {% else %}
-                                            <img src="https://via.placeholder.com/300x200?text=No+Image" alt="No Image" class="img-fluid rounded">
+                                            <img src="https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?w=300&h=200&fit=crop" alt="{{ booking.car.make }} {{ booking.car.model }}" class="img-fluid rounded">
                                         {% endif %}
                                     </div>
                                 </div>
@@ -110,8 +114,8 @@
                                             {% endif %}
                                             
                                             {% if booking.status.value == 'pending' %}
-                                                <button class="btn btn-success btn-sm btn-block mb-2" onclick="confirmPayment({{ booking.id }})">
-                                                    <i class="fas fa-credit-card"></i> Pay Now
+                                                <button class="btn btn-success btn-sm btn-block mb-2" onclick="contactSupport()">
+                                                    <i class="fas fa-phone"></i> Contact Support
                                                 </button>
                                             {% endif %}
                                             
@@ -351,8 +355,8 @@ function modifyBooking(bookingId) {
     window.location.href = `/bookings/${bookingId}/edit`;
 }
 
-function confirmPayment(bookingId) {
-    window.location.href = `/bookings/${bookingId}/payment`;
+function contactSupport() {
+    window.location.href = '/contact';
 }
 
 function rebookVehicle(carId) {

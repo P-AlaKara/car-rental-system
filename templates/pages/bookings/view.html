@@ -43,7 +43,7 @@
                             <i class="fas fa-info-circle"></i>
                             Your booking is scheduled for pickup on {{ booking.pickup_date.strftime('%B %d, %Y') }}.
                             {% if booking.status.value == 'pending' %}
-                            Please complete payment to confirm your booking.
+                            We'll be in touch shortly.
                             {% endif %}
                         </div>
                         {% endif %}
@@ -58,10 +58,14 @@
                     <div class="card-body">
                         <div class="row">
                             <div class="col-md-4">
-                                {% if booking.car.images %}
-                                    <img src="{{ booking.car.images[0] }}" alt="{{ booking.car.make }} {{ booking.car.model }}" class="img-fluid rounded">
+                                {% if booking.car.main_image %}
+                                    <img src="{{ booking.car.main_image }}" alt="{{ booking.car.make }} {{ booking.car.model }}" class="img-fluid rounded"
+                                         onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?w=300&h=200&fit=crop';">
+                                {% elif booking.car.images and booking.car.images|length > 0 %}
+                                    <img src="{{ booking.car.images[0] }}" alt="{{ booking.car.make }} {{ booking.car.model }}" class="img-fluid rounded"
+                                         onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?w=300&h=200&fit=crop';">
                                 {% else %}
-                                    <img src="https://via.placeholder.com/300x200?text=No+Image" alt="No Image" class="img-fluid rounded">
+                                    <img src="https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?w=300&h=200&fit=crop" alt="{{ booking.car.make }} {{ booking.car.model }}" class="img-fluid rounded">
                                 {% endif %}
                             </div>
                             <div class="col-md-8">
@@ -229,21 +233,7 @@
                             <span class="text-primary">${{ "%.2f"|format(booking.total_amount) }}</span>
                         </div>
                     </div>
-                    
-                    {% if booking.payment %}
-                    <div class="payment-status mt-3">
-                        <label class="text-muted">Payment Status</label>
-                        <p class="font-weight-bold">
-                            {% if booking.payment.status == 'completed' %}
-                                <span class="text-success"><i class="fas fa-check-circle"></i> Paid</span>
-                            {% elif booking.payment.status == 'pending' %}
-                                <span class="text-warning"><i class="fas fa-clock"></i> Pending</span>
-                            {% else %}
-                                <span class="text-danger"><i class="fas fa-times-circle"></i> {{ booking.payment.status|title }}</span>
-                            {% endif %}
-                        </p>
-                    </div>
-                    {% endif %}
+
                 </div>
                 
                 <!-- Actions -->
@@ -251,8 +241,8 @@
                     <h5 class="mb-3">Actions</h5>
                     
                     {% if booking.status.value == 'pending' %}
-                        <a href="{{ url_for('payments.process', booking_id=booking.id) }}" class="btn btn-success btn-block mb-2">
-                            <i class="fas fa-credit-card"></i> Complete Payment
+                        <a href="{{ url_for('main.contact') }}" class="btn btn-success btn-block mb-2">
+                            <i class="fas fa-phone"></i> Contact Support
                         </a>
                     {% endif %}
                     

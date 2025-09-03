@@ -172,35 +172,38 @@ def edit(id):
 @login_required
 def cancel(id):
     """Cancel a booking."""
+    from flask import jsonify
+    
     booking = Booking.query.get_or_404(id)
     
     # Check permission
     if not current_user.is_manager and booking.customer_id != current_user.id:
-        flash('You do not have permission to cancel this booking.', 'error')
-        return redirect(url_for('bookings.index'))
+        return jsonify({'success': False, 'message': 'You do not have permission to cancel this booking.'}), 403
     
     if not booking.can_cancel:
-        flash('This booking cannot be cancelled.', 'error')
-        return redirect(url_for('bookings.view', id=id))
+        return jsonify({'success': False, 'message': 'This booking cannot be cancelled.'}), 400
     
-    # Update booking status
-    booking.status = BookingStatus.CANCELLED
-    booking.cancelled_at = datetime.utcnow()
-    booking.cancellation_reason = request.form.get('reason', 'Customer requested cancellation')
-    
-    # Calculate cancellation fee if applicable
-    hours_until_pickup = (booking.pickup_date - datetime.utcnow()).total_seconds() / 3600
-    if hours_until_pickup < 24:
-        booking.cancellation_fee = booking.total_amount * 0.25  # 25% cancellation fee
-    
-    # Update car status
-    if booking.car:
-        from app.models.car import CarStatus
-        booking.car.status = CarStatus.AVAILABLE
-    
-    db.session.commit()
-    flash('Booking cancelled successfully.', 'info')
-    return redirect(url_for('bookings.view', id=id))
+    try:
+        # Update booking status
+        booking.status = BookingStatus.CANCELLED
+        booking.cancelled_at = datetime.utcnow()
+        booking.cancellation_reason = request.form.get('reason', 'Customer requested cancellation')
+        
+        # Calculate cancellation fee if applicable
+        hours_until_pickup = (booking.pickup_date - datetime.utcnow()).total_seconds() / 3600
+        if hours_until_pickup < 24:
+            booking.cancellation_fee = booking.total_amount * 0.25  # 25% cancellation fee
+        
+        # Update car status
+        if booking.car:
+            from app.models.car import CarStatus
+            booking.car.status = CarStatus.AVAILABLE
+        
+        db.session.commit()
+        return jsonify({'success': True, 'message': 'Booking cancelled successfully'})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': str(e)}), 500
 
 
 @bp.route('/<int:id>/confirm', methods=['POST'])
