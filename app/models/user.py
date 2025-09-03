@@ -6,8 +6,8 @@ from app import db, login_manager
 
 
 class Role(Enum):
-    CUSTOMER = 'customer'
-    ADMIN = 'admin'
+    CUSTOMER = 'CUSTOMER'
+    ADMIN = 'ADMIN'
 
 
 class User(UserMixin, db.Model):
