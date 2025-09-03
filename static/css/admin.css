@@ -568,6 +568,8 @@ body.admin-body {
 .btn-sm {
     padding: 0.375rem 0.75rem;
     font-size: 0.8125rem;
+    white-space: nowrap;  /* Prevent text wrapping inside button */
+    overflow: visible;    /* Ensure content isn't clipped */
 }
 
 /* Forms */
@@ -826,7 +828,13 @@ body.admin-body {
     padding: 1rem 1.5rem;
     background: var(--admin-light);
     display: flex;
+    flex-wrap: wrap;  /* Allow buttons to wrap to next line */
     gap: 0.5rem;
+}
+
+.car-card-footer form {
+    display: inline-flex;  /* Ensure inline forms don't break layout */
+    margin: 0;  /* Remove any default margins */
 }
 
 /* Maintenance Styles */
@@ -1075,10 +1083,12 @@ body.admin-body {
 
 .admin-wrapper.sidebar-collapsed .logout-btn {
     justify-content: center;
+    font-size: 0;  /* Hide text but keep icon */
 }
 
 .admin-wrapper.sidebar-collapsed .logout-btn i {
     margin: 0;
+    font-size: 1.25rem;  /* Make icon visible */
 }
 
 .admin-wrapper.sidebar-collapsed .sidebar-footer {
