@@ -279,6 +279,10 @@
         </div>
     </div>
 </div>
+
+<!-- Include Handover Modal -->
+{% include 'admin/handover_modal.html' %}
+
 {% endblock %}
 
 {% block extra_js %}
@@ -348,21 +352,7 @@ function viewPaymentHistory(bookingId) {
 }
 
 function handoverVehicle(bookingId) {
-    if (confirm('Process vehicle handover?')) {
-        fetch(`/admin/api/booking/${bookingId}/handover`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            alert(data.message);
-            if (data.success) {
-                location.reload();
-            }
-        });
-    }
+    loadHandoverModal(bookingId);
 }
 
 function completeBooking(bookingId) {
