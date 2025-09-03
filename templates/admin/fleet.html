@@ -124,6 +124,10 @@
                     <i class="fas fa-edit"></i> Edit
                 </a>
                 
+                <a href="{{ url_for('admin.view_car_images', car_id=car.id) }}" class="btn btn-sm btn-info">
+                    <i class="fas fa-images"></i> View
+                </a>
+                
                 {% if car.status != CarStatus.MAINTENANCE %}
                 <button class="btn btn-sm btn-warning" onclick="showMaintenanceModal({{ car.id }})">
                     <i class="fas fa-wrench"></i> Maintenance

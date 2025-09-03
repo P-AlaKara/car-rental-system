@@ -40,7 +40,13 @@
                     
                     <div class="form-group col-md-4">
                         <label>Agency/Branch</label>
-                        <input type="text" name="agency" class="form-control" placeholder="e.g., Melbourne CBD">
+                        <select name="agency" class="form-control">
+                            <option value="">Select Agency</option>
+                            <option value="smart">Smart</option>
+                            <option value="rehema enterprise">Rehema Enterprise</option>
+                            <option value="aurora motors">Aurora Motors</option>
+                            <option value="JIN">JIN</option>
+                        </select>
                     </div>
                 </div>
             </div>
@@ -97,8 +103,9 @@
                     </div>
                     
                     <div class="form-group col-md-8">
-                        <label>Current Location</label>
-                        <input type="text" name="current_location" class="form-control" placeholder="e.g., 123 Collins St, Melbourne">
+                        <label>Upload Images (Optional)</label>
+                        <input type="file" name="images" class="form-control-file" multiple accept="image/*">
+                        <small class="form-text text-muted">You can select multiple images. Supported formats: JPG, PNG, GIF</small>
                     </div>
                 </div>
             </div>

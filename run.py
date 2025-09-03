@@ -94,7 +94,7 @@ def seed_db():
                 status=CarStatus.AVAILABLE,
                 color=random.choice(['Black', 'White', 'Silver', 'Blue', 'Red']),
                 mileage=random.randint(1000, 50000),
-                current_location='Main Office'
+                agency=random.choice(['smart', 'rehema enterprise', 'aurora motors', 'JIN'])
             )
             
             # Set weekly and monthly rates
@@ -103,6 +103,13 @@ def seed_db():
             
             # Add features
             car.features = ['GPS', 'Bluetooth', 'Backup Camera', 'Cruise Control']
+            
+            # Add sample images (using placeholder URLs for demo)
+            car.images = [
+                f"https://via.placeholder.com/800x600/888888/FFFFFF?text={car_data['make']}+{car_data['model']}+1",
+                f"https://via.placeholder.com/800x600/666666/FFFFFF?text={car_data['make']}+{car_data['model']}+2",
+                f"https://via.placeholder.com/800x600/444444/FFFFFF?text={car_data['make']}+{car_data['model']}+3"
+            ]
             
             db.session.add(car)
     

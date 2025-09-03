@@ -40,7 +40,13 @@
                     
                     <div class="form-group col-md-4">
                         <label>Agency/Branch</label>
-                        <input type="text" name="agency" class="form-control" value="{{ car.agency or '' }}" placeholder="e.g., Melbourne CBD">
+                        <select name="agency" class="form-control">
+                            <option value="">Select Agency</option>
+                            <option value="smart" {% if car.agency == 'smart' %}selected{% endif %}>Smart</option>
+                            <option value="rehema enterprise" {% if car.agency == 'rehema enterprise' %}selected{% endif %}>Rehema Enterprise</option>
+                            <option value="aurora motors" {% if car.agency == 'aurora motors' %}selected{% endif %}>Aurora Motors</option>
+                            <option value="JIN" {% if car.agency == 'JIN' %}selected{% endif %}>JIN</option>
+                        </select>
                     </div>
                 </div>
             </div>
@@ -96,12 +102,7 @@
                         <input type="text" name="color" class="form-control" value="{{ car.color or '' }}">
                     </div>
                     
-                    <div class="form-group col-md-4">
-                        <label>Current Location</label>
-                        <input type="text" name="current_location" class="form-control" value="{{ car.current_location or '' }}" placeholder="e.g., 123 Collins St, Melbourne">
-                    </div>
-                    
-                    <div class="form-group col-md-4">
+                    <div class="form-group col-md-8">
                         <label>Status *</label>
                         <select name="status" class="form-control" required>
                             {% for status in CarStatus %}

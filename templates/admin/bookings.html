@@ -83,7 +83,6 @@
                         <th>Booking #</th>
                         <th>Customer</th>
                         <th>Vehicle</th>
-                        <th>Location</th>
                         <th>Dates</th>
                         <th>Status</th>
                         <th>Amount</th>
@@ -107,9 +106,6 @@
                             {{ booking.car.full_name if booking.car else 'N/A' }}
                             <br>
                             <small class="text-muted">{{ booking.car.license_plate if booking.car else '' }}</small>
-                        </td>
-                        <td>
-                            {{ booking.pickup_location }}
                         </td>
                         <td>
                             {{ booking.pickup_date.strftime('%Y-%m-%d') if booking.pickup_date else '' }}
@@ -178,7 +174,7 @@
                     </tr>
                     {% else %}
                     <tr>
-                        <td colspan="8" class="text-center py-4">
+                        <td colspan="7" class="text-center py-4">
                             <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
                             <p>No bookings found</p>
                         </td>
