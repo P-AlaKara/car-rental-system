@@ -192,22 +192,32 @@ document.getElementById('invoiceForm').addEventListener('submit', async function
     sendBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Sending...';
     
     const bookingId = document.getElementById('bookingId').value;
+    const invoiceAmount = document.getElementById('invoiceAmount').value;
+    const dueDate = document.getElementById('dueDate').value;
     
     try {
         const response = await fetch(`/admin/api/booking/${bookingId}/send-invoice`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-            }
+            },
+            body: JSON.stringify({
+                invoice_amount: invoiceAmount,
+                due_date: dueDate
+            })
         });
         
         const result = await response.json();
         
-        if (result.success) {
+        // Check if response is successful (2xx status code) and result.success is true
+        if (response.ok && result.success) {
             // Show success modal
             document.getElementById('invoiceNumber').textContent = result.invoice_number || 'N/A';
             const successModal = new bootstrap.Modal(document.getElementById('successModal'));
             successModal.show();
+            
+            // Log success for debugging
+            console.log('Invoice sent successfully:', result);
         } else if (result.needs_auth) {
             // Need to re-authorize
             if (confirm(result.message + '\n\nWould you like to reconnect to Xero now?')) {
@@ -218,7 +228,9 @@ document.getElementById('invoiceForm').addEventListener('submit', async function
             }
         } else {
             // Show error message
-            alert('Failed to send invoice: ' + (result.message || 'Unknown error'));
+            const errorMsg = result.message || 'Unknown error';
+            console.error('Failed to send invoice:', errorMsg, 'Response status:', response.status, 'Result:', result);
+            alert('Failed to send invoice: ' + errorMsg);
             sendBtn.disabled = false;
             sendBtn.innerHTML = originalBtnText;
         }

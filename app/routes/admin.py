@@ -759,6 +759,11 @@ def send_invoice(booking_id):
     logger = logging.getLogger(__name__)
     booking = Booking.query.get_or_404(booking_id)
     
+    # Get custom invoice amount and due date from request
+    data = request.get_json() or {}
+    custom_invoice_amount = data.get('invoice_amount')
+    custom_due_date = data.get('due_date')
+    
     try:
         # Check if we have a Xero token (refresh token)
         xero_token = XeroToken.query.order_by(XeroToken.created_at.desc()).first()
@@ -799,18 +804,27 @@ def send_invoice(booking_id):
             'child_seat_opted': booking.child_seat_opted
         }
         
-        # Calculate due date (7 days from now by default)
+        # Use custom due date or calculate default (7 days from now)
         from datetime import datetime, timedelta
-        due_date = datetime.utcnow() + timedelta(days=7)
+        if custom_due_date:
+            try:
+                due_date = datetime.strptime(custom_due_date, '%Y-%m-%d')
+            except:
+                due_date = datetime.utcnow() + timedelta(days=7)
+        else:
+            due_date = datetime.utcnow() + timedelta(days=7)
         
         # Initialize Xero client and send invoice
         client = XeroClient()
         
         try:
+            # Use custom invoice amount if provided, otherwise use booking total
+            invoice_amount = float(custom_invoice_amount) if custom_invoice_amount else float(booking.total_amount)
+            
             # This will automatically refresh the token if needed
             result = client.create_and_send_invoice(
                 booking_data=booking_data,
-                invoice_amount=float(booking.total_amount),
+                invoice_amount=invoice_amount,
                 due_date=due_date
             )
             
