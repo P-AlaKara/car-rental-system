@@ -1,0 +1,176 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Settings - Admin{% endblock %}
+{% block page_title %}Settings{% endblock %}
+
+{% block content %}
+<div class="settings-container">
+    <div class="row">
+        <div class="col-md-12">
+            <!-- Xero Integration Section -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5><i class="fab fa-xero"></i> Xero Integration</h5>
+                </div>
+                <div class="card-body">
+                    <div id="xeroStatus">
+                        <div class="text-center">
+                            <i class="fas fa-spinner fa-spin"></i> Checking connection status...
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Other Settings -->
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-cog"></i> General Settings</h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted">Additional settings will be available here.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Check Xero connection status on page load
+document.addEventListener('DOMContentLoaded', function() {
+    checkXeroStatus();
+});
+
+function checkXeroStatus() {
+    fetch('/xero/status')
+        .then(response => response.json())
+        .then(data => {
+            let statusHtml = '';
+            
+            if (data.connected) {
+                statusHtml = `
+                    <div class="alert alert-success">
+                        <h6 class="alert-heading"><i class="fas fa-check-circle"></i> Connected to Xero</h6>
+                        <p class="mb-2"><strong>Organization:</strong> ${data.tenant_name || 'Unknown'}</p>
+                        <p class="mb-2"><strong>Tenant ID:</strong> <code>${data.tenant_id || 'N/A'}</code></p>
+                        ${data.expires_at ? `<p class="mb-2"><strong>Token Expires:</strong> ${new Date(data.expires_at).toLocaleString()}</p>` : ''}
+                        ${data.needs_refresh ? '<p class="mb-0 text-warning"><i class="fas fa-exclamation-triangle"></i> Token will be refreshed automatically on next use</p>' : ''}
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-info" onclick="testXeroConnection()">
+                            <i class="fas fa-plug"></i> Test Connection
+                        </button>
+                        <button class="btn btn-danger" onclick="disconnectXero()">
+                            <i class="fas fa-unlink"></i> Disconnect
+                        </button>
+                    </div>
+                `;
+            } else {
+                statusHtml = `
+                    <div class="alert alert-warning">
+                        <h6 class="alert-heading"><i class="fas fa-exclamation-triangle"></i> Not Connected to Xero</h6>
+                        <p>Connect to Xero to enable invoice sending and accounting integration.</p>
+                    </div>
+                    <a href="/xero/authorize" class="btn btn-primary">
+                        <i class="fas fa-link"></i> Connect to Xero
+                    </a>
+                `;
+            }
+            
+            document.getElementById('xeroStatus').innerHTML = statusHtml;
+        })
+        .catch(error => {
+            console.error('Error checking Xero status:', error);
+            document.getElementById('xeroStatus').innerHTML = `
+                <div class="alert alert-danger">
+                    <i class="fas fa-times-circle"></i> Failed to check connection status
+                </div>
+            `;
+        });
+}
+
+function testXeroConnection() {
+    const btn = event.target.closest('button');
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Testing...';
+    btn.disabled = true;
+    
+    fetch('/xero/test-connection')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(`✅ Connection successful!\n\nOrganization: ${data.organization?.Name || 'Unknown'}\nVersion: ${data.organization?.Version || 'N/A'}`);
+            } else {
+                alert(`❌ Connection test failed:\n\n${data.message}`);
+            }
+        })
+        .catch(error => {
+            console.error('Error testing connection:', error);
+            alert('Failed to test connection. Please check the console for details.');
+        })
+        .finally(() => {
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        });
+}
+
+function disconnectXero() {
+    if (!confirm('Are you sure you want to disconnect from Xero?\n\nThis will remove the stored authentication tokens.')) {
+        return;
+    }
+    
+    fetch('/xero/disconnect', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Successfully disconnected from Xero');
+            checkXeroStatus(); // Refresh the status display
+        } else {
+            alert(`Failed to disconnect: ${data.message}`);
+        }
+    })
+    .catch(error => {
+        console.error('Error disconnecting:', error);
+        alert('An error occurred while disconnecting. Please try again.');
+    });
+}
+</script>
+
+<style>
+.settings-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.card {
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    border: none;
+    margin-bottom: 20px;
+}
+
+.card-header {
+    background-color: #f8f9fa;
+    border-bottom: 2px solid #e9ecef;
+    font-weight: 600;
+}
+
+.alert code {
+    background-color: #f8f9fa;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 0.875em;
+}
+
+.d-flex.gap-2 {
+    display: flex;
+    gap: 0.5rem;
+}
+</style>
+{% endblock %}

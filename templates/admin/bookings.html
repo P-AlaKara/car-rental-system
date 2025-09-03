@@ -134,9 +134,16 @@
                                 <!-- Send Invoice -->
                                 <button class="action-icon" 
                                         onclick="sendInvoice({{ booking.id }})"
-                                        data-tooltip="Send invoice to customer">
+                                        data-tooltip="Quick send invoice via Xero">
                                     <i class="fas fa-file-invoice"></i>
                                 </button>
+                                
+                                <!-- Send Invoice (Detailed) -->
+                                <a href="{{ url_for('admin.show_send_invoice', booking_id=booking.id) }}" 
+                                   class="action-icon" 
+                                   data-tooltip="Send invoice with details">
+                                    <i class="fas fa-file-invoice-dollar"></i>
+                                </a>
                                 
                                 <!-- Payment History -->
                                 <button class="action-icon" 
@@ -277,7 +284,13 @@
 {% block extra_js %}
 <script>
 function sendInvoice(bookingId) {
-    if (confirm('Send invoice to customer?')) {
+    if (confirm('Send invoice to customer via Xero?')) {
+        // Show loading state
+        const button = event.target.closest('button');
+        const originalContent = button.innerHTML;
+        button.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+        button.disabled = true;
+        
         fetch(`/admin/api/booking/${bookingId}/send-invoice`, {
             method: 'POST',
             headers: {
@@ -286,7 +299,31 @@ function sendInvoice(bookingId) {
         })
         .then(response => response.json())
         .then(data => {
-            alert(data.message);
+            if (data.success) {
+                // Invoice sent successfully
+                alert(`✅ Invoice sent successfully!\n\nInvoice Number: ${data.invoice_number || 'N/A'}`);
+                // Optionally refresh the page to show updated booking notes
+                location.reload();
+            } else if (data.needs_auth) {
+                // Need Xero authorization
+                if (confirm(`${data.message}\n\nWould you like to connect to Xero now?`)) {
+                    // Open Xero authorization in new window
+                    window.open(data.auth_url, '_blank', 'width=800,height=600');
+                    alert('Please complete the Xero authorization in the new window, then try sending the invoice again.');
+                }
+            } else {
+                // Other error
+                alert(`❌ Failed to send invoice:\n\n${data.message}`);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while sending the invoice. Please check the console for details.');
+        })
+        .finally(() => {
+            // Restore button state
+            button.innerHTML = originalContent;
+            button.disabled = false;
         });
     }
 }
