@@ -156,7 +156,7 @@
                                 <button class="action-icon" 
                                         onclick="handoverVehicle({{ booking.id }})"
                                         data-tooltip="Process vehicle handover"
-                                        {% if booking.status != BookingStatus.CONFIRMED %}disabled{% endif %}>
+                                        {% if booking.status.value != 'confirmed' %}disabled{% endif %}>
                                     <i class="fas fa-key"></i>
                                 </button>
                                 
@@ -164,7 +164,7 @@
                                 <button class="action-icon" 
                                         onclick="processVehicleReturn({{ booking.id }})"
                                         data-tooltip="Process vehicle return"
-                                        {% if booking.status != BookingStatus.IN_PROGRESS %}disabled{% endif %}>
+                                        {% if booking.status.value != 'in_progress' %}disabled{% endif %}>
                                     <i class="fas fa-check-circle"></i>
                                 </button>
                                 
