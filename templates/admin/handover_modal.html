@@ -1,0 +1,428 @@
+<!-- Vehicle Handover Modal -->
+<div class="modal fade" id="handoverModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-xl" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Vehicle Handover Process</h5>
+                <button type="button" class="close" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div id="handoverContent">
+                    <!-- Content will be loaded dynamically -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.handover-section {
+    margin-bottom: 30px;
+    padding: 20px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+}
+
+.handover-section h6 {
+    margin-bottom: 15px;
+    color: #333;
+    font-weight: 600;
+}
+
+.license-details {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 5px;
+    margin-bottom: 15px;
+}
+
+.license-details .row {
+    margin-bottom: 10px;
+}
+
+.license-details label {
+    font-weight: 600;
+}
+
+.photo-upload-area {
+    border: 2px dashed #ddd;
+    padding: 30px;
+    text-align: center;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.photo-upload-area:hover {
+    border-color: #007bff;
+    background: #f0f8ff;
+}
+
+.photo-preview {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.photo-preview img {
+    width: 150px;
+    height: 150px;
+    object-fit: cover;
+    border-radius: 5px;
+    border: 2px solid #ddd;
+}
+
+.direct-debit-form {
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 8px;
+}
+
+.direct-debit-form .form-row {
+    margin-bottom: 15px;
+}
+
+.step-indicator {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 30px;
+    padding: 0;
+}
+
+.step-indicator li {
+    list-style: none;
+    flex: 1;
+    text-align: center;
+    position: relative;
+}
+
+.step-indicator li:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    top: 15px;
+    right: -50%;
+    width: 100%;
+    height: 2px;
+    background: #ddd;
+}
+
+.step-indicator li.completed::after {
+    background: #28a745;
+}
+
+.step-indicator .step-circle {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: #ddd;
+    margin: 0 auto 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: bold;
+}
+
+.step-indicator li.active .step-circle {
+    background: #007bff;
+}
+
+.step-indicator li.completed .step-circle {
+    background: #28a745;
+}
+
+.btn-group-handover {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    margin-top: 20px;
+}
+</style>
+
+<script>
+let currentBookingId = null;
+let uploadedPhotos = [];
+
+function loadHandoverModal(bookingId) {
+    currentBookingId = bookingId;
+    uploadedPhotos = [];
+    
+    // Show loading state
+    $('#handoverContent').html('<div class="text-center"><i class="fas fa-spinner fa-spin fa-3x"></i><p>Loading handover details...</p></div>');
+    $('#handoverModal').modal('show');
+    
+    // Fetch booking details and render form
+    fetch(`/admin/api/booking/${bookingId}/handover-details`)
+        .then(response => response.json())
+        .then(data => {
+            renderHandoverForm(data);
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            $('#handoverContent').html('<div class="alert alert-danger">Failed to load handover details</div>');
+        });
+}
+
+function renderHandoverForm(data) {
+    const html = `
+        <ul class="step-indicator">
+            <li class="active" id="step1">
+                <div class="step-circle">1</div>
+                <span>License Verification</span>
+            </li>
+            <li id="step2">
+                <div class="step-circle">2</div>
+                <span>Contract</span>
+            </li>
+            <li id="step3">
+                <div class="step-circle">3</div>
+                <span>Vehicle Photos</span>
+            </li>
+            <li id="step4">
+                <div class="step-circle">4</div>
+                <span>Odometer</span>
+            </li>
+            <li id="step5">
+                <div class="step-circle">5</div>
+                <span>Direct Debit</span>
+            </li>
+        </ul>
+
+        <!-- Step 1: License Verification -->
+        <div class="handover-section" id="section-license">
+            <h6><i class="fas fa-id-card"></i> Driver License Verification</h6>
+            <div class="license-details">
+                <div class="row">
+                    <div class="col-md-6">
+                        <label>License Number:</label>
+                        <span>${data.customer.license_number || 'Not provided'}</span>
+                    </div>
+                    <div class="col-md-6">
+                        <label>Expiry Date:</label>
+                        <span>${data.customer.license_expiry || 'Not provided'}</span>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <label>Full Name:</label>
+                        <span>${data.customer.full_name}</span>
+                    </div>
+                    <div class="col-md-6">
+                        <label>Date of Birth:</label>
+                        <span>${data.customer.date_of_birth || 'Not provided'}</span>
+                    </div>
+                </div>
+            </div>
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="licenseVerified">
+                <label class="form-check-label" for="licenseVerified">
+                    I have verified that the driver license details match the physical license presented
+                </label>
+            </div>
+        </div>
+
+        <!-- Step 2: Contract -->
+        <div class="handover-section" id="section-contract">
+            <h6><i class="fas fa-file-contract"></i> Rental Contract</h6>
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle"></i> Contract generation will be implemented soon.
+            </div>
+            <button class="btn btn-secondary" onclick="generateContract()">
+                <i class="fas fa-file-pdf"></i> Generate Contract
+            </button>
+            <button class="btn btn-secondary ml-2" onclick="uploadSignedContract()">
+                <i class="fas fa-upload"></i> Upload Signed Contract
+            </button>
+            <input type="file" id="contractFile" style="display:none" accept=".pdf,.jpg,.jpeg,.png">
+            <div id="contractStatus" class="mt-3"></div>
+        </div>
+
+        <!-- Step 3: Vehicle Photos -->
+        <div class="handover-section" id="section-photos">
+            <h6><i class="fas fa-camera"></i> Vehicle Condition Photos</h6>
+            <p class="text-muted">Upload photos of the vehicle's current condition (front, back, sides, interior)</p>
+            <div class="photo-upload-area" onclick="document.getElementById('photoFiles').click()">
+                <i class="fas fa-cloud-upload-alt fa-3x text-muted"></i>
+                <p>Click to upload photos or drag and drop</p>
+            </div>
+            <input type="file" id="photoFiles" style="display:none" multiple accept="image/*" onchange="handlePhotoUpload(event)">
+            <div class="photo-preview" id="photoPreview"></div>
+        </div>
+
+        <!-- Step 4: Odometer Reading -->
+        <div class="handover-section" id="section-odometer">
+            <h6><i class="fas fa-tachometer-alt"></i> Odometer Reading</h6>
+            <div class="form-group">
+                <label>Current Odometer Reading (km):</label>
+                <input type="number" class="form-control" id="odometerReading" placeholder="Enter current odometer reading">
+            </div>
+        </div>
+
+        <!-- Step 5: Direct Debit Setup -->
+        <div class="handover-section" id="section-directdebit">
+            <h6><i class="fas fa-credit-card"></i> Direct Debit Setup</h6>
+            <div class="direct-debit-form">
+                <div class="form-row">
+                    <div class="col-md-12">
+                        <label>Description:</label>
+                        <input type="text" class="form-control" id="ddDescription" 
+                               value="Car rental - ${data.booking.booking_number}">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="col-md-6">
+                        <label>Upfront Amount ($):</label>
+                        <input type="number" class="form-control" id="ddUpfrontAmount" step="0.01"
+                               value="${data.booking.deposit_amount || 0}">
+                    </div>
+                    <div class="col-md-6">
+                        <label>Upfront Date:</label>
+                        <input type="date" class="form-control" id="ddUpfrontDate" 
+                               value="${new Date().toISOString().split('T')[0]}">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="col-md-6">
+                        <label>Recurring Amount ($):</label>
+                        <input type="number" class="form-control" id="ddRecurringAmount" step="0.01"
+                               value="${data.booking.daily_rate || 0}">
+                    </div>
+                    <div class="col-md-6">
+                        <label>Recurring Start Date:</label>
+                        <input type="date" class="form-control" id="ddRecurringStart"
+                               value="${new Date().toISOString().split('T')[0]}">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="col-md-6">
+                        <label>Frequency:</label>
+                        <select class="form-control" id="ddFrequency">
+                            <option value="weekly">Weekly</option>
+                            <option value="fortnightly">Fortnightly</option>
+                            <option value="monthly">Monthly</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label>End Condition Amount ($):</label>
+                        <input type="number" class="form-control" id="ddEndAmount" step="0.01"
+                               value="${data.booking.total_amount || 0}">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="btn-group-handover">
+            <button class="btn btn-secondary" onclick="$('#handoverModal').modal('hide')">
+                <i class="fas fa-times"></i> Cancel
+            </button>
+            <button class="btn btn-primary" onclick="completeHandover()">
+                <i class="fas fa-check"></i> Complete Handover
+            </button>
+        </div>
+    `;
+    
+    $('#handoverContent').html(html);
+}
+
+function handlePhotoUpload(event) {
+    const files = event.target.files;
+    const preview = document.getElementById('photoPreview');
+    
+    for (let file of files) {
+        if (file.type.startsWith('image/')) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = document.createElement('img');
+                img.src = e.target.result;
+                preview.appendChild(img);
+                uploadedPhotos.push({
+                    name: file.name,
+                    data: e.target.result
+                });
+            };
+            reader.readAsDataURL(file);
+        }
+    }
+}
+
+function generateContract() {
+    // Placeholder for contract generation
+    $('#contractStatus').html('<div class="alert alert-warning">Contract generation will be implemented soon</div>');
+}
+
+function uploadSignedContract() {
+    document.getElementById('contractFile').click();
+}
+
+function completeHandover() {
+    // Validate all steps
+    const licenseVerified = document.getElementById('licenseVerified').checked;
+    const odometerReading = document.getElementById('odometerReading').value;
+    
+    if (!licenseVerified) {
+        alert('Please verify the driver license first');
+        return;
+    }
+    
+    if (!odometerReading) {
+        alert('Please enter the odometer reading');
+        return;
+    }
+    
+    // Prepare handover data
+    const handoverData = {
+        license_verified: licenseVerified,
+        odometer_reading: parseInt(odometerReading),
+        photos: uploadedPhotos,
+        direct_debit: {
+            description: document.getElementById('ddDescription').value,
+            upfront_amount: parseFloat(document.getElementById('ddUpfrontAmount').value) || null,
+            upfront_date: document.getElementById('ddUpfrontDate').value || null,
+            recurring_amount: parseFloat(document.getElementById('ddRecurringAmount').value) || null,
+            recurring_start_date: document.getElementById('ddRecurringStart').value || null,
+            frequency: document.getElementById('ddFrequency').value,
+            end_condition_amount: parseFloat(document.getElementById('ddEndAmount').value) || null
+        }
+    };
+    
+    // Show loading
+    const btn = event.target;
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+    
+    // Submit handover
+    fetch(`/admin/api/booking/${currentBookingId}/complete-handover`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(handoverData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Handover completed successfully!');
+            if (data.authorization_url) {
+                if (confirm('Direct debit authorization required. Open authorization page?')) {
+                    window.open(data.authorization_url, '_blank');
+                }
+            }
+            $('#handoverModal').modal('hide');
+            location.reload();
+        } else {
+            alert('Error: ' + data.message);
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-check"></i> Complete Handover';
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred during handover');
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-check"></i> Complete Handover';
+    });
+}
+</script>

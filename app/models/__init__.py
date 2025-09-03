@@ -5,6 +5,8 @@ from .driver import Driver, DriverStatus
 from .payment import Payment, PaymentStatus, PaymentMethod
 from .maintenance import Maintenance, MaintenanceType, MaintenanceStatus
 from .xero_token import XeroToken
+from .booking_photo import BookingPhoto
+from .pay_advantage import PayAdvantageCustomer, DirectDebitSchedule
 
 __all__ = [
     'User', 'Role',
@@ -13,5 +15,7 @@ __all__ = [
     'Driver', 'DriverStatus',
     'Payment', 'PaymentStatus', 'PaymentMethod',
     'Maintenance', 'MaintenanceType', 'MaintenanceStatus',
-    'XeroToken'
+    'XeroToken',
+    'BookingPhoto',
+    'PayAdvantageCustomer', 'DirectDebitSchedule'
 ]

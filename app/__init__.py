@@ -1,4 +1,4 @@
-from flask import Flask
+from flask import Flask, send_from_directory
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
 from flask_migrate import Migrate
@@ -57,6 +57,13 @@ def create_app(config_name='default'):
     # Register Xero blueprint
     from app.routes.xero import xero_bp
     app.register_blueprint(xero_bp)
+    
+    # Add route to serve uploaded files
+    @app.route('/uploads/<path:filename>')
+    def uploaded_file(filename):
+        import os
+        upload_folder = app.config.get('UPLOAD_FOLDER', 'uploads')
+        return send_from_directory(os.path.join(app.root_path, '..', upload_folder), filename)
     
     # Add context processor to make datetime and models available in templates
     @app.context_processor

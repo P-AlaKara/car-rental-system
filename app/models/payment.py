@@ -19,6 +19,7 @@ class PaymentMethod(Enum):
     STRIPE = 'stripe'
     CASH = 'cash'
     BANK_TRANSFER = 'bank_transfer'
+    DIRECT_DEBIT = 'direct_debit'
 
 
 class Payment(db.Model):
