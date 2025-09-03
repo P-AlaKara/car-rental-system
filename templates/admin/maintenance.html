@@ -1,0 +1,322 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Maintenance - Admin{% endblock %}
+{% block page_title %}Vehicle Maintenance{% endblock %}
+
+{% block content %}
+<div class="maintenance-container">
+    <!-- Maintenance Statistics -->
+    <div class="maintenance-stats">
+        <div class="stat-card healthy">
+            <div class="stat-icon">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <div class="stat-content">
+                <h3>{{ stats.healthy }}</h3>
+                <p>Healthy</p>
+            </div>
+        </div>
+        
+        <div class="stat-card due-soon">
+            <div class="stat-icon">
+                <i class="fas fa-clock"></i>
+            </div>
+            <div class="stat-content">
+                <h3>{{ stats.due_soon }}</h3>
+                <p>Due Soon</p>
+            </div>
+        </div>
+        
+        <div class="stat-card overdue">
+            <div class="stat-icon">
+                <i class="fas fa-exclamation-triangle"></i>
+            </div>
+            <div class="stat-content">
+                <h3>{{ stats.overdue }}</h3>
+                <p>Overdue</p>
+            </div>
+        </div>
+        
+        <div class="stat-card in-service">
+            <div class="stat-icon">
+                <i class="fas fa-wrench"></i>
+            </div>
+            <div class="stat-content">
+                <h3>{{ stats.in_service }}</h3>
+                <p>In Service</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Service Alerts -->
+    <div class="service-section">
+        <div class="section-card">
+            <div class="card-header">
+                <h3><i class="fas fa-exclamation-circle"></i> Service Alerts</h3>
+            </div>
+            <div class="card-body">
+                {% if service_alerts %}
+                <div class="alert-list">
+                    {% for alert in service_alerts %}
+                    <div class="alert-item danger">
+                        <div class="alert-content">
+                            <strong>{{ alert.car.full_name }}</strong> - {{ alert.car.license_plate }}
+                            <br>
+                            <span class="text-danger">Overdue by {{ "{:,}".format(alert.km_overdue) }} km</span>
+                        </div>
+                        <button class="btn btn-sm btn-danger" onclick="scheduleMaintenanceFor({{ alert.car.id }})">
+                            <i class="fas fa-wrench"></i> Schedule Service
+                        </button>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="empty-state success">
+                    <i class="fas fa-check-circle fa-3x"></i>
+                    <h4>All Systems Operational</h4>
+                    <p>All vehicles are up to date with service requirements.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Upcoming Services -->
+    <div class="upcoming-section">
+        <div class="section-card">
+            <div class="card-header">
+                <h3><i class="fas fa-calendar-alt"></i> Upcoming Services</h3>
+            </div>
+            <div class="card-body">
+                {% if upcoming_services %}
+                <div class="upcoming-list">
+                    {% for service in upcoming_services %}
+                    <div class="upcoming-item">
+                        <div class="upcoming-content">
+                            <strong>{{ service.car.full_name }}</strong> - {{ service.car.license_plate }}
+                            <br>
+                            <span class="text-warning">{{ "{:,}".format(service.km_remaining) }} km remaining</span>
+                        </div>
+                        <button class="btn btn-sm btn-warning" onclick="scheduleMaintenanceFor({{ service.car.id }})">
+                            <i class="fas fa-calendar-plus"></i> Schedule
+                        </button>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-muted">No upcoming services scheduled.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Scheduled Maintenance -->
+    <div class="scheduled-section">
+        <div class="section-card">
+            <div class="card-header">
+                <h3><i class="fas fa-tools"></i> Scheduled Maintenance</h3>
+            </div>
+            <div class="card-body">
+                {% if scheduled_maintenance %}
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Vehicle</th>
+                                <th>Type</th>
+                                <th>Scheduled Date</th>
+                                <th>Description</th>
+                                <th>Est. Cost</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for maintenance in scheduled_maintenance %}
+                            <tr>
+                                <td>
+                                    {{ maintenance.car.full_name if maintenance.car else 'N/A' }}
+                                    <br>
+                                    <small class="text-muted">{{ maintenance.car.license_plate if maintenance.car else '' }}</small>
+                                </td>
+                                <td>
+                                    <span class="badge badge-type">
+                                        {{ maintenance.type.value.replace('_', ' ').title() }}
+                                    </span>
+                                </td>
+                                <td>{{ maintenance.service_date.strftime('%Y-%m-%d') if maintenance.service_date else '' }}</td>
+                                <td>{{ maintenance.description[:50] }}...</td>
+                                <td>${{ "{:,.2f}".format(maintenance.total_cost) }}</td>
+                                <td>
+                                    <button class="btn btn-sm btn-success" 
+                                            onclick="completeMaintenanceModal({{ maintenance.id }})">
+                                        <i class="fas fa-check"></i> Complete
+                                    </button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-muted">No maintenance currently scheduled.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Recent Service History -->
+    <div class="history-section">
+        <div class="section-card">
+            <div class="card-header">
+                <h3><i class="fas fa-history"></i> Recent Service History</h3>
+            </div>
+            <div class="card-body">
+                {% if recent_services %}
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Vehicle</th>
+                                <th>Date</th>
+                                <th>Type of Service</th>
+                                <th>Cost</th>
+                                <th>Provider</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for service in recent_services %}
+                            <tr>
+                                <td>
+                                    {{ service.car.full_name if service.car else 'N/A' }}
+                                    <br>
+                                    <small class="text-muted">{{ service.car.license_plate if service.car else '' }}</small>
+                                </td>
+                                <td>{{ service.completion_date.strftime('%Y-%m-%d') if service.completion_date else service.service_date.strftime('%Y-%m-%d') }}</td>
+                                <td>
+                                    <span class="badge badge-type">
+                                        {{ service.type.value.replace('_', ' ').title() }}
+                                    </span>
+                                </td>
+                                <td>${{ "{:,.2f}".format(service.total_cost) }}</td>
+                                <td>{{ service.service_provider or 'N/A' }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-muted">No service history available.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Schedule Maintenance Modal -->
+<div class="modal" id="scheduleMaintenanceModal">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Schedule Maintenance</h5>
+                <button type="button" class="close" onclick="closeModal('scheduleMaintenanceModal')">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <form method="POST" action="{{ url_for('admin.schedule_maintenance') }}" id="scheduleForm">
+                <div class="modal-body">
+                    <input type="hidden" name="car_id" id="scheduleCarId">
+                    
+                    <div class="form-group">
+                        <label>Service Type</label>
+                        <select name="type" class="form-control" required>
+                            {% for type in MaintenanceType %}
+                            <option value="{{ type.value }}">{{ type.value.replace('_', ' ').title() }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Service Date</label>
+                        <input type="date" name="service_date" class="form-control" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Description</label>
+                        <textarea name="description" class="form-control" rows="3" required></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Estimated Cost</label>
+                        <input type="number" name="estimated_cost" class="form-control" step="0.01" min="0">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('scheduleMaintenanceModal')">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Schedule</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Complete Maintenance Modal -->
+<div class="modal" id="completeMaintenanceModal">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Complete Maintenance</h5>
+                <button type="button" class="close" onclick="closeModal('completeMaintenanceModal')">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <form method="POST" id="completeForm">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label>Work Performed</label>
+                        <textarea name="work_performed" class="form-control" rows="3" required></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Labor Cost</label>
+                        <input type="number" name="labor_cost" class="form-control" step="0.01" min="0" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Parts Cost</label>
+                        <input type="number" name="parts_cost" class="form-control" step="0.01" min="0" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('completeMaintenanceModal')">Cancel</button>
+                    <button type="submit" class="btn btn-success">Complete Service</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function scheduleMaintenanceFor(carId) {
+    document.getElementById('scheduleCarId').value = carId;
+    document.getElementById('scheduleMaintenanceModal').style.display = 'block';
+}
+
+function completeMaintenanceModal(maintenanceId) {
+    document.getElementById('completeMaintenanceModal').style.display = 'block';
+    document.getElementById('completeForm').action = `/admin/maintenance/${maintenanceId}/complete`;
+}
+
+function closeModal(modalId) {
+    document.getElementById(modalId).style.display = 'none';
+}
+
+// Close modal when clicking outside
+window.onclick = function(event) {
+    if (event.target.classList.contains('modal')) {
+        event.target.style.display = 'none';
+    }
+}
+</script>
+{% endblock %}

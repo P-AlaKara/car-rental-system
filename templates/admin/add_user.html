@@ -1,0 +1,65 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Add User - Admin{% endblock %}
+{% block page_title %}Add New User{% endblock %}
+
+{% block content %}
+<div class="form-container">
+    <div class="form-card">
+        <form method="POST">
+            <div class="form-section">
+                <h3>User Information</h3>
+                
+                <div class="form-row">
+                    <div class="form-group col-md-6">
+                        <label>First Name *</label>
+                        <input type="text" name="first_name" class="form-control" required>
+                    </div>
+                    
+                    <div class="form-group col-md-6">
+                        <label>Last Name *</label>
+                        <input type="text" name="last_name" class="form-control" required>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group col-md-6">
+                        <label>Email Address *</label>
+                        <input type="email" name="email" class="form-control" required>
+                    </div>
+                    
+                    <div class="form-group col-md-6">
+                        <label>Phone Number</label>
+                        <input type="tel" name="phone" class="form-control" placeholder="+61 4XX XXX XXX">
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group col-md-6">
+                        <label>Password *</label>
+                        <input type="password" name="password" class="form-control" required minlength="6">
+                        <small class="text-muted">Minimum 6 characters</small>
+                    </div>
+                    
+                    <div class="form-group col-md-6">
+                        <label>Role *</label>
+                        <select name="role" class="form-control" required>
+                            <option value="customer">Customer</option>
+                            <option value="staff">Staff</option>
+                            <option value="manager">Manager</option>
+                            <option value="admin">Admin</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-actions">
+                <a href="{{ url_for('admin.users') }}" class="btn btn-secondary">Cancel</a>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-user-plus"></i> Add User
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

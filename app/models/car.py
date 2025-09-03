@@ -61,7 +61,11 @@ class Car(db.Model):
     
     # Vehicle details
     color = db.Column(db.String(30))
-    mileage = db.Column(db.Integer, default=0)
+    mileage = db.Column(db.Integer, default=0)  # Current odometer reading
+    agency = db.Column(db.String(100))  # Agency/Branch
+    current_odometer = db.Column(db.Integer, default=0)  # Current odometer in km
+    last_service_odometer = db.Column(db.Integer, default=0)  # Last service odometer in km
+    service_threshold = db.Column(db.Integer, default=5000)  # Service threshold in km
     last_service_date = db.Column(db.Date)
     next_service_due = db.Column(db.Date)
     insurance_expiry = db.Column(db.Date)
@@ -104,6 +108,28 @@ class Car(db.Model):
             return (weeks * self.weekly_rate) + (remaining_days * self.daily_rate)
         else:
             return days * self.daily_rate
+    
+    @property
+    def km_until_service(self):
+        """Calculate kilometers remaining until next service."""
+        if self.current_odometer and self.last_service_odometer and self.service_threshold:
+            return (self.last_service_odometer + self.service_threshold) - self.current_odometer
+        return None
+    
+    @property
+    def service_status(self):
+        """Get the service status of the vehicle."""
+        km_remaining = self.km_until_service
+        if km_remaining is None:
+            return 'unknown'
+        elif km_remaining < 0:
+            return 'overdue'
+        elif km_remaining <= 500:
+            return 'due_soon'
+        elif self.status == CarStatus.MAINTENANCE:
+            return 'in_service'
+        else:
+            return 'healthy'
     
     def to_dict(self):
         """Convert car object to dictionary."""

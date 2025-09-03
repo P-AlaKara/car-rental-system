@@ -1,0 +1,92 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Edit User - Admin{% endblock %}
+{% block page_title %}Edit User{% endblock %}
+
+{% block content %}
+<div class="form-container">
+    <div class="form-card">
+        <form method="POST">
+            <div class="form-section">
+                <h3>User Information</h3>
+                
+                <div class="form-row">
+                    <div class="form-group col-md-6">
+                        <label>First Name *</label>
+                        <input type="text" name="first_name" class="form-control" value="{{ user.first_name }}" required>
+                    </div>
+                    
+                    <div class="form-group col-md-6">
+                        <label>Last Name *</label>
+                        <input type="text" name="last_name" class="form-control" value="{{ user.last_name }}" required>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group col-md-6">
+                        <label>Email Address *</label>
+                        <input type="email" name="email" class="form-control" value="{{ user.email }}" required>
+                    </div>
+                    
+                    <div class="form-group col-md-6">
+                        <label>Phone Number</label>
+                        <input type="tel" name="phone" class="form-control" value="{{ user.phone or '' }}" placeholder="+61 4XX XXX XXX">
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group col-md-6">
+                        <label>New Password</label>
+                        <input type="password" name="password" class="form-control" minlength="6">
+                        <small class="text-muted">Leave blank to keep current password</small>
+                    </div>
+                    
+                    <div class="form-group col-md-6">
+                        <label>Role *</label>
+                        <select name="role" class="form-control" required>
+                            <option value="customer" {% if user.role == 'customer' %}selected{% endif %}>Customer</option>
+                            <option value="staff" {% if user.role == 'staff' %}selected{% endif %}>Staff</option>
+                            <option value="manager" {% if user.role == 'manager' %}selected{% endif %}>Manager</option>
+                            <option value="admin" {% if user.role == 'admin' %}selected{% endif %}>Admin</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-section">
+                <h3>User Statistics</h3>
+                
+                <div class="stats-row">
+                    <div class="stat-item">
+                        <span class="stat-label">Total Bookings:</span>
+                        <span class="stat-value">{{ user.bookings.count() }}</span>
+                    </div>
+                    
+                    <div class="stat-item">
+                        <span class="stat-label">Member Since:</span>
+                        <span class="stat-value">{{ user.created_at.strftime('%Y-%m-%d') if user.created_at else 'N/A' }}</span>
+                    </div>
+                    
+                    <div class="stat-item">
+                        <span class="stat-label">Account Status:</span>
+                        <span class="stat-value">
+                            {% if user.is_active %}
+                                <span class="badge badge-success">Active</span>
+                            {% else %}
+                                <span class="badge badge-danger">Inactive</span>
+                            {% endif %}
+                        </span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-actions">
+                <a href="{{ url_for('admin.users') }}" class="btn btn-secondary">Cancel</a>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save"></i> Update User
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

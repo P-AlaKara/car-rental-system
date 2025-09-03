@@ -1,0 +1,196 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Add Vehicle - Admin{% endblock %}
+{% block page_title %}Add New Vehicle{% endblock %}
+
+{% block content %}
+<div class="form-container">
+    <div class="form-card">
+        <form method="POST" enctype="multipart/form-data">
+            <div class="form-section">
+                <h3>Basic Information</h3>
+                
+                <div class="form-row">
+                    <div class="form-group col-md-4">
+                        <label>Make *</label>
+                        <input type="text" name="make" class="form-control" required>
+                    </div>
+                    
+                    <div class="form-group col-md-4">
+                        <label>Model *</label>
+                        <input type="text" name="model" class="form-control" required>
+                    </div>
+                    
+                    <div class="form-group col-md-4">
+                        <label>Year *</label>
+                        <input type="number" name="year" class="form-control" min="1900" max="2030" required>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group col-md-4">
+                        <label>License Plate *</label>
+                        <input type="text" name="license_plate" class="form-control" required>
+                    </div>
+                    
+                    <div class="form-group col-md-4">
+                        <label>VIN *</label>
+                        <input type="text" name="vin" class="form-control" required>
+                    </div>
+                    
+                    <div class="form-group col-md-4">
+                        <label>Agency/Branch</label>
+                        <input type="text" name="agency" class="form-control" placeholder="e.g., Melbourne CBD">
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-section">
+                <h3>Vehicle Details</h3>
+                
+                <div class="form-row">
+                    <div class="form-group col-md-3">
+                        <label>Category *</label>
+                        <select name="category" class="form-control" required>
+                            <option value="">Select Category</option>
+                            <option value="economy">Economy</option>
+                            <option value="compact">Compact</option>
+                            <option value="midsize">Midsize</option>
+                            <option value="fullsize">Full Size</option>
+                            <option value="luxury">Luxury</option>
+                            <option value="suv">SUV</option>
+                            <option value="minivan">Minivan</option>
+                            <option value="convertible">Convertible</option>
+                            <option value="sports">Sports</option>
+                            <option value="electric">Electric</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group col-md-3">
+                        <label>Seats *</label>
+                        <input type="number" name="seats" class="form-control" min="2" max="12" required>
+                    </div>
+                    
+                    <div class="form-group col-md-3">
+                        <label>Transmission *</label>
+                        <select name="transmission" class="form-control" required>
+                            <option value="Automatic">Automatic</option>
+                            <option value="Manual">Manual</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group col-md-3">
+                        <label>Fuel Type *</label>
+                        <select name="fuel_type" class="form-control" required>
+                            <option value="Gasoline">Gasoline</option>
+                            <option value="Diesel">Diesel</option>
+                            <option value="Electric">Electric</option>
+                            <option value="Hybrid">Hybrid</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group col-md-4">
+                        <label>Color</label>
+                        <input type="text" name="color" class="form-control">
+                    </div>
+                    
+                    <div class="form-group col-md-8">
+                        <label>Current Location</label>
+                        <input type="text" name="current_location" class="form-control" placeholder="e.g., 123 Collins St, Melbourne">
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-section">
+                <h3>Pricing</h3>
+                
+                <div class="form-row">
+                    <div class="form-group col-md-4">
+                        <label>Daily Rate ($) *</label>
+                        <input type="number" name="daily_rate" class="form-control" step="0.01" min="0" required>
+                    </div>
+                    
+                    <div class="form-group col-md-4">
+                        <label>Weekly Rate ($)</label>
+                        <input type="number" name="weekly_rate" class="form-control" step="0.01" min="0">
+                    </div>
+                    
+                    <div class="form-group col-md-4">
+                        <label>Monthly Rate ($)</label>
+                        <input type="number" name="monthly_rate" class="form-control" step="0.01" min="0">
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-section">
+                <h3>Maintenance Information</h3>
+                
+                <div class="form-row">
+                    <div class="form-group col-md-4">
+                        <label>Current Odometer (km) *</label>
+                        <input type="number" name="current_odometer" class="form-control" min="0" value="0" required>
+                    </div>
+                    
+                    <div class="form-group col-md-4">
+                        <label>Last Service Odometer (km)</label>
+                        <input type="number" name="last_service_odometer" class="form-control" min="0" value="0">
+                    </div>
+                    
+                    <div class="form-group col-md-4">
+                        <label>Service Threshold (km)</label>
+                        <input type="number" name="service_threshold" class="form-control" min="1000" value="5000">
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-section">
+                <h3>Features</h3>
+                
+                <div class="features-grid">
+                    <div class="form-check">
+                        <input type="checkbox" name="features" value="GPS" class="form-check-input" id="feature-gps">
+                        <label class="form-check-label" for="feature-gps">GPS Navigation</label>
+                    </div>
+                    <div class="form-check">
+                        <input type="checkbox" name="features" value="Bluetooth" class="form-check-input" id="feature-bluetooth">
+                        <label class="form-check-label" for="feature-bluetooth">Bluetooth</label>
+                    </div>
+                    <div class="form-check">
+                        <input type="checkbox" name="features" value="Backup Camera" class="form-check-input" id="feature-camera">
+                        <label class="form-check-label" for="feature-camera">Backup Camera</label>
+                    </div>
+                    <div class="form-check">
+                        <input type="checkbox" name="features" value="Cruise Control" class="form-check-input" id="feature-cruise">
+                        <label class="form-check-label" for="feature-cruise">Cruise Control</label>
+                    </div>
+                    <div class="form-check">
+                        <input type="checkbox" name="features" value="Air Conditioning" class="form-check-input" id="feature-ac">
+                        <label class="form-check-label" for="feature-ac">Air Conditioning</label>
+                    </div>
+                    <div class="form-check">
+                        <input type="checkbox" name="features" value="Heated Seats" class="form-check-input" id="feature-heated">
+                        <label class="form-check-label" for="feature-heated">Heated Seats</label>
+                    </div>
+                    <div class="form-check">
+                        <input type="checkbox" name="features" value="Sunroof" class="form-check-input" id="feature-sunroof">
+                        <label class="form-check-label" for="feature-sunroof">Sunroof</label>
+                    </div>
+                    <div class="form-check">
+                        <input type="checkbox" name="features" value="USB Charging" class="form-check-input" id="feature-usb">
+                        <label class="form-check-label" for="feature-usb">USB Charging</label>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-actions">
+                <a href="{{ url_for('admin.fleet') }}" class="btn btn-secondary">Cancel</a>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save"></i> Add Vehicle
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

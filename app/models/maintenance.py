@@ -9,6 +9,11 @@ class MaintenanceType(Enum):
     INSPECTION = 'inspection'
     ACCIDENT = 'accident'
     CLEANING = 'cleaning'
+    OIL_CHANGE = 'oil_change'
+    TIRE_ROTATION = 'tire_rotation'
+    BRAKE_SERVICE = 'brake_service'
+    BATTERY_REPLACEMENT = 'battery_replacement'
+    TRANSMISSION_SERVICE = 'transmission_service'
     OTHER = 'other'
 
 

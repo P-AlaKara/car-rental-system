@@ -1,0 +1,373 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Bookings Management - Admin{% endblock %}
+{% block page_title %}Bookings Management{% endblock %}
+
+{% block content %}
+<div class="bookings-container">
+    <!-- Filters Section -->
+    <div class="filters-card">
+        <form method="get" class="filters-form">
+            <div class="filter-row">
+                <div class="filter-group">
+                    <label>User</label>
+                    <select name="user_id" class="form-control">
+                        <option value="">All Users</option>
+                        {% for user in users %}
+                        <option value="{{ user.id }}" {% if request.args.get('user_id', type=int) == user.id %}selected{% endif %}>
+                            {{ user.full_name }} ({{ user.email }})
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="filter-group">
+                    <label>Vehicle</label>
+                    <select name="car_id" class="form-control">
+                        <option value="">All Vehicles</option>
+                        {% for car in cars %}
+                        <option value="{{ car.id }}" {% if request.args.get('car_id', type=int) == car.id %}selected{% endif %}>
+                            {{ car.full_name }} - {{ car.license_plate }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="filter-group">
+                    <label>Status</label>
+                    <select name="status" class="form-control">
+                        <option value="">All Status</option>
+                        {% for status in BookingStatus %}
+                        <option value="{{ status.value }}" {% if request.args.get('status') == status.value %}selected{% endif %}>
+                            {{ status.value.replace('_', ' ').title() }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="filter-group">
+                    <label>From Date</label>
+                    <input type="date" name="date_from" class="form-control date-picker" 
+                           value="{{ request.args.get('date_from', '') }}">
+                </div>
+                
+                <div class="filter-group">
+                    <label>To Date</label>
+                    <input type="date" name="date_to" class="form-control date-picker" 
+                           value="{{ request.args.get('date_to', '') }}">
+                </div>
+                
+                <div class="filter-group">
+                    <label>Search</label>
+                    <input type="text" name="search" class="form-control" 
+                           placeholder="Booking #, Name, Email..." 
+                           value="{{ request.args.get('search', '') }}">
+                </div>
+                
+                <div class="filter-group filter-actions">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-filter"></i> Filter
+                    </button>
+                    <a href="{{ url_for('admin.bookings') }}" class="btn btn-outline">
+                        <i class="fas fa-times"></i> Clear
+                    </a>
+                </div>
+            </div>
+        </form>
+    </div>
+    
+    <!-- Bookings Table -->
+    <div class="table-card">
+        <div class="table-responsive">
+            <table class="table bookings-table">
+                <thead>
+                    <tr>
+                        <th>Booking #</th>
+                        <th>Customer</th>
+                        <th>Vehicle</th>
+                        <th>Pickup</th>
+                        <th>Return</th>
+                        <th>Status</th>
+                        <th>Amount</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for booking in bookings.items %}
+                    <tr>
+                        <td>
+                            <strong>{{ booking.booking_number }}</strong>
+                            <br>
+                            <small class="text-muted">{{ booking.created_at.strftime('%Y-%m-%d %H:%M') }}</small>
+                        </td>
+                        <td>
+                            {{ booking.customer.full_name if booking.customer else 'N/A' }}
+                            <br>
+                            <small class="text-muted">{{ booking.customer.email if booking.customer else '' }}</small>
+                        </td>
+                        <td>
+                            {{ booking.car.full_name if booking.car else 'N/A' }}
+                            <br>
+                            <small class="text-muted">{{ booking.car.license_plate if booking.car else '' }}</small>
+                        </td>
+                        <td>
+                            {{ booking.pickup_date.strftime('%Y-%m-%d') if booking.pickup_date else '' }}
+                            <br>
+                            <small class="text-muted">{{ booking.pickup_location }}</small>
+                        </td>
+                        <td>
+                            {{ booking.return_date.strftime('%Y-%m-%d') if booking.return_date else '' }}
+                            <br>
+                            <small class="text-muted">{{ booking.return_location }}</small>
+                        </td>
+                        <td>
+                            <span class="badge badge-{{ booking.status.value }}">
+                                {{ booking.status.value.replace('_', ' ').title() }}
+                            </span>
+                        </td>
+                        <td>
+                            <strong>${{ "{:,.2f}".format(booking.total_amount) }}</strong>
+                            <br>
+                            <small class="text-muted">{{ booking.total_days }} days</small>
+                        </td>
+                        <td>
+                            <div class="action-icons">
+                                <!-- Edit Booking -->
+                                <a href="{{ url_for('admin.edit_booking', booking_id=booking.id) }}" 
+                                   class="action-icon" 
+                                   data-tooltip="Edit booking details">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                
+                                <!-- Send Invoice -->
+                                <button class="action-icon" 
+                                        onclick="sendInvoice({{ booking.id }})"
+                                        data-tooltip="Send invoice to customer">
+                                    <i class="fas fa-file-invoice"></i>
+                                </button>
+                                
+                                <!-- Payment History -->
+                                <button class="action-icon" 
+                                        onclick="viewPaymentHistory({{ booking.id }})"
+                                        data-tooltip="View payment history">
+                                    <i class="fas fa-history"></i>
+                                </button>
+                                
+                                <!-- Handover -->
+                                <button class="action-icon" 
+                                        onclick="handoverVehicle({{ booking.id }})"
+                                        data-tooltip="Process vehicle handover"
+                                        {% if booking.status != BookingStatus.CONFIRMED %}disabled{% endif %}>
+                                    <i class="fas fa-key"></i>
+                                </button>
+                                
+                                <!-- Complete -->
+                                <button class="action-icon" 
+                                        onclick="completeBooking({{ booking.id }})"
+                                        data-tooltip="Mark booking as complete"
+                                        {% if booking.status != BookingStatus.IN_PROGRESS %}disabled{% endif %}>
+                                    <i class="fas fa-check-circle"></i>
+                                </button>
+                                
+                                <!-- Cancel (if applicable) -->
+                                {% if booking.can_cancel %}
+                                <button class="action-icon text-danger" 
+                                        onclick="cancelBooking({{ booking.id }})"
+                                        data-tooltip="Cancel booking">
+                                    <i class="fas fa-times-circle"></i>
+                                </button>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="8" class="text-center py-4">
+                            <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                            <p>No bookings found</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Pagination -->
+        {% if bookings.pages > 1 %}
+        <div class="pagination-wrapper">
+            <nav aria-label="Page navigation">
+                <ul class="pagination">
+                    {% if bookings.has_prev %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('admin.bookings', page=bookings.prev_num, **request.args) }}">
+                            Previous
+                        </a>
+                    </li>
+                    {% endif %}
+                    
+                    {% for page_num in bookings.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+                        {% if page_num %}
+                            {% if page_num != bookings.page %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('admin.bookings', page=page_num, **request.args) }}">
+                                    {{ page_num }}
+                                </a>
+                            </li>
+                            {% else %}
+                            <li class="page-item active">
+                                <span class="page-link">{{ page_num }}</span>
+                            </li>
+                            {% endif %}
+                        {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link">...</span>
+                            </li>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if bookings.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('admin.bookings', page=bookings.next_num, **request.args) }}">
+                            Next
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Modals -->
+<div class="modal" id="paymentHistoryModal">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Payment History</h5>
+                <button type="button" class="close" onclick="closeModal('paymentHistoryModal')">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <div class="modal-body" id="paymentHistoryContent">
+                Loading...
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal" id="cancelModal">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Cancel Booking</h5>
+                <button type="button" class="close" onclick="closeModal('cancelModal')">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <form method="POST" id="cancelForm">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label>Cancellation Reason</label>
+                        <textarea name="reason" class="form-control" rows="3" required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('cancelModal')">Close</button>
+                    <button type="submit" class="btn btn-danger">Cancel Booking</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function sendInvoice(bookingId) {
+    if (confirm('Send invoice to customer?')) {
+        fetch(`/admin/api/booking/${bookingId}/send-invoice`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            alert(data.message);
+        });
+    }
+}
+
+function viewPaymentHistory(bookingId) {
+    document.getElementById('paymentHistoryModal').style.display = 'block';
+    fetch(`/admin/api/booking/${bookingId}/payment-history`)
+        .then(response => response.json())
+        .then(data => {
+            let content = '';
+            if (data.payments && data.payments.length > 0) {
+                content = '<ul>';
+                data.payments.forEach(payment => {
+                    content += `<li>${payment.date} - $${payment.amount} - ${payment.status}</li>`;
+                });
+                content += '</ul>';
+            } else {
+                content = '<p>' + data.message + '</p>';
+            }
+            document.getElementById('paymentHistoryContent').innerHTML = content;
+        });
+}
+
+function handoverVehicle(bookingId) {
+    if (confirm('Process vehicle handover?')) {
+        fetch(`/admin/api/booking/${bookingId}/handover`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            alert(data.message);
+            if (data.success) {
+                location.reload();
+            }
+        });
+    }
+}
+
+function completeBooking(bookingId) {
+    if (confirm('Mark booking as complete?')) {
+        fetch(`/admin/api/booking/${bookingId}/complete`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            alert(data.message);
+            if (data.success) {
+                location.reload();
+            }
+        });
+    }
+}
+
+function cancelBooking(bookingId) {
+    document.getElementById('cancelModal').style.display = 'block';
+    document.getElementById('cancelForm').action = `/admin/bookings/${bookingId}/cancel`;
+}
+
+function closeModal(modalId) {
+    document.getElementById(modalId).style.display = 'none';
+}
+
+// Close modal when clicking outside
+window.onclick = function(event) {
+    if (event.target.classList.contains('modal')) {
+        event.target.style.display = 'none';
+    }
+}
+</script>
+{% endblock %}
