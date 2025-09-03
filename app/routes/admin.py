@@ -514,10 +514,33 @@ def users():
 def add_user():
     """Add a new user."""
     if request.method == 'POST':
+        email = request.form.get('email')
+        first_name = request.form.get('first_name')
+        last_name = request.form.get('last_name')
+        
+        # Generate username from email (part before @) or from first_last name
+        username = request.form.get('username')
+        if not username:
+            # Try to generate from email
+            if email and '@' in email:
+                username = email.split('@')[0]
+            else:
+                # Generate from name
+                username = f"{first_name.lower()}.{last_name.lower()}" if first_name and last_name else None
+        
+        # Ensure username is unique
+        if username:
+            base_username = username
+            counter = 1
+            while User.query.filter_by(username=username).first():
+                username = f"{base_username}{counter}"
+                counter += 1
+        
         user = User(
-            email=request.form.get('email'),
-            first_name=request.form.get('first_name'),
-            last_name=request.form.get('last_name'),
+            email=email,
+            username=username,
+            first_name=first_name,
+            last_name=last_name,
             phone=request.form.get('phone'),
             role=request.form.get('role', 'customer')
         )
