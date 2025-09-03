@@ -51,6 +51,88 @@ def init_db():
 
 
 @app.cli.command()
+def list_users():
+    """List all users in the database."""
+    users = User.query.all()
+    
+    if not users:
+        print("\n❌ No users found in the database.")
+        return
+    
+    print("\n" + "=" * 80)
+    print("USERS IN DATABASE")
+    print("=" * 80)
+    print(f"\n{'ID':<5} {'Username':<20} {'Email':<30} {'Role':<15} {'Active':<8}")
+    print("-" * 80)
+    
+    for user in users:
+        role_value = user.role.value if user.role else 'None'
+        print(f"{user.id:<5} {user.username:<20} {user.email:<30} {role_value:<15} {'Yes' if user.is_active else 'No':<8}")
+    
+    print("\n" + "=" * 80)
+
+
+@app.cli.command()
+def make_admin():
+    """Make a user an admin by email or ID."""
+    import click
+    
+    users = User.query.all()
+    if not users:
+        print("❌ No users found in the database.")
+        return
+    
+    print("\nCurrent users:")
+    for user in users:
+        role_value = user.role.value if user.role else 'None'
+        print(f"  ID: {user.id} - {user.email} ({role_value})")
+    
+    user_input = click.prompt('\nEnter user email or ID to make admin')
+    
+    # Try to find by ID first
+    try:
+        user_id = int(user_input)
+        user = User.query.get(user_id)
+    except ValueError:
+        # Try to find by email
+        user = User.query.filter_by(email=user_input).first()
+    
+    if not user:
+        print(f"❌ User '{user_input}' not found.")
+        return
+    
+    if user.role == Role.ADMIN:
+        print(f"ℹ️  User '{user.email}' is already an admin.")
+        return
+    
+    user.role = Role.ADMIN
+    db.session.commit()
+    print(f"✅ Successfully updated user '{user.email}' to ADMIN role!")
+
+
+@app.cli.command()
+def make_all_admin():
+    """Make all users admins (for development only)."""
+    import click
+    
+    if not click.confirm('\n⚠️  This will make ALL users admins. Continue?'):
+        print("Operation cancelled.")
+        return
+    
+    users = User.query.filter(User.role != Role.ADMIN).all()
+    
+    if not users:
+        print("ℹ️  All users are already admins.")
+        return
+    
+    for user in users:
+        user.role = Role.ADMIN
+    
+    db.session.commit()
+    print(f"✅ Successfully updated {len(users)} user(s) to ADMIN role!")
+
+
+@app.cli.command()
 def seed_db():
     """Seed the database with sample data."""
     from datetime import datetime, timedelta
