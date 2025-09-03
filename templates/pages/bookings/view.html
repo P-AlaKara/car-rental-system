@@ -38,13 +38,17 @@
                             </div>
                         </div>
                         
+                        {% if booking.status.value == 'pending' %}
+                        <div class="alert alert-warning mt-3">
+                            <i class="fas fa-clock"></i>
+                            <strong>Your booking is pending confirmation.</strong> We'll be in touch shortly to confirm your reservation.
+                        </div>
+                        {% endif %}
+                        
                         {% if booking.status.value in ['pending', 'confirmed'] and booking.pickup_date > datetime.now() %}
                         <div class="alert alert-info mt-3">
                             <i class="fas fa-info-circle"></i>
                             Your booking is scheduled for pickup on {{ booking.pickup_date.strftime('%B %d, %Y') }}.
-                            {% if booking.status.value == 'pending' %}
-                            We'll be in touch shortly.
-                            {% endif %}
                         </div>
                         {% endif %}
                     </div>
