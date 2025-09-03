@@ -1,0 +1,387 @@
+{% extends "base.html" %}
+
+{% block title %}Process Vehicle Return - Aurora Motors{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="container">
+        <h1>Process Vehicle Return</h1>
+        <nav class="breadcrumb">
+            <a href="{{ url_for('main.index') }}">Home</a>
+            <span>/</span>
+            <a href="{{ url_for('bookings.index') }}">Bookings</a>
+            <span>/</span>
+            <a href="{{ url_for('bookings.view', id=booking.id) }}">#{{ booking.booking_number }}</a>
+            <span>/</span>
+            <span>Return</span>
+        </nav>
+    </div>
+</div>
+
+<section class="return-process-section py-5">
+    <div class="container">
+        <form method="POST" action="{{ url_for('bookings.process_return', id=booking.id) }}" id="returnForm">
+            <div class="row">
+                <div class="col-lg-8">
+                    <!-- Vehicle & Booking Info -->
+                    <div class="detail-card mb-4">
+                        <div class="card-header">
+                            <h4>Booking Information</h4>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <label class="text-muted">Booking Number</label>
+                                    <p class="font-weight-bold">#{{ booking.booking_number }}</p>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="text-muted">Customer</label>
+                                    <p class="font-weight-bold">{{ booking.customer.full_name }}</p>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="text-muted">Vehicle</label>
+                                    <p class="font-weight-bold">{{ booking.car.year }} {{ booking.car.make }} {{ booking.car.model }}</p>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="text-muted">License Plate</label>
+                                    <p class="font-weight-bold">{{ booking.car.license_plate }}</p>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="text-muted">Pickup Date</label>
+                                    <p class="font-weight-bold">{{ booking.pickup_date.strftime('%B %d, %Y %I:%M %p') }}</p>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="text-muted">Expected Return Date</label>
+                                    <p class="font-weight-bold">{{ booking.return_date.strftime('%B %d, %Y %I:%M %p') }}</p>
+                                </div>
+                            </div>
+                            
+                            {% if days_late > 0 %}
+                            <div class="alert alert-warning mt-3">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                <strong>Vehicle is {{ days_late }} day(s) late!</strong>
+                                Late return fee of ${{ "%.2f"|format(late_fees) }} will be applied.
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Return Checklist -->
+                    <div class="detail-card mb-4">
+                        <div class="card-header">
+                            <h4><i class="fas fa-clipboard-check"></i> Return Checklist</h4>
+                        </div>
+                        <div class="card-body">
+                            <div class="checklist-items">
+                                <div class="custom-control custom-checkbox mb-3">
+                                    <input type="checkbox" class="custom-control-input" id="bond_returned" name="bond_returned">
+                                    <label class="custom-control-label" for="bond_returned">
+                                        <strong>Bond/Deposit Returned</strong>
+                                        <small class="d-block text-muted">Confirm that any security deposit or bond has been returned to the customer</small>
+                                    </label>
+                                </div>
+                                
+                                <div class="custom-control custom-checkbox mb-3">
+                                    <input type="checkbox" class="custom-control-input" id="all_payments_received" name="all_payments_received">
+                                    <label class="custom-control-label" for="all_payments_received">
+                                        <strong>All Payments Received</strong>
+                                        <small class="d-block text-muted">Confirm that all rental fees and charges have been paid in full</small>
+                                    </label>
+                                </div>
+                                
+                                <div class="custom-control custom-checkbox mb-3">
+                                    <input type="checkbox" class="custom-control-input" id="car_in_good_condition" name="car_in_good_condition">
+                                    <label class="custom-control-label" for="car_in_good_condition">
+                                        <strong>Car Returned in Good Condition</strong>
+                                        <small class="d-block text-muted">Vehicle has been inspected and is in acceptable condition</small>
+                                    </label>
+                                </div>
+                                
+                                <div class="custom-control custom-checkbox mb-3">
+                                    <input type="checkbox" class="custom-control-input" id="fuel_tank_full" name="fuel_tank_full">
+                                    <label class="custom-control-label" for="fuel_tank_full">
+                                        <strong>Fuel Tank Full</strong>
+                                        <small class="d-block text-muted">Confirm that the fuel tank has been refilled as per rental agreement</small>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Vehicle Condition -->
+                    <div class="detail-card mb-4">
+                        <div class="card-header">
+                            <h4><i class="fas fa-car"></i> Vehicle Condition</h4>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="odometer_reading">Odometer Reading (km) <span class="text-danger">*</span></label>
+                                        <input type="number" class="form-control" id="odometer_reading" name="odometer_reading" 
+                                               value="{{ booking.car.current_odometer }}" min="{{ booking.car.current_odometer }}" required>
+                                        <small class="text-muted">Current reading: {{ booking.car.current_odometer }} km</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="fuel_level">Fuel Level</label>
+                                        <select class="form-control" id="fuel_level" name="fuel_level">
+                                            <option value="Full">Full</option>
+                                            <option value="3/4">3/4 Tank</option>
+                                            <option value="1/2">1/2 Tank</option>
+                                            <option value="1/4">1/4 Tank</option>
+                                            <option value="Empty">Empty</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <div class="custom-control custom-checkbox">
+                                    <input type="checkbox" class="custom-control-input" id="damage_noted" name="damage_noted">
+                                    <label class="custom-control-label" for="damage_noted">
+                                        <strong>Damage Noted</strong>
+                                    </label>
+                                </div>
+                            </div>
+                            
+                            <div class="form-group" id="damage_details" style="display: none;">
+                                <label for="damage_description">Damage Description</label>
+                                <textarea class="form-control" id="damage_description" name="damage_description" rows="3" 
+                                          placeholder="Describe any damage found..."></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Additional Charges -->
+                    <div class="detail-card mb-4">
+                        <div class="card-header">
+                            <h4><i class="fas fa-dollar-sign"></i> Additional Charges (if any)</h4>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="damage_charges">Damage Charges ($)</label>
+                                        <input type="number" class="form-control" id="damage_charges" name="damage_charges" 
+                                               value="0" min="0" step="0.01">
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="fuel_charges">Fuel Charges ($)</label>
+                                        <input type="number" class="form-control" id="fuel_charges" name="fuel_charges" 
+                                               value="0" min="0" step="0.01">
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="late_return_charges">Late Return Charges ($)</label>
+                                        <input type="number" class="form-control" id="late_return_charges" name="late_return_charges" 
+                                               value="{{ late_fees }}" min="0" step="0.01">
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="other_charges">Other Charges ($)</label>
+                                        <input type="number" class="form-control" id="other_charges" name="other_charges" 
+                                               value="0" min="0" step="0.01">
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="charges_description">Charges Description</label>
+                                <textarea class="form-control" id="charges_description" name="charges_description" rows="2" 
+                                          placeholder="Describe any additional charges..."></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Return Notes -->
+                    <div class="detail-card mb-4">
+                        <div class="card-header">
+                            <h4><i class="fas fa-sticky-note"></i> Return Notes</h4>
+                        </div>
+                        <div class="card-body">
+                            <div class="form-group">
+                                <label for="return_notes">Additional Notes (Optional)</label>
+                                <textarea class="form-control" id="return_notes" name="return_notes" rows="3" 
+                                          placeholder="Any additional notes about the return..."></textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-4">
+                    <!-- Summary Card -->
+                    <div class="detail-card sticky-top">
+                        <div class="card-header">
+                            <h4>Return Summary</h4>
+                        </div>
+                        <div class="card-body">
+                            <div class="summary-item">
+                                <span>Rental Amount:</span>
+                                <strong>${{ "%.2f"|format(booking.total_amount) }}</strong>
+                            </div>
+                            <div class="summary-item">
+                                <span>Additional Charges:</span>
+                                <strong id="total_charges">$0.00</strong>
+                            </div>
+                            <hr>
+                            <div class="summary-item total">
+                                <span>Total Amount:</span>
+                                <strong id="grand_total">${{ "%.2f"|format(booking.total_amount) }}</strong>
+                            </div>
+                            
+                            <div class="checklist-status mt-3">
+                                <h6>Checklist Status</h6>
+                                <div class="progress">
+                                    <div class="progress-bar" role="progressbar" style="width: 0%" id="checklist_progress"></div>
+                                </div>
+                                <small class="text-muted"><span id="checklist_count">0</span> of 4 items completed</small>
+                            </div>
+                            
+                            <button type="submit" class="btn btn-primary btn-block mt-4" id="submitBtn">
+                                <i class="fas fa-check-circle"></i> Process Return
+                            </button>
+                            <a href="{{ url_for('bookings.view', id=booking.id) }}" class="btn btn-secondary btn-block">
+                                <i class="fas fa-arrow-left"></i> Cancel
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</section>
+
+<style>
+    .checklist-items .custom-control {
+        padding: 15px;
+        background: #f8f9fa;
+        border-radius: 5px;
+        transition: background 0.3s;
+    }
+    
+    .checklist-items .custom-control:hover {
+        background: #e9ecef;
+    }
+    
+    .checklist-items .custom-control-input:checked ~ .custom-control-label {
+        color: #28a745;
+    }
+    
+    .checklist-items .custom-control-input:checked ~ .custom-control-label::before {
+        border-color: #28a745;
+        background-color: #28a745;
+    }
+    
+    .summary-item {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 10px;
+    }
+    
+    .summary-item.total {
+        font-size: 1.2rem;
+        color: #333;
+    }
+    
+    .sticky-top {
+        top: 80px;
+    }
+    
+    .progress {
+        height: 25px;
+        background-color: #e9ecef;
+    }
+    
+    .progress-bar {
+        background-color: #28a745;
+        transition: width 0.3s ease;
+    }
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Handle damage checkbox
+    const damageCheckbox = document.getElementById('damage_noted');
+    const damageDetails = document.getElementById('damage_details');
+    
+    damageCheckbox.addEventListener('change', function() {
+        damageDetails.style.display = this.checked ? 'block' : 'none';
+        if (!this.checked) {
+            document.getElementById('damage_charges').value = '0';
+        }
+    });
+    
+    // Calculate total charges
+    const chargeInputs = ['damage_charges', 'fuel_charges', 'late_return_charges', 'other_charges'];
+    const baseAmount = {{ booking.total_amount }};
+    
+    function updateTotals() {
+        let totalCharges = 0;
+        chargeInputs.forEach(id => {
+            totalCharges += parseFloat(document.getElementById(id).value) || 0;
+        });
+        
+        document.getElementById('total_charges').textContent = '$' + totalCharges.toFixed(2);
+        document.getElementById('grand_total').textContent = '$' + (baseAmount + totalCharges).toFixed(2);
+    }
+    
+    chargeInputs.forEach(id => {
+        document.getElementById(id).addEventListener('input', updateTotals);
+    });
+    
+    // Update checklist progress
+    const checkboxes = document.querySelectorAll('.checklist-items input[type="checkbox"]');
+    
+    function updateProgress() {
+        const checked = document.querySelectorAll('.checklist-items input[type="checkbox"]:checked').length;
+        const total = checkboxes.length;
+        const percentage = (checked / total) * 100;
+        
+        document.getElementById('checklist_progress').style.width = percentage + '%';
+        document.getElementById('checklist_count').textContent = checked;
+        
+        // Update submit button state
+        const submitBtn = document.getElementById('submitBtn');
+        if (checked === total) {
+            submitBtn.classList.remove('btn-primary');
+            submitBtn.classList.add('btn-success');
+        } else {
+            submitBtn.classList.remove('btn-success');
+            submitBtn.classList.add('btn-primary');
+        }
+    }
+    
+    checkboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', updateProgress);
+    });
+    
+    // Form validation
+    document.getElementById('returnForm').addEventListener('submit', function(e) {
+        const odometer = document.getElementById('odometer_reading').value;
+        if (!odometer || odometer < {{ booking.car.current_odometer }}) {
+            e.preventDefault();
+            alert('Please enter a valid odometer reading');
+            return false;
+        }
+        
+        const checked = document.querySelectorAll('.checklist-items input[type="checkbox"]:checked').length;
+        if (checked < checkboxes.length) {
+            if (!confirm('Not all checklist items are marked as complete. Do you want to continue?')) {
+                e.preventDefault();
+                return false;
+            }
+        }
+    });
+    
+    // Initialize
+    updateTotals();
+    updateProgress();
+});
+</script>
+{% endblock %}

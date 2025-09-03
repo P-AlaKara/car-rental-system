@@ -5,6 +5,7 @@ from .driver import Driver, DriverStatus
 from .payment import Payment, PaymentStatus, PaymentMethod
 from .maintenance import Maintenance, MaintenanceType, MaintenanceStatus
 from .xero_token import XeroToken
+from .vehicle_return import VehicleReturn
 
 __all__ = [
     'User', 'Role',
@@ -13,5 +14,6 @@ __all__ = [
     'Driver', 'DriverStatus',
     'Payment', 'PaymentStatus', 'PaymentMethod',
     'Maintenance', 'MaintenanceType', 'MaintenanceStatus',
-    'XeroToken'
+    'XeroToken',
+    'VehicleReturn'
 ]
