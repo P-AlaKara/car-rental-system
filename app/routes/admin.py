@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
+from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, current_app
 from flask_login import login_required, current_user
 from functools import wraps
 from datetime import datetime, timedelta
@@ -767,3 +767,18 @@ def complete_booking(booking_id):
     booking = Booking.query.get_or_404(booking_id)
     # TODO: Implement completion logic
     return jsonify({'success': True, 'message': 'Booking completion functionality will be implemented'})
+
+
+@admin_bp.route('/settings')
+@admin_required
+def settings():
+    """Admin settings page."""
+    return render_template('admin/settings.html')
+
+
+@admin_bp.route('/xero-settings')
+@admin_required
+def xero_settings():
+    """Xero integration settings page."""
+    callback_url = current_app.config.get('XERO_CALLBACK_URL', '')
+    return render_template('admin/xero_settings.html', callback_url=callback_url)

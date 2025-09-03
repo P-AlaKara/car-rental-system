@@ -54,6 +54,10 @@ def create_app(config_name='default'):
     from app.routes.api import api_bp
     app.register_blueprint(api_bp, url_prefix='/api')
     
+    # Register Xero blueprint
+    from app.routes.xero import xero_bp
+    app.register_blueprint(xero_bp)
+    
     # Add context processor to make datetime and models available in templates
     @app.context_processor
     def inject_globals():

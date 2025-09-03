@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify
 from flask_login import login_required, current_user
 from app import db
-from app.models import Booking, Car, User, Payment, BookingStatus, PaymentStatus
+from app.models import Booking, Car, User, Payment, BookingStatus, PaymentStatus, Role
 from app.utils.decorators import manager_required
 from datetime import datetime
 
@@ -246,3 +246,41 @@ def complete(id):
     db.session.commit()
     flash('Booking completed successfully!', 'success')
     return redirect(url_for('bookings.view', id=id))
+
+
+@bp.route('/<int:booking_id>/send-invoice')
+@login_required
+def send_invoice_page(booking_id):
+    """Display the send invoice page for a booking."""
+    # Check if user is admin or manager
+    if current_user.role not in [Role.ADMIN, Role.MANAGER]:
+        flash('You do not have permission to send invoices.', 'error')
+        return redirect(url_for('bookings.view', id=booking_id))
+    
+    booking = Booking.query.get_or_404(booking_id)
+    
+    # Check if booking has a customer
+    if not booking.customer:
+        flash('Cannot send invoice: No customer associated with this booking.', 'error')
+        return redirect(url_for('bookings.view', id=booking_id))
+    
+    # Check if customer has email
+    if not booking.customer.email:
+        flash('Cannot send invoice: Customer does not have an email address.', 'error')
+        return redirect(url_for('bookings.view', id=booking_id))
+    
+    return render_template('admin/send_invoice.html', booking=booking)
+
+
+@bp.route('/<int:booking_id>/view')
+@login_required
+def view_booking(booking_id):
+    """View a specific booking details."""
+    booking = Booking.query.get_or_404(booking_id)
+    
+    # Check if user has permission to view this booking
+    if not current_user.is_manager and booking.customer_id != current_user.id:
+        flash('You do not have permission to view this booking.', 'error')
+        return redirect(url_for('bookings.index'))
+    
+    return render_template('pages/bookings/view.html', booking=booking)

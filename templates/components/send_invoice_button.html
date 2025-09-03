@@ -1,0 +1,111 @@
+<!-- Send Invoice Button Component -->
+{% if current_user.is_authenticated and current_user.is_manager %}
+<div class="mt-3">
+    <a href="{{ url_for('bookings.send_invoice_page', booking_id=booking.id) }}" 
+       class="btn btn-info">
+        <i class="fas fa-file-invoice"></i> Send Invoice
+    </a>
+</div>
+
+<!-- Quick Send Invoice Modal -->
+<div class="modal fade" id="quickInvoiceModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Quick Send Invoice</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="quickInvoiceForm">
+                    <input type="hidden" id="quickBookingId" value="{{ booking.id }}">
+                    
+                    <div class="mb-3">
+                        <label for="quickInvoiceAmount" class="form-label">Invoice Amount</label>
+                        <div class="input-group">
+                            <span class="input-group-text">$</span>
+                            <input type="number" 
+                                   class="form-control" 
+                                   id="quickInvoiceAmount" 
+                                   value="{{ booking.total_amount }}"
+                                   step="0.01"
+                                   required>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="quickDueDate" class="form-label">Due Date</label>
+                        <input type="date" 
+                               class="form-control" 
+                               id="quickDueDate" 
+                               required>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="quickSendInvoice()">
+                    <i class="fas fa-paper-plane"></i> Send Invoice
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Set default due date for quick invoice
+document.addEventListener('DOMContentLoaded', function() {
+    const quickDueDateInput = document.getElementById('quickDueDate');
+    if (quickDueDateInput) {
+        const today = new Date();
+        const dueDate = new Date(today.setDate(today.getDate() + 7));
+        quickDueDateInput.value = dueDate.toISOString().split('T')[0];
+    }
+});
+
+async function quickSendInvoice() {
+    const btn = event.target;
+    const originalText = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Sending...';
+    
+    const data = {
+        booking_id: document.getElementById('quickBookingId').value,
+        invoice_amount: document.getElementById('quickInvoiceAmount').value,
+        due_date: document.getElementById('quickDueDate').value
+    };
+    
+    try {
+        const response = await fetch('/xero/send-invoice', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data)
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            // Close modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('quickInvoiceModal'));
+            modal.hide();
+            
+            // Show success message
+            alert('Invoice sent successfully! Invoice Number: ' + (result.invoice_number || 'N/A'));
+            
+            // Reload page to show updated status
+            location.reload();
+        } else {
+            alert('Failed to send invoice: ' + (result.message || 'Unknown error'));
+            btn.disabled = false;
+            btn.innerHTML = originalText;
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('An error occurred while sending the invoice. Please try again.');
+        btn.disabled = false;
+        btn.innerHTML = originalText;
+    }
+}
+</script>
+{% endif %}

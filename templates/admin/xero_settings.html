@@ -1,0 +1,203 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Xero Integration Settings{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-12">
+            <h2 class="mb-4">Xero Integration Settings</h2>
+            
+            <!-- Connection Status Card -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5>Connection Status</h5>
+                </div>
+                <div class="card-body">
+                    <div id="connectionStatus">
+                        <div class="text-center">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            <p class="mt-2">Checking connection status...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Connection Actions -->
+            <div class="card">
+                <div class="card-header">
+                    <h5>Actions</h5>
+                </div>
+                <div class="card-body">
+                    <div id="connectionActions">
+                        <!-- Actions will be populated based on connection status -->
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Instructions Card -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5>Setup Instructions</h5>
+                </div>
+                <div class="card-body">
+                    <ol>
+                        <li class="mb-2">
+                            <strong>Register your app in Xero:</strong>
+                            <ul>
+                                <li>Go to <a href="https://developer.xero.com/myapps" target="_blank">Xero Developer Portal</a></li>
+                                <li>Create a new app or use an existing one</li>
+                                <li>Set the redirect URI to: <code>{{ callback_url }}</code></li>
+                            </ul>
+                        </li>
+                        <li class="mb-2">
+                            <strong>Configure environment variables:</strong>
+                            <ul>
+                                <li>Add your Client ID to <code>XERO_CLIENT_ID</code> in .env file</li>
+                                <li>Add your Client Secret to <code>XERO_CLIENT_SECRET</code> in .env file</li>
+                                <li>Restart the application after updating .env</li>
+                            </ul>
+                        </li>
+                        <li class="mb-2">
+                            <strong>Connect to Xero:</strong>
+                            <ul>
+                                <li>Click the "Connect to Xero" button above</li>
+                                <li>Authorize the application in Xero</li>
+                                <li>Select your organization</li>
+                            </ul>
+                        </li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Check Xero connection status
+async function checkConnectionStatus() {
+    try {
+        const response = await fetch('/xero/status');
+        const data = await response.json();
+        
+        const statusDiv = document.getElementById('connectionStatus');
+        const actionsDiv = document.getElementById('connectionActions');
+        
+        if (data.connected) {
+            // Connected status
+            statusDiv.innerHTML = `
+                <div class="alert alert-success">
+                    <h6 class="alert-heading">
+                        <i class="fas fa-check-circle"></i> Connected to Xero
+                    </h6>
+                    <hr>
+                    <p class="mb-1"><strong>Organization:</strong> ${data.tenant_name || 'Unknown'}</p>
+                    <p class="mb-1"><strong>Tenant ID:</strong> <code>${data.tenant_id || 'N/A'}</code></p>
+                    <p class="mb-1"><strong>Token Expires:</strong> ${data.expires_at ? new Date(data.expires_at).toLocaleString() : 'N/A'}</p>
+                    ${data.needs_refresh ? '<p class="mb-0 text-warning"><i class="fas fa-exclamation-triangle"></i> Token will be refreshed automatically on next use</p>' : ''}
+                </div>
+            `;
+            
+            actionsDiv.innerHTML = `
+                <div class="row">
+                    <div class="col-md-6">
+                        <button class="btn btn-info w-100" onclick="testConnection()">
+                            <i class="fas fa-plug"></i> Test Connection
+                        </button>
+                    </div>
+                    <div class="col-md-6">
+                        <button class="btn btn-danger w-100" onclick="disconnectXero()">
+                            <i class="fas fa-unlink"></i> Disconnect from Xero
+                        </button>
+                    </div>
+                </div>
+            `;
+        } else {
+            // Not connected status
+            statusDiv.innerHTML = `
+                <div class="alert alert-warning">
+                    <h6 class="alert-heading">
+                        <i class="fas fa-exclamation-circle"></i> Not Connected to Xero
+                    </h6>
+                    <p class="mb-0">Click the button below to connect your Xero account.</p>
+                </div>
+            `;
+            
+            actionsDiv.innerHTML = `
+                <a href="/xero/authorize" class="btn btn-primary">
+                    <i class="fas fa-link"></i> Connect to Xero
+                </a>
+                <p class="mt-2 text-muted">
+                    Make sure you have configured your Xero Client ID and Client Secret in the .env file before connecting.
+                </p>
+            `;
+        }
+    } catch (error) {
+        console.error('Error checking connection status:', error);
+        document.getElementById('connectionStatus').innerHTML = `
+            <div class="alert alert-danger">
+                <i class="fas fa-exclamation-triangle"></i> Failed to check connection status
+            </div>
+        `;
+    }
+}
+
+// Test Xero connection
+async function testConnection() {
+    const btn = event.target;
+    const originalText = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Testing...';
+    
+    try {
+        const response = await fetch('/xero/test-connection');
+        const data = await response.json();
+        
+        if (data.success) {
+            alert('Connection test successful! Organization: ' + (data.organization?.Name || 'Unknown'));
+        } else {
+            alert('Connection test failed: ' + (data.message || 'Unknown error'));
+        }
+    } catch (error) {
+        console.error('Error testing connection:', error);
+        alert('Failed to test connection');
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = originalText;
+    }
+}
+
+// Disconnect from Xero
+async function disconnectXero() {
+    if (!confirm('Are you sure you want to disconnect from Xero? You will need to re-authorize to send invoices.')) {
+        return;
+    }
+    
+    try {
+        const response = await fetch('/xero/disconnect', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            alert('Successfully disconnected from Xero');
+            checkConnectionStatus(); // Refresh the status
+        } else {
+            alert('Failed to disconnect: ' + (data.message || 'Unknown error'));
+        }
+    } catch (error) {
+        console.error('Error disconnecting:', error);
+        alert('Failed to disconnect from Xero');
+    }
+}
+
+// Check status on page load
+document.addEventListener('DOMContentLoaded', checkConnectionStatus);
+</script>
+{% endblock %}
