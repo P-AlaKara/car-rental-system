@@ -244,9 +244,22 @@ def bookings():
     except Exception as e:
         current_app.logger.error(f"Error loading bookings: {str(e)}")
         flash('An error occurred while loading bookings. Please try again.', 'danger')
-        # Return empty results on error
-        from werkzeug.datastructures import Pagination
-        empty_bookings = Pagination(None, 1, 20, 0, [])
+        # Return empty results on error - create a simple mock pagination object
+        class EmptyPagination:
+            def __init__(self):
+                self.items = []
+                self.total = 0
+                self.page = 1
+                self.pages = 0
+                self.per_page = 20
+                self.has_prev = False
+                self.has_next = False
+                self.prev_num = None
+                self.next_num = None
+            def iter_pages(self, left_edge=2, left_current=2, right_current=3, right_edge=2):
+                return []
+        
+        empty_bookings = EmptyPagination()
         return render_template('admin/bookings.html', 
                              bookings=empty_bookings,
                              users=[],
@@ -570,33 +583,60 @@ def set_maintenance(car_id):
 @admin_required
 def users():
     """User management page."""
-    # Get filter parameters
-    role = request.args.get('role')
-    search = request.args.get('search')
-    
-    # Build query
-    query = User.query
-    
-    if role:
-        query = query.filter_by(role=role)
-    if search:
-        query = query.filter(
-            or_(
-                User.email.contains(search),
-                User.first_name.contains(search),
-                User.last_name.contains(search),
-                User.phone.contains(search)
+    try:
+        # Get filter parameters
+        role = request.args.get('role')
+        search = request.args.get('search')
+        
+        # Build query
+        query = User.query
+        
+        if role:
+            # Convert string role to Role enum
+            try:
+                role_enum = Role[role.upper()]
+                query = query.filter_by(role=role_enum)
+            except (KeyError, AttributeError):
+                # Invalid role, skip filter
+                pass
+        if search:
+            query = query.filter(
+                or_(
+                    User.email.contains(search),
+                    User.first_name.contains(search),
+                    User.last_name.contains(search),
+                    User.phone.contains(search)
+                )
             )
+        
+        # Pagination
+        page = request.args.get('page', 1, type=int)
+        per_page = 20
+        users = query.order_by(User.created_at.desc()).paginate(
+            page=page, per_page=per_page, error_out=False
         )
-    
-    # Pagination
-    page = request.args.get('page', 1, type=int)
-    per_page = 20
-    users = query.order_by(User.created_at.desc()).paginate(
-        page=page, per_page=per_page, error_out=False
-    )
-    
-    return render_template('admin/users.html', users=users)
+        
+        return render_template('admin/users.html', users=users)
+    except Exception as e:
+        current_app.logger.error(f"Error loading users: {str(e)}")
+        flash('An error occurred while loading users. Please try again.', 'danger')
+        # Return empty results on error - create a simple mock pagination object
+        class EmptyPagination:
+            def __init__(self):
+                self.items = []
+                self.total = 0
+                self.page = 1
+                self.pages = 0
+                self.per_page = 20
+                self.has_prev = False
+                self.has_next = False
+                self.prev_num = None
+                self.next_num = None
+            def iter_pages(self, left_edge=2, left_current=2, right_current=3, right_edge=2):
+                return []
+        
+        empty_users = EmptyPagination()
+        return render_template('admin/users.html', users=empty_users)
 
 @admin_bp.route('/users/add', methods=['GET', 'POST'])
 @admin_required
@@ -723,7 +763,7 @@ def delete_user(user_id):
     user = User.query.get_or_404(user_id)
     
     # Don't delete admin users
-    if user.role == 'admin':
+    if user.role == Role.ADMIN:
         flash('Cannot delete admin users!', 'danger')
     else:
         db.session.delete(user)
@@ -736,53 +776,89 @@ def delete_user(user_id):
 @admin_required
 def payments():
     """View payment history."""
-    # Get filter parameters
-    user_id = request.args.get('user_id', type=int)
-    car_id = request.args.get('car_id', type=int)
-    booking_id = request.args.get('booking_id', type=int)
-    status = request.args.get('status')
-    date_from = request.args.get('date_from')
-    date_to = request.args.get('date_to')
-    
-    # Build query
-    query = Payment.query
-    
-    if user_id:
-        query = query.filter_by(user_id=user_id)
-    if car_id:
-        # Filter by car through booking relationship
-        query = query.join(Booking).filter(Booking.car_id == car_id)
-    if booking_id:
-        query = query.filter_by(booking_id=booking_id)
-    if status:
-        query = query.filter_by(status=PaymentStatus(status))
-    if date_from:
-        query = query.filter(Payment.created_at >= datetime.strptime(date_from, '%Y-%m-%d'))
-    if date_to:
-        query = query.filter(Payment.created_at <= datetime.strptime(date_to, '%Y-%m-%d'))
-    
-    # Pagination
-    page = request.args.get('page', 1, type=int)
-    per_page = 20
-    payments = query.order_by(Payment.created_at.desc()).paginate(
-        page=page, per_page=per_page, error_out=False
-    )
-    
-    # Get total amount
-    total_amount = query.filter(Payment.status == PaymentStatus.COMPLETED).with_entities(
-        func.sum(Payment.amount)
-    ).scalar() or 0
-    
-    # Get all users and cars for filter dropdowns
-    users = User.query.order_by(User.first_name, User.last_name).all()
-    cars = Car.query.order_by(Car.make, Car.model).all()
-    
-    return render_template('admin/payments.html', 
-                         payments=payments,
-                         total_amount=total_amount,
-                         users=users,
-                         cars=cars,
-                         PaymentStatus=PaymentStatus)
+    try:
+        # Get filter parameters
+        user_id = request.args.get('user_id', type=int)
+        car_id = request.args.get('car_id', type=int)
+        booking_id = request.args.get('booking_id', type=int)
+        status = request.args.get('status')
+        date_from = request.args.get('date_from')
+        date_to = request.args.get('date_to')
+        
+        # Build query
+        query = Payment.query
+        
+        if user_id:
+            query = query.filter_by(user_id=user_id)
+        if car_id:
+            # Filter by car through booking relationship
+            query = query.join(Booking).filter(Booking.car_id == car_id)
+        if booking_id:
+            query = query.filter_by(booking_id=booking_id)
+        if status:
+            try:
+                query = query.filter_by(status=PaymentStatus(status))
+            except ValueError:
+                current_app.logger.warning(f"Invalid payment status: {status}")
+                # Ignore invalid status
+        if date_from:
+            try:
+                query = query.filter(Payment.created_at >= datetime.strptime(date_from, '%Y-%m-%d'))
+            except ValueError:
+                current_app.logger.warning(f"Invalid date_from format: {date_from}")
+        if date_to:
+            try:
+                query = query.filter(Payment.created_at <= datetime.strptime(date_to, '%Y-%m-%d'))
+            except ValueError:
+                current_app.logger.warning(f"Invalid date_to format: {date_to}")
+        
+        # Pagination
+        page = request.args.get('page', 1, type=int)
+        per_page = 20
+        payments = query.order_by(Payment.created_at.desc()).paginate(
+            page=page, per_page=per_page, error_out=False
+        )
+        
+        # Get total amount
+        total_amount = query.filter(Payment.status == PaymentStatus.COMPLETED).with_entities(
+            func.sum(Payment.amount)
+        ).scalar() or 0
+        
+        # Get all users and cars for filter dropdowns
+        users = User.query.order_by(User.first_name, User.last_name).all()
+        cars = Car.query.order_by(Car.make, Car.model).all()
+        
+        return render_template('admin/payments.html', 
+                             payments=payments,
+                             total_amount=total_amount,
+                             users=users,
+                             cars=cars,
+                             PaymentStatus=PaymentStatus)
+    except Exception as e:
+        current_app.logger.error(f"Error loading payments: {str(e)}")
+        flash('An error occurred while loading payments. Please try again.', 'danger')
+        # Return empty results on error - create a simple mock pagination object
+        class EmptyPagination:
+            def __init__(self):
+                self.items = []
+                self.total = 0
+                self.page = 1
+                self.pages = 0
+                self.per_page = 20
+                self.has_prev = False
+                self.has_next = False
+                self.prev_num = None
+                self.next_num = None
+            def iter_pages(self, left_edge=2, left_current=2, right_current=3, right_edge=2):
+                return []
+        
+        empty_payments = EmptyPagination()
+        return render_template('admin/payments.html', 
+                             payments=empty_payments,
+                             total_amount=0,
+                             users=[],
+                             cars=[],
+                             PaymentStatus=PaymentStatus)
 
 @admin_bp.route('/maintenance')
 @admin_required
