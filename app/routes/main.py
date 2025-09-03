@@ -1,6 +1,7 @@
-from flask import Blueprint, render_template, jsonify
-from app.models import Car, Booking, User
+from flask import Blueprint, render_template, jsonify, current_app
+from app.models import Car, Booking, User, Role
 from sqlalchemy import func
+from app import db
 
 bp = Blueprint('main', __name__)
 
@@ -8,20 +9,32 @@ bp = Blueprint('main', __name__)
 @bp.route('/')
 def index():
     """Home page."""
-    # Get featured cars
-    featured_cars = Car.query.filter_by(is_active=True).limit(6).all()
-    
-    # Get statistics
-    stats = {
-        'total_cars': Car.query.filter_by(is_active=True).count(),
-        'total_bookings': Booking.query.count(),
-        'happy_customers': User.query.filter_by(role='customer').count(),
-        'years_experience': 10
-    }
-    
-    return render_template('pages/home.html', 
-                         featured_cars=featured_cars,
-                         stats=stats)
+    try:
+        # Get featured cars
+        featured_cars = Car.query.filter_by(is_active=True).limit(6).all()
+        
+        # Get statistics with proper enum usage
+        stats = {
+            'total_cars': Car.query.filter_by(is_active=True).count(),
+            'total_bookings': Booking.query.count(),
+            'happy_customers': User.query.filter_by(role=Role.CUSTOMER).count(),
+            'years_experience': 10
+        }
+        
+        return render_template('pages/home.html', 
+                             featured_cars=featured_cars,
+                             stats=stats)
+    except Exception as e:
+        current_app.logger.error(f"Error loading home page: {str(e)}")
+        # Return with default values if there's an error
+        return render_template('pages/home.html', 
+                             featured_cars=[],
+                             stats={
+                                 'total_cars': 0,
+                                 'total_bookings': 0,
+                                 'happy_customers': 0,
+                                 'years_experience': 10
+                             })
 
 
 @bp.route('/about')

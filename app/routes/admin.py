@@ -4,7 +4,7 @@ from functools import wraps
 from datetime import datetime, timedelta
 from sqlalchemy import func, and_, or_, desc
 from app import db
-from app.models import User, Car, Booking, Payment, Maintenance, CarStatus, BookingStatus, MaintenanceType, MaintenanceStatus, PaymentStatus
+from app.models import User, Role, Car, Booking, Payment, Maintenance, CarStatus, BookingStatus, MaintenanceType, MaintenanceStatus, PaymentStatus
 import json
 import os
 from werkzeug.utils import secure_filename
@@ -25,144 +25,233 @@ def admin_required(f):
 @admin_required
 def dashboard():
     """Admin dashboard with statistics and charts."""
-    # Get statistics
-    total_bookings = Booking.query.count()
-    active_bookings = Booking.query.filter(
-        Booking.status.in_([BookingStatus.CONFIRMED, BookingStatus.IN_PROGRESS])
-    ).count()
-    total_cars = Car.query.count()
-    available_cars = Car.query.filter_by(status=CarStatus.AVAILABLE).count()
-    total_users = User.query.count()
-    total_revenue = db.session.query(func.sum(Payment.amount)).filter_by(
-        status=PaymentStatus.COMPLETED
-    ).scalar() or 0
-    
-    # Get recent bookings
-    recent_bookings = Booking.query.order_by(Booking.created_at.desc()).limit(5).all()
-    
-    # Get monthly revenue for chart
-    six_months_ago = datetime.utcnow() - timedelta(days=180)
-    monthly_revenue = db.session.query(
-        func.strftime('%Y-%m', Payment.created_at).label('month'),
-        func.sum(Payment.amount).label('revenue')
-    ).filter(
-        Payment.created_at >= six_months_ago,
-        Payment.status == PaymentStatus.COMPLETED
-    ).group_by('month').all()
-    
-    # Get booking status distribution
-    booking_status_dist = db.session.query(
-        Booking.status,
-        func.count(Booking.id).label('count')
-    ).group_by(Booking.status).all()
-    
-    # Get fleet status distribution
-    fleet_status_dist = db.session.query(
-        Car.status,
-        func.count(Car.id).label('count')
-    ).group_by(Car.status).all()
-    
-    # Get maintenance statistics
-    cars_healthy = Car.query.filter(
-        ~Car.status.in_([CarStatus.MAINTENANCE, CarStatus.OUT_OF_SERVICE])
-    ).count()
-    
-    cars_in_service = Car.query.filter_by(status=CarStatus.MAINTENANCE).count()
-    
-    # Calculate cars due for service
-    cars_due_soon = 0
-    cars_overdue = 0
-    for car in Car.query.all():
-        if car.service_status == 'due_soon':
-            cars_due_soon += 1
-        elif car.service_status == 'overdue':
-            cars_overdue += 1
-    
-    stats = {
-        'total_bookings': total_bookings,
-        'active_bookings': active_bookings,
-        'total_cars': total_cars,
-        'available_cars': available_cars,
-        'total_users': total_users,
-        'total_revenue': total_revenue,
-        'cars_healthy': cars_healthy,
-        'cars_due_soon': cars_due_soon,
-        'cars_overdue': cars_overdue,
-        'cars_in_service': cars_in_service
-    }
-    
-    # Format data for charts
-    chart_data = {
-        'monthly_revenue': {
-            'labels': [item.month for item in monthly_revenue],
-            'data': [float(item.revenue) for item in monthly_revenue]
-        },
-        'booking_status': {
-            'labels': [status.value for status, _ in booking_status_dist],
-            'data': [count for _, count in booking_status_dist]
-        },
-        'fleet_status': {
-            'labels': [status.value for status, _ in fleet_status_dist],
-            'data': [count for _, count in fleet_status_dist]
+    try:
+        # Get statistics with error handling
+        try:
+            total_bookings = Booking.query.count()
+            active_bookings = Booking.query.filter(
+                Booking.status.in_([BookingStatus.CONFIRMED, BookingStatus.IN_PROGRESS])
+            ).count()
+        except Exception as e:
+            current_app.logger.error(f"Error getting booking stats: {str(e)}")
+            total_bookings = 0
+            active_bookings = 0
+        
+        try:
+            total_cars = Car.query.count()
+            available_cars = Car.query.filter_by(status=CarStatus.AVAILABLE).count()
+        except Exception as e:
+            current_app.logger.error(f"Error getting car stats: {str(e)}")
+            total_cars = 0
+            available_cars = 0
+        
+        try:
+            total_users = User.query.count()
+        except Exception as e:
+            current_app.logger.error(f"Error getting user count: {str(e)}")
+            total_users = 0
+        
+        try:
+            total_revenue = db.session.query(func.sum(Payment.amount)).filter_by(
+                status=PaymentStatus.COMPLETED
+            ).scalar() or 0
+        except Exception as e:
+            current_app.logger.error(f"Error getting revenue: {str(e)}")
+            total_revenue = 0
+        
+        # Get recent bookings
+        try:
+            recent_bookings = Booking.query.order_by(Booking.created_at.desc()).limit(5).all()
+        except Exception as e:
+            current_app.logger.error(f"Error getting recent bookings: {str(e)}")
+            recent_bookings = []
+        
+        # Get monthly revenue for chart
+        try:
+            six_months_ago = datetime.utcnow() - timedelta(days=180)
+            monthly_revenue = db.session.query(
+                func.strftime('%Y-%m', Payment.created_at).label('month'),
+                func.sum(Payment.amount).label('revenue')
+            ).filter(
+                Payment.created_at >= six_months_ago,
+                Payment.status == PaymentStatus.COMPLETED
+            ).group_by('month').all()
+        except Exception as e:
+            current_app.logger.error(f"Error getting monthly revenue: {str(e)}")
+            monthly_revenue = []
+        
+        # Get booking status distribution
+        try:
+            booking_status_dist = db.session.query(
+                Booking.status,
+                func.count(Booking.id).label('count')
+            ).group_by(Booking.status).all()
+        except Exception as e:
+            current_app.logger.error(f"Error getting booking distribution: {str(e)}")
+            booking_status_dist = []
+        
+        # Get fleet status distribution
+        try:
+            fleet_status_dist = db.session.query(
+                Car.status,
+                func.count(Car.id).label('count')
+            ).group_by(Car.status).all()
+        except Exception as e:
+            current_app.logger.error(f"Error getting fleet distribution: {str(e)}")
+            fleet_status_dist = []
+        
+        # Get maintenance statistics
+        cars_healthy = 0
+        cars_in_service = 0
+        cars_due_soon = 0
+        cars_overdue = 0
+        
+        try:
+            cars_healthy = Car.query.filter(
+                ~Car.status.in_([CarStatus.MAINTENANCE, CarStatus.OUT_OF_SERVICE])
+            ).count()
+            
+            cars_in_service = Car.query.filter_by(status=CarStatus.MAINTENANCE).count()
+            
+            # Calculate cars due for service
+            for car in Car.query.all():
+                if hasattr(car, 'service_status'):
+                    if car.service_status == 'due_soon':
+                        cars_due_soon += 1
+                    elif car.service_status == 'overdue':
+                        cars_overdue += 1
+        except Exception as e:
+            current_app.logger.error(f"Error getting maintenance stats: {str(e)}")
+        
+        stats = {
+            'total_bookings': total_bookings,
+            'active_bookings': active_bookings,
+            'total_cars': total_cars,
+            'available_cars': available_cars,
+            'total_users': total_users,
+            'total_revenue': total_revenue,
+            'cars_healthy': cars_healthy,
+            'cars_due_soon': cars_due_soon,
+            'cars_overdue': cars_overdue,
+            'cars_in_service': cars_in_service
         }
-    }
-    
-    return render_template('admin/dashboard.html', 
-                         stats=stats, 
-                         recent_bookings=recent_bookings,
-                         chart_data=chart_data)
+        
+        # Format data for charts
+        chart_data = {
+            'monthly_revenue': {
+                'labels': [item.month for item in monthly_revenue] if monthly_revenue else [],
+                'data': [float(item.revenue) for item in monthly_revenue] if monthly_revenue else []
+            },
+            'booking_status': {
+                'labels': [status.value for status, _ in booking_status_dist] if booking_status_dist else [],
+                'data': [count for _, count in booking_status_dist] if booking_status_dist else []
+            },
+            'fleet_status': {
+                'labels': [status.value for status, _ in fleet_status_dist] if fleet_status_dist else [],
+                'data': [count for _, count in fleet_status_dist] if fleet_status_dist else []
+            }
+        }
+        
+        return render_template('admin/dashboard.html', 
+                             stats=stats, 
+                             recent_bookings=recent_bookings,
+                             chart_data=chart_data)
+    except Exception as e:
+        current_app.logger.error(f"Critical error in admin dashboard: {str(e)}")
+        # Return with all default values
+        return render_template('admin/dashboard.html', 
+                             stats={
+                                 'total_bookings': 0,
+                                 'active_bookings': 0,
+                                 'total_cars': 0,
+                                 'available_cars': 0,
+                                 'total_users': 0,
+                                 'total_revenue': 0,
+                                 'cars_healthy': 0,
+                                 'cars_due_soon': 0,
+                                 'cars_overdue': 0,
+                                 'cars_in_service': 0
+                             }, 
+                             recent_bookings=[],
+                             chart_data={
+                                 'monthly_revenue': {'labels': [], 'data': []},
+                                 'booking_status': {'labels': [], 'data': []},
+                                 'fleet_status': {'labels': [], 'data': []}
+                             })
 
 @admin_bp.route('/bookings')
 @admin_required
 def bookings():
     """View and manage all bookings."""
-    # Get filter parameters
-    user_id = request.args.get('user_id', type=int)
-    car_id = request.args.get('car_id', type=int)
-    status = request.args.get('status')
-    date_from = request.args.get('date_from')
-    date_to = request.args.get('date_to')
-    search = request.args.get('search')
-    
-    # Build query
-    query = Booking.query
-    
-    if user_id:
-        query = query.filter_by(customer_id=user_id)
-    if car_id:
-        query = query.filter_by(car_id=car_id)
-    if status:
-        query = query.filter_by(status=BookingStatus(status))
-    if date_from:
-        query = query.filter(Booking.pickup_date >= datetime.strptime(date_from, '%Y-%m-%d'))
-    if date_to:
-        query = query.filter(Booking.return_date <= datetime.strptime(date_to, '%Y-%m-%d'))
-    if search:
-        query = query.filter(
-            or_(
-                Booking.booking_number.contains(search),
-                Booking.customer.has(User.email.contains(search)),
-                Booking.customer.has(User.first_name.contains(search)),
-                Booking.customer.has(User.last_name.contains(search))
+    try:
+        # Get filter parameters
+        user_id = request.args.get('user_id', type=int)
+        car_id = request.args.get('car_id', type=int)
+        status = request.args.get('status')
+        date_from = request.args.get('date_from')
+        date_to = request.args.get('date_to')
+        search = request.args.get('search')
+        
+        # Build query
+        query = Booking.query
+        
+        if user_id:
+            query = query.filter_by(customer_id=user_id)
+        if car_id:
+            query = query.filter_by(car_id=car_id)
+        if status:
+            try:
+                query = query.filter_by(status=BookingStatus(status))
+            except ValueError:
+                current_app.logger.warning(f"Invalid booking status: {status}")
+                # Ignore invalid status
+        if date_from:
+            try:
+                query = query.filter(Booking.pickup_date >= datetime.strptime(date_from, '%Y-%m-%d'))
+            except ValueError:
+                current_app.logger.warning(f"Invalid date_from format: {date_from}")
+        if date_to:
+            try:
+                query = query.filter(Booking.return_date <= datetime.strptime(date_to, '%Y-%m-%d'))
+            except ValueError:
+                current_app.logger.warning(f"Invalid date_to format: {date_to}")
+        if search:
+            query = query.filter(
+                or_(
+                    Booking.booking_number.contains(search),
+                    Booking.customer.has(User.email.contains(search)),
+                    Booking.customer.has(User.first_name.contains(search)),
+                    Booking.customer.has(User.last_name.contains(search))
+                )
             )
+        
+        # Pagination
+        page = request.args.get('page', 1, type=int)
+        per_page = 20
+        bookings = query.order_by(Booking.created_at.desc()).paginate(
+            page=page, per_page=per_page, error_out=False
         )
-    
-    # Pagination
-    page = request.args.get('page', 1, type=int)
-    per_page = 20
-    bookings = query.order_by(Booking.created_at.desc()).paginate(
-        page=page, per_page=per_page, error_out=False
-    )
-    
-    # Get all users and cars for filter dropdowns
-    users = User.query.order_by(User.first_name).all()
-    cars = Car.query.order_by(Car.make, Car.model).all()
-    
-    return render_template('admin/bookings.html', 
-                         bookings=bookings,
-                         users=users,
-                         cars=cars,
-                         BookingStatus=BookingStatus)
+        
+        # Get all users and cars for filter dropdowns
+        users = User.query.order_by(User.first_name).all()
+        cars = Car.query.order_by(Car.make, Car.model).all()
+        
+        return render_template('admin/bookings.html', 
+                             bookings=bookings,
+                             users=users,
+                             cars=cars,
+                             BookingStatus=BookingStatus)
+    except Exception as e:
+        current_app.logger.error(f"Error loading bookings: {str(e)}")
+        flash('An error occurred while loading bookings. Please try again.', 'danger')
+        # Return empty results on error
+        from werkzeug.datastructures import Pagination
+        empty_bookings = Pagination(None, 1, 20, 0, [])
+        return render_template('admin/bookings.html', 
+                             bookings=empty_bookings,
+                             users=[],
+                             cars=[],
+                             BookingStatus=BookingStatus)
 
 @admin_bp.route('/bookings/<int:booking_id>/edit', methods=['GET', 'POST'])
 @admin_required
@@ -514,43 +603,71 @@ def users():
 def add_user():
     """Add a new user."""
     if request.method == 'POST':
-        email = request.form.get('email')
-        first_name = request.form.get('first_name')
-        last_name = request.form.get('last_name')
-        
-        # Generate username from email (part before @) or from first_last name
-        username = request.form.get('username')
-        if not username:
-            # Try to generate from email
-            if email and '@' in email:
-                username = email.split('@')[0]
-            else:
-                # Generate from name
-                username = f"{first_name.lower()}.{last_name.lower()}" if first_name and last_name else None
-        
-        # Ensure username is unique
-        if username:
-            base_username = username
-            counter = 1
-            while User.query.filter_by(username=username).first():
-                username = f"{base_username}{counter}"
-                counter += 1
-        
-        user = User(
-            email=email,
-            username=username,
-            first_name=first_name,
-            last_name=last_name,
-            phone=request.form.get('phone'),
-            role=request.form.get('role', 'customer')
-        )
-        user.set_password(request.form.get('password'))
-        
-        db.session.add(user)
-        db.session.commit()
-        
-        flash('User added successfully!', 'success')
-        return redirect(url_for('admin.users'))
+        try:
+            email = request.form.get('email')
+            first_name = request.form.get('first_name')
+            last_name = request.form.get('last_name')
+            
+            # Check if user already exists
+            existing_user = User.query.filter_by(email=email).first()
+            if existing_user:
+                flash('User with this email already exists!', 'danger')
+                return redirect(url_for('admin.add_user'))
+            
+            # Generate username from email (part before @) or from first_last name
+            username = request.form.get('username')
+            if not username:
+                # Try to generate from email
+                if email and '@' in email:
+                    username = email.split('@')[0]
+                else:
+                    # Generate from name
+                    username = f"{first_name.lower()}.{last_name.lower()}" if first_name and last_name else None
+            
+            # Ensure username is unique
+            if username:
+                base_username = username
+                counter = 1
+                while User.query.filter_by(username=username).first():
+                    username = f"{base_username}{counter}"
+                    counter += 1
+            
+            # Get role from form and convert to enum
+            role_value = request.form.get('role', 'customer')
+            
+            # Map HTML form values to Role enum values
+            role_mapping = {
+                'customer': Role.CUSTOMER,
+                'staff': Role.DRIVER,  # Map staff to DRIVER since there's no STAFF in enum
+                'driver': Role.DRIVER,
+                'manager': Role.MANAGER,
+                'admin': Role.ADMIN
+            }
+            
+            # Get the role enum value, default to CUSTOMER if not found
+            user_role = role_mapping.get(role_value.lower(), Role.CUSTOMER)
+            
+            user = User(
+                email=email,
+                username=username,
+                first_name=first_name,
+                last_name=last_name,
+                phone=request.form.get('phone'),
+                role=user_role
+            )
+            user.set_password(request.form.get('password'))
+            
+            db.session.add(user)
+            db.session.commit()
+            
+            flash('User added successfully!', 'success')
+            return redirect(url_for('admin.users'))
+            
+        except Exception as e:
+            db.session.rollback()
+            current_app.logger.error(f"Error adding user: {str(e)}")
+            flash(f'Error adding user: {str(e)}', 'danger')
+            return redirect(url_for('admin.add_user'))
     
     return render_template('admin/add_user.html')
 
@@ -561,20 +678,41 @@ def edit_user(user_id):
     user = User.query.get_or_404(user_id)
     
     if request.method == 'POST':
-        user.email = request.form.get('email')
-        user.first_name = request.form.get('first_name')
-        user.last_name = request.form.get('last_name')
-        user.phone = request.form.get('phone')
-        user.role = request.form.get('role')
-        
-        # Update password if provided
-        new_password = request.form.get('password')
-        if new_password:
-            user.set_password(new_password)
-        
-        db.session.commit()
-        flash('User updated successfully!', 'success')
-        return redirect(url_for('admin.users'))
+        try:
+            user.email = request.form.get('email')
+            user.first_name = request.form.get('first_name')
+            user.last_name = request.form.get('last_name')
+            user.phone = request.form.get('phone')
+            
+            # Get role from form and convert to enum
+            role_value = request.form.get('role', 'customer')
+            
+            # Map HTML form values to Role enum values
+            role_mapping = {
+                'customer': Role.CUSTOMER,
+                'staff': Role.DRIVER,  # Map staff to DRIVER since there's no STAFF in enum
+                'driver': Role.DRIVER,
+                'manager': Role.MANAGER,
+                'admin': Role.ADMIN
+            }
+            
+            # Get the role enum value, keep existing if not found
+            user.role = role_mapping.get(role_value.lower(), user.role)
+            
+            # Update password if provided
+            new_password = request.form.get('password')
+            if new_password:
+                user.set_password(new_password)
+            
+            db.session.commit()
+            flash('User updated successfully!', 'success')
+            return redirect(url_for('admin.users'))
+            
+        except Exception as e:
+            db.session.rollback()
+            current_app.logger.error(f"Error updating user: {str(e)}")
+            flash(f'Error updating user: {str(e)}', 'danger')
+            return redirect(url_for('admin.edit_user', user_id=user_id))
     
     return render_template('admin/edit_user.html', user=user)
 

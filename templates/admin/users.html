@@ -43,10 +43,10 @@
                 <div class="search-group">
                     <select name="role" class="form-control" onchange="this.form.submit()">
                         <option value="">All Roles</option>
-                        <option value="customer" {% if request.args.get('role') == 'customer' %}selected{% endif %}>Customer</option>
-                        <option value="staff" {% if request.args.get('role') == 'staff' %}selected{% endif %}>Staff</option>
-                        <option value="manager" {% if request.args.get('role') == 'manager' %}selected{% endif %}>Manager</option>
-                        <option value="admin" {% if request.args.get('role') == 'admin' %}selected{% endif %}>Admin</option>
+                        <option value="CUSTOMER" {% if request.args.get('role') == 'CUSTOMER' %}selected{% endif %}>Customer</option>
+                        <option value="DRIVER" {% if request.args.get('role') == 'DRIVER' %}selected{% endif %}>Driver</option>
+                        <option value="MANAGER" {% if request.args.get('role') == 'MANAGER' %}selected{% endif %}>Manager</option>
+                        <option value="ADMIN" {% if request.args.get('role') == 'ADMIN' %}selected{% endif %}>Admin</option>
                     </select>
                 </div>
                 
@@ -96,7 +96,7 @@
                         <td>{{ user.email }}</td>
                         <td>{{ user.phone or 'N/A' }}</td>
                         <td>
-                            <span class="badge badge-role-{{ user.role.value if user.role else 'customer' }}">
+                            <span class="badge badge-role-{{ user.role.value.lower() if user.role else 'customer' }}">
                                 {{ user.role.value.title() if user.role else 'Customer' }}
                             </span>
                         </td>

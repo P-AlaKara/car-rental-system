@@ -470,6 +470,12 @@ body.admin-body {
     border: 1px solid #2563eb;
 }
 
+.badge-role-driver {
+    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+    color: white;
+    border: 1px solid #2563eb;
+}
+
 .badge-role-customer {
     background: linear-gradient(135deg, #10b981 0%, #059669 100%);
     color: white;

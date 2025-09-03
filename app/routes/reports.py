@@ -1,7 +1,7 @@
-from flask import Blueprint, render_template, request, send_file, jsonify
+from flask import Blueprint, render_template, request, send_file, jsonify, current_app
 from flask_login import login_required
 from app import db
-from app.models import Booking, Payment, Car, User, Driver
+from app.models import Booking, Payment, Car, User, Driver, Role
 from app.utils.decorators import manager_required
 from datetime import datetime, timedelta
 from sqlalchemy import func
@@ -172,48 +172,64 @@ def fleet_utilization():
 @manager_required
 def customers():
     """Customer analytics report."""
-    # Get top customers by revenue
-    top_customers = db.session.query(
-        User,
-        func.count(Booking.id).label('booking_count'),
-        func.sum(Booking.total_amount).label('total_spent'),
-        func.avg(Booking.total_amount).label('avg_booking_value')
-    ).join(Booking, User.id == Booking.customer_id).filter(
-        Booking.status == 'completed'
-    ).group_by(User.id).order_by(
-        func.sum(Booking.total_amount).desc()
-    ).limit(20).all()
-    
-    # Get new customers (last 30 days)
-    thirty_days_ago = datetime.utcnow() - timedelta(days=30)
-    new_customers = User.query.filter(
-        User.role == 'customer',
-        User.created_at >= thirty_days_ago
-    ).count()
-    
-    # Get customer retention data
-    total_customers = User.query.filter_by(role='customer').count()
-    repeat_customers = db.session.query(
-        func.count(func.distinct(Booking.customer_id))
-    ).filter(
-        db.exists().where(
-            db.and_(
-                Booking.customer_id == User.id,
-                Booking.id != db.session.query(func.min(Booking.id)).filter(
-                    Booking.customer_id == User.id
-                ).scalar_subquery()
-            )
-        )
-    ).scalar()
-    
-    retention_rate = (repeat_customers / total_customers * 100) if total_customers > 0 else 0
-    
-    return render_template('pages/reports/customers.html',
-                         top_customers=top_customers,
-                         new_customers=new_customers,
-                         total_customers=total_customers,
-                         repeat_customers=repeat_customers,
-                         retention_rate=retention_rate)
+    try:
+        # Get top customers by revenue
+        top_customers = db.session.query(
+            User,
+            func.count(Booking.id).label('booking_count'),
+            func.sum(Booking.total_amount).label('total_spent'),
+            func.avg(Booking.total_amount).label('avg_booking_value')
+        ).join(Booking, User.id == Booking.customer_id).filter(
+            Booking.status == 'completed'
+        ).group_by(User.id).order_by(
+            func.sum(Booking.total_amount).desc()
+        ).limit(20).all()
+        
+        # Get new customers (last 30 days)
+        thirty_days_ago = datetime.utcnow() - timedelta(days=30)
+        new_customers = User.query.filter(
+            User.role == Role.CUSTOMER,
+            User.created_at >= thirty_days_ago
+        ).count()
+        
+        # Get customer retention data
+        total_customers = User.query.filter_by(role=Role.CUSTOMER).count()
+        repeat_customers = 0
+        
+        try:
+            repeat_customers = db.session.query(
+                func.count(func.distinct(Booking.customer_id))
+            ).filter(
+                db.exists().where(
+                    db.and_(
+                        Booking.customer_id == User.id,
+                        Booking.id != db.session.query(func.min(Booking.id)).filter(
+                            Booking.customer_id == User.id
+                        ).scalar_subquery()
+                    )
+                )
+            ).scalar() or 0
+        except Exception as e:
+            current_app.logger.error(f"Error calculating repeat customers: {str(e)}")
+            repeat_customers = 0
+        
+        retention_rate = (repeat_customers / total_customers * 100) if total_customers > 0 else 0
+        
+        return render_template('pages/reports/customers.html',
+                             top_customers=top_customers,
+                             new_customers=new_customers,
+                             total_customers=total_customers,
+                             repeat_customers=repeat_customers,
+                             retention_rate=retention_rate)
+    except Exception as e:
+        current_app.logger.error(f"Error generating customer report: {str(e)}")
+        # Return with default values if there's an error
+        return render_template('pages/reports/customers.html',
+                             top_customers=[],
+                             new_customers=0,
+                             total_customers=0,
+                             repeat_customers=0,
+                             retention_rate=0)
 
 
 @bp.route('/export/<report_type>')
