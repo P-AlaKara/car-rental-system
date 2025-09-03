@@ -39,6 +39,23 @@
     <!-- Filters -->
     <div class="card mb-4">
         <div class="card-body">
+            {% if request.args.get('category') or request.args.get('status') or request.args.get('search') %}
+            <div class="alert alert-info mb-3">
+                <strong>Active Filters:</strong>
+                {% if request.args.get('category') %}
+                    <span class="badge badge-primary">Category: {{ request.args.get('category').title() }}</span>
+                {% endif %}
+                {% if request.args.get('status') %}
+                    <span class="badge badge-primary">Status: {{ request.args.get('status').replace('_', ' ').title() }}</span>
+                {% endif %}
+                {% if request.args.get('search') %}
+                    <span class="badge badge-primary">Search: "{{ request.args.get('search') }}"</span>
+                {% endif %}
+                <a href="{{ url_for('cars.index') }}" class="btn btn-sm btn-outline-secondary float-right">
+                    <i class="fas fa-times"></i> Clear All
+                </a>
+            </div>
+            {% endif %}
             <form method="GET" action="{{ url_for('cars.index') }}" class="filter-form">
                 <div class="row">
                     <div class="col-3">
@@ -67,6 +84,9 @@
                     </div>
                     <div class="col-2">
                         <button type="submit" class="btn btn-primary btn-block">Filter</button>
+                        {% if request.args.get('category') or request.args.get('status') or request.args.get('search') %}
+                        <a href="{{ url_for('cars.index') }}" class="btn btn-link btn-block mt-1 p-0">Clear Filters</a>
+                        {% endif %}
                     </div>
                 </div>
             </form>
@@ -74,6 +94,7 @@
     </div>
     
     <!-- Cars Grid -->
+    {% if cars.items %}
     <div class="row">
         {% for car in cars.items %}
         <div class="col-4 mb-4">
@@ -164,6 +185,17 @@
         </div>
         {% endfor %}
     </div>
+    {% else %}
+    <div class="alert alert-warning text-center">
+        <h4>No cars found</h4>
+        {% if request.args.get('category') or request.args.get('status') or request.args.get('search') %}
+        <p>No cars match your current filters. Try adjusting your search criteria.</p>
+        <a href="{{ url_for('cars.index') }}" class="btn btn-primary">View All Cars</a>
+        {% else %}
+        <p>No cars are currently available in our fleet.</p>
+        {% endif %}
+    </div>
+    {% endif %}
     
     <!-- Pagination -->
     {% if cars.pages > 1 %}
@@ -171,7 +203,7 @@
         <ul class="pagination justify-content-center">
             {% if cars.has_prev %}
             <li class="page-item">
-                <a class="page-link" href="{{ url_for('cars.index', page=cars.prev_num, **request.args) }}">Previous</a>
+                <a class="page-link" href="{{ url_for('cars.index', page=cars.prev_num, category=request.args.get('category'), status=request.args.get('status'), search=request.args.get('search')) }}">Previous</a>
             </li>
             {% endif %}
             
@@ -179,7 +211,7 @@
                 {% if page_num %}
                     {% if page_num != cars.page %}
                     <li class="page-item">
-                        <a class="page-link" href="{{ url_for('cars.index', page=page_num, **request.args) }}">{{ page_num }}</a>
+                        <a class="page-link" href="{{ url_for('cars.index', page=page_num, category=request.args.get('category'), status=request.args.get('status'), search=request.args.get('search')) }}">{{ page_num }}</a>
                     </li>
                     {% else %}
                     <li class="page-item active">
@@ -195,7 +227,7 @@
             
             {% if cars.has_next %}
             <li class="page-item">
-                <a class="page-link" href="{{ url_for('cars.index', page=cars.next_num, **request.args) }}">Next</a>
+                <a class="page-link" href="{{ url_for('cars.index', page=cars.next_num, category=request.args.get('category'), status=request.args.get('status'), search=request.args.get('search')) }}">Next</a>
             </li>
             {% endif %}
         </ul>
@@ -307,6 +339,37 @@
 
 .justify-content-center {
     justify-content: center;
+}
+
+.alert-info {
+    background-color: #e3f2fd;
+    border-color: #2196f3;
+    color: #0d47a1;
+}
+
+.alert-info .badge {
+    margin-right: 10px;
+    padding: 5px 10px;
+    font-size: 0.85rem;
+}
+
+.badge-primary {
+    background-color: #2563eb;
+}
+
+.float-right {
+    float: right;
+}
+
+.btn-outline-secondary {
+    color: #6c757d;
+    border-color: #6c757d;
+}
+
+.btn-outline-secondary:hover {
+    color: #fff;
+    background-color: #6c757d;
+    border-color: #6c757d;
 }
 </style>
 {% endblock %}
