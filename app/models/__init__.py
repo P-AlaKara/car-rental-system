@@ -7,6 +7,8 @@ from .maintenance import Maintenance, MaintenanceType, MaintenanceStatus
 from .xero_token import XeroToken
 from .vehicle_return import VehicleReturn
 from .vehicle_photo import VehiclePhoto, PhotoType
+from .booking_photo import BookingPhoto
+from .pay_advantage import PayAdvantageCustomer, DirectDebitSchedule
 
 __all__ = [
     'User', 'Role',
@@ -16,5 +18,10 @@ __all__ = [
     'Payment', 'PaymentStatus', 'PaymentMethod',
     'Maintenance', 'MaintenanceType', 'MaintenanceStatus',
     'XeroToken',
+    'VehicleReturn',
+    'VehiclePhoto', 'PhotoType',
+    'BookingPhoto',
+    'PayAdvantageCustomer', 'DirectDebitSchedule'
 ]
+
 
