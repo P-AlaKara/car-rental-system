@@ -44,8 +44,6 @@
                     <select name="role" class="form-control" onchange="this.form.submit()">
                         <option value="">All Roles</option>
                         <option value="CUSTOMER" {% if request.args.get('role') == 'CUSTOMER' %}selected{% endif %}>Customer</option>
-                        <option value="DRIVER" {% if request.args.get('role') == 'DRIVER' %}selected{% endif %}>Driver</option>
-                        <option value="MANAGER" {% if request.args.get('role') == 'MANAGER' %}selected{% endif %}>Manager</option>
                         <option value="ADMIN" {% if request.args.get('role') == 'ADMIN' %}selected{% endif %}>Admin</option>
                     </select>
                 </div>

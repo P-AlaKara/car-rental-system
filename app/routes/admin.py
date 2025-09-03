@@ -638,9 +638,9 @@ def add_user():
             # Map HTML form values to Role enum values
             role_mapping = {
                 'customer': Role.CUSTOMER,
-                'staff': Role.DRIVER,  # Map staff to DRIVER since there's no STAFF in enum
-                'driver': Role.DRIVER,
-                'manager': Role.MANAGER,
+                'staff': Role.ADMIN,  # Map legacy staff/driver/manager to ADMIN
+                'driver': Role.ADMIN,  # Map legacy driver to ADMIN
+                'manager': Role.ADMIN,  # Map legacy manager to ADMIN
                 'admin': Role.ADMIN
             }
             
@@ -690,9 +690,9 @@ def edit_user(user_id):
             # Map HTML form values to Role enum values
             role_mapping = {
                 'customer': Role.CUSTOMER,
-                'staff': Role.DRIVER,  # Map staff to DRIVER since there's no STAFF in enum
-                'driver': Role.DRIVER,
-                'manager': Role.MANAGER,
+                'staff': Role.ADMIN,  # Map legacy staff/driver/manager to ADMIN
+                'driver': Role.ADMIN,  # Map legacy driver to ADMIN
+                'manager': Role.ADMIN,  # Map legacy manager to ADMIN
                 'admin': Role.ADMIN
             }
             
