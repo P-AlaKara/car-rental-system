@@ -1,0 +1,170 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Car Images - {{ car.full_name }} - Admin{% endblock %}
+{% block page_title %}{{ car.full_name }} - Images{% endblock %}
+
+{% block content %}
+<div class="car-images-container">
+    <!-- Header -->
+    <div class="actions-bar">
+        <div class="actions-left">
+            <a href="{{ url_for('admin.fleet') }}" class="btn btn-outline">
+                <i class="fas fa-arrow-left"></i> Back to Fleet
+            </a>
+        </div>
+        
+        <div class="actions-right">
+            <h3>{{ car.full_name }} - {{ car.license_plate }}</h3>
+        </div>
+    </div>
+    
+    <!-- Image Upload Section -->
+    <div class="upload-section">
+        <h4>Upload New Images</h4>
+        <form method="POST" enctype="multipart/form-data" action="{{ url_for('admin.upload_car_images', car_id=car.id) }}">
+            <div class="form-group">
+                <label>Select Images</label>
+                <input type="file" name="images" class="form-control-file" multiple accept="image/*">
+                <small class="form-text text-muted">You can select multiple images. Supported formats: JPG, PNG, GIF</small>
+            </div>
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-upload"></i> Upload Images
+            </button>
+        </form>
+    </div>
+    
+    <!-- Images Grid -->
+    <div class="images-section">
+        <h4>Current Images</h4>
+        {% if car.images and car.images|length > 0 %}
+        <div class="images-grid">
+            {% for image in car.images %}
+            <div class="image-card">
+                <img src="{{ image }}" alt="Car image" class="car-image" onclick="showImageModal('{{ image }}')">
+                <div class="image-actions">
+                    <button class="btn btn-sm btn-danger" onclick="deleteImage({{ car.id }}, '{{ image }}')">
+                        <i class="fas fa-trash"></i> Delete
+                    </button>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <i class="fas fa-image fa-4x text-muted mb-3"></i>
+            <p>No images uploaded for this vehicle</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Image Modal -->
+<div class="modal" id="imageModal">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Image Preview</h5>
+                <button type="button" class="close" onclick="closeModal('imageModal')">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <div class="modal-body text-center">
+                <img id="modalImage" src="" alt="Car image" style="max-width: 100%; height: auto;">
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.car-images-container {
+    padding: 1.5rem;
+}
+
+.upload-section {
+    background: white;
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.images-section {
+    background: white;
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.images-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 1.5rem;
+    margin-top: 1rem;
+}
+
+.image-card {
+    border: 1px solid #e5e7eb;
+    border-radius: 0.5rem;
+    overflow: hidden;
+    transition: transform 0.2s;
+}
+
+.image-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.car-image {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+    cursor: pointer;
+}
+
+.image-actions {
+    padding: 0.75rem;
+    background: #f9fafb;
+    text-align: center;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function showImageModal(imageSrc) {
+    document.getElementById('modalImage').src = imageSrc;
+    document.getElementById('imageModal').style.display = 'block';
+}
+
+function closeModal(modalId) {
+    document.getElementById(modalId).style.display = 'none';
+}
+
+function deleteImage(carId, imageUrl) {
+    if (confirm('Are you sure you want to delete this image?')) {
+        fetch(`/admin/fleet/${carId}/delete-image`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ image_url: imageUrl })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Error deleting image: ' + data.message);
+            }
+        });
+    }
+}
+
+// Close modal when clicking outside
+window.onclick = function(event) {
+    if (event.target.classList.contains('modal')) {
+        event.target.style.display = 'none';
+    }
+}
+</script>
+{% endblock %}

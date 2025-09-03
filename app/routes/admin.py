@@ -6,6 +6,8 @@ from sqlalchemy import func, and_, or_, desc
 from app import db
 from app.models import User, Car, Booking, Payment, Maintenance, CarStatus, BookingStatus, MaintenanceType, MaintenanceStatus, PaymentStatus
 import json
+import os
+from werkzeug.utils import secure_filename
 
 admin_bp = Blueprint('admin', __name__, url_prefix='/admin')
 
@@ -268,7 +270,6 @@ def add_car():
             current_odometer=request.form.get('current_odometer', type=int, default=0),
             last_service_odometer=request.form.get('last_service_odometer', type=int, default=0),
             service_threshold=request.form.get('service_threshold', type=int, default=5000),
-            current_location=request.form.get('current_location'),
             status=CarStatus.AVAILABLE
         )
         
@@ -278,6 +279,36 @@ def add_car():
             car.features = features
         
         db.session.add(car)
+        db.session.flush()  # Flush to get the car ID before committing
+        
+        # Handle image uploads
+        if 'images' in request.files:
+            files = request.files.getlist('images')
+            uploaded_images = []
+            
+            # Create upload directory if it doesn't exist
+            upload_dir = os.path.join('static', 'uploads', 'cars')
+            os.makedirs(upload_dir, exist_ok=True)
+            
+            for file in files:
+                if file and file.filename:
+                    # Secure the filename
+                    filename = secure_filename(file.filename)
+                    # Add timestamp to make filename unique
+                    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+                    filename = f"{car.id}_{timestamp}_{filename}"
+                    filepath = os.path.join(upload_dir, filename)
+                    
+                    # Save the file
+                    file.save(filepath)
+                    
+                    # Store the relative path for web access
+                    web_path = f"/static/uploads/cars/{filename}"
+                    uploaded_images.append(web_path)
+            
+            if uploaded_images:
+                car.images = uploaded_images
+        
         db.session.commit()
         
         flash('Car added successfully!', 'success')
@@ -309,7 +340,6 @@ def edit_car(car_id):
         car.current_odometer = request.form.get('current_odometer', type=int)
         car.last_service_odometer = request.form.get('last_service_odometer', type=int)
         car.service_threshold = request.form.get('service_threshold', type=int)
-        car.current_location = request.form.get('current_location')
         car.status = CarStatus(request.form.get('status'))
         
         # Handle features as JSON
@@ -342,6 +372,88 @@ def delete_car(car_id):
         flash('Car deleted successfully!', 'success')
     
     return redirect(url_for('admin.fleet'))
+
+@admin_bp.route('/fleet/<int:car_id>/images')
+@admin_required
+def view_car_images(car_id):
+    """View car images."""
+    car = Car.query.get_or_404(car_id)
+    return render_template('admin/view_car_images.html', car=car)
+
+@admin_bp.route('/fleet/<int:car_id>/upload-images', methods=['POST'])
+@admin_required
+def upload_car_images(car_id):
+    """Upload images for a car."""
+    car = Car.query.get_or_404(car_id)
+    
+    if 'images' not in request.files:
+        flash('No images selected', 'danger')
+        return redirect(url_for('admin.view_car_images', car_id=car_id))
+    
+    files = request.files.getlist('images')
+    uploaded_images = []
+    
+    # Create upload directory if it doesn't exist
+    upload_dir = os.path.join('static', 'uploads', 'cars')
+    os.makedirs(upload_dir, exist_ok=True)
+    
+    for file in files:
+        if file and file.filename:
+            # Secure the filename
+            filename = secure_filename(file.filename)
+            # Add timestamp to make filename unique
+            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+            filename = f"{car_id}_{timestamp}_{filename}"
+            filepath = os.path.join(upload_dir, filename)
+            
+            # Save the file
+            file.save(filepath)
+            
+            # Store the relative path for web access
+            web_path = f"/static/uploads/cars/{filename}"
+            uploaded_images.append(web_path)
+    
+    # Update car images
+    if car.images:
+        car.images = car.images + uploaded_images
+    else:
+        car.images = uploaded_images
+    
+    db.session.commit()
+    flash(f'Successfully uploaded {len(uploaded_images)} image(s)', 'success')
+    
+    return redirect(url_for('admin.view_car_images', car_id=car_id))
+
+@admin_bp.route('/fleet/<int:car_id>/delete-image', methods=['POST'])
+@admin_required
+def delete_car_image(car_id):
+    """Delete a specific image from a car."""
+    car = Car.query.get_or_404(car_id)
+    data = request.get_json()
+    image_url = data.get('image_url')
+    
+    if not image_url:
+        return jsonify({'success': False, 'message': 'No image URL provided'}), 400
+    
+    if car.images and image_url in car.images:
+        # Remove the image from the list
+        car.images = [img for img in car.images if img != image_url]
+        
+        # Try to delete the physical file
+        try:
+            # Convert web path to file path
+            if image_url.startswith('/static/'):
+                file_path = image_url[1:]  # Remove leading slash
+                if os.path.exists(file_path):
+                    os.remove(file_path)
+        except Exception as e:
+            # Log error but don't fail the operation
+            print(f"Error deleting file: {e}")
+        
+        db.session.commit()
+        return jsonify({'success': True, 'message': 'Image deleted successfully'})
+    
+    return jsonify({'success': False, 'message': 'Image not found'}), 404
 
 @admin_bp.route('/fleet/<int:car_id>/maintenance', methods=['POST'])
 @admin_required
@@ -465,6 +577,7 @@ def payments():
     """View payment history."""
     # Get filter parameters
     user_id = request.args.get('user_id', type=int)
+    car_id = request.args.get('car_id', type=int)
     booking_id = request.args.get('booking_id', type=int)
     status = request.args.get('status')
     date_from = request.args.get('date_from')
@@ -475,6 +588,9 @@ def payments():
     
     if user_id:
         query = query.filter_by(user_id=user_id)
+    if car_id:
+        # Filter by car through booking relationship
+        query = query.join(Booking).filter(Booking.car_id == car_id)
     if booking_id:
         query = query.filter_by(booking_id=booking_id)
     if status:
@@ -496,9 +612,15 @@ def payments():
         func.sum(Payment.amount)
     ).scalar() or 0
     
+    # Get all users and cars for filter dropdowns
+    users = User.query.order_by(User.first_name, User.last_name).all()
+    cars = Car.query.order_by(Car.make, Car.model).all()
+    
     return render_template('admin/payments.html', 
                          payments=payments,
                          total_amount=total_amount,
+                         users=users,
+                         cars=cars,
                          PaymentStatus=PaymentStatus)
 
 @admin_bp.route('/maintenance')

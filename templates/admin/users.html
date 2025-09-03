@@ -3,6 +3,20 @@
 {% block title %}User Management - Admin{% endblock %}
 {% block page_title %}User Management{% endblock %}
 
+{% block head %}
+<style>
+.users-table td {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.users-table td strong {
+    display: inline-block;
+    white-space: nowrap;
+}
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="users-container">
     <!-- Actions Bar -->
@@ -165,35 +179,6 @@
         {% endif %}
     </div>
     
-    <!-- User Statistics -->
-    <div class="stats-row">
-        <div class="stat-card">
-            <div class="stat-content">
-                <h3>{{ users.total }}</h3>
-                <p>Total Users</p>
-            </div>
-        </div>
-        
-        <div class="stat-card">
-            <div class="stat-content">
-                <h3>{{ users.items | selectattr('role.value', 'equalto', 'customer') | list | length }}</h3>
-                <p>Customers</p>
-            </div>
-        </div>
-        
-        <div class="stat-card">
-            <div class="stat-content">
-                <h3>{{ users.items | selectattr('role.value', 'equalto', 'driver') | list | length }}</h3>
-                <p>Staff Members</p>
-            </div>
-        </div>
-        
-        <div class="stat-card">
-            <div class="stat-content">
-                <h3>{{ users.items | selectattr('is_active', 'equalto', true) | list | length }}</h3>
-                <p>Active Users</p>
-            </div>
-        </div>
-    </div>
+
 </div>
 {% endblock %}
