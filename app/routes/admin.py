@@ -730,14 +730,128 @@ def complete_maintenance(maintenance_id):
     flash('Maintenance completed successfully!', 'success')
     return redirect(url_for('admin.maintenance'))
 
+@admin_bp.route('/booking/<int:booking_id>/send-invoice')
+@admin_required
+def show_send_invoice(booking_id):
+    """Show the send invoice page for a booking."""
+    from app.models import XeroToken
+    
+    booking = Booking.query.get_or_404(booking_id)
+    
+    # Check if Xero is connected
+    xero_token = XeroToken.query.order_by(XeroToken.created_at.desc()).first()
+    xero_connected = xero_token is not None and xero_token.refresh_token is not None
+    
+    return render_template('admin/send_invoice.html', 
+                         booking=booking, 
+                         xero_connected=xero_connected,
+                         xero_auth_url=url_for('xero.authorize', _external=True))
+
 # API endpoints for AJAX operations
 @admin_bp.route('/api/booking/<int:booking_id>/send-invoice', methods=['POST'])
 @admin_required
 def send_invoice(booking_id):
-    """Send invoice for a booking (placeholder)."""
+    """Send invoice for a booking through Xero."""
+    from app.models import XeroToken
+    from app.utils.xero import XeroClient
+    import logging
+    
+    logger = logging.getLogger(__name__)
     booking = Booking.query.get_or_404(booking_id)
-    # TODO: Implement invoice sending logic
-    return jsonify({'success': True, 'message': 'Invoice sending functionality will be implemented'})
+    
+    try:
+        # Check if we have a Xero token (refresh token)
+        xero_token = XeroToken.query.order_by(XeroToken.created_at.desc()).first()
+        
+        if not xero_token or not xero_token.refresh_token:
+            # No token available - first time connection or token deleted
+            return jsonify({
+                'success': False,
+                'needs_auth': True,
+                'auth_url': url_for('xero.authorize', _external=True),
+                'message': 'Xero connection required. Please authorize the application first.'
+            }), 401
+        
+        # Get customer details
+        customer = User.query.get(booking.customer_id)
+        if not customer:
+            return jsonify({
+                'success': False,
+                'message': 'Customer not found for this booking'
+            }), 404
+        
+        # Prepare booking data for invoice
+        booking_data = {
+            'booking_number': booking.booking_number,
+            'customer_name': f"{customer.first_name} {customer.last_name}",
+            'customer_email': customer.email,
+            'customer_phone': customer.phone or '',
+            'car_name': booking.car.full_name if booking.car else 'N/A',
+            'pickup_date': booking.pickup_date.strftime('%Y-%m-%d') if booking.pickup_date else None,
+            'return_date': booking.return_date.strftime('%Y-%m-%d') if booking.return_date else None,
+            'pickup_location': booking.pickup_location,
+            'return_location': booking.return_location,
+            'daily_rate': booking.daily_rate,
+            'total_days': booking.total_days,
+            'with_driver': booking.with_driver,
+            'insurance_opted': booking.insurance_opted,
+            'gps_opted': booking.gps_opted,
+            'child_seat_opted': booking.child_seat_opted
+        }
+        
+        # Calculate due date (7 days from now by default)
+        from datetime import datetime, timedelta
+        due_date = datetime.utcnow() + timedelta(days=7)
+        
+        # Initialize Xero client and send invoice
+        client = XeroClient()
+        
+        try:
+            # This will automatically refresh the token if needed
+            result = client.create_and_send_invoice(
+                booking_data=booking_data,
+                invoice_amount=float(booking.total_amount),
+                due_date=due_date
+            )
+            
+            # Store invoice reference in booking
+            if result.get('invoice'):
+                invoice_info = result['invoice']
+                booking.admin_notes = (booking.admin_notes or '') + f"\nXero Invoice: {invoice_info.get('InvoiceNumber')} (ID: {invoice_info.get('InvoiceID')})"
+                db.session.commit()
+            
+            return jsonify({
+                'success': True,
+                'message': 'Invoice sent successfully',
+                'invoice_number': result.get('invoice', {}).get('InvoiceNumber'),
+                'invoice_id': result.get('invoice', {}).get('InvoiceID')
+            })
+            
+        except Exception as xero_error:
+            # Check if the error is due to invalid/expired refresh token
+            error_msg = str(xero_error).lower()
+            if 'invalid_grant' in error_msg or 'refresh' in error_msg or 'expired' in error_msg:
+                # Token is invalid - need to re-authorize
+                return jsonify({
+                    'success': False,
+                    'needs_auth': True,
+                    'auth_url': url_for('xero.authorize', _external=True),
+                    'message': 'Xero authorization expired. Please re-authorize the application.'
+                }), 401
+            else:
+                # Other Xero error
+                logger.error(f"Xero error sending invoice: {str(xero_error)}")
+                return jsonify({
+                    'success': False,
+                    'message': f'Failed to send invoice: {str(xero_error)}'
+                }), 500
+                
+    except Exception as e:
+        logger.error(f"Error processing invoice request: {str(e)}")
+        return jsonify({
+            'success': False,
+            'message': f'Error processing request: {str(e)}'
+        }), 500
 
 @admin_bp.route('/api/booking/<int:booking_id>/payment-history')
 @admin_required
@@ -773,7 +887,15 @@ def complete_booking(booking_id):
 @admin_required
 def settings():
     """Admin settings page."""
-    return render_template('admin/settings.html')
+    from app.models import XeroToken
+    
+    # Check Xero connection status
+    xero_token = XeroToken.query.order_by(XeroToken.created_at.desc()).first()
+    xero_connected = xero_token is not None and xero_token.refresh_token is not None
+    
+    return render_template('admin/settings.html', 
+                         xero_connected=xero_connected,
+                         xero_token=xero_token)
 
 
 @admin_bp.route('/xero-settings')

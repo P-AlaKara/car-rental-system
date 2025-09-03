@@ -69,6 +69,12 @@
                             <span>Maintenance</span>
                         </a>
                     </li>
+                    <li class="{% if request.endpoint == 'admin.settings' %}active{% endif %}">
+                        <a href="{{ url_for('admin.settings') }}" data-tooltip="Settings">
+                            <i class="fas fa-cog"></i>
+                            <span>Settings</span>
+                        </a>
+                    </li>
                 </ul>
             </nav>
             
