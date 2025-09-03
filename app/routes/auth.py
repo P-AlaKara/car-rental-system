@@ -154,10 +154,11 @@ def edit_profile():
         
         # Update user fields
         updateable_fields = ['first_name', 'last_name', 'phone', 'address', 
-                           'city', 'state', 'zip_code', 'country', 'license_number']
+                           'city', 'state', 'zip_code', 'country', 'license_number',
+                           'license_state', 'license_class']
         
         for field in updateable_fields:
-            if field in data and data[field]:  # Only update if field has a value
+            if field in data:  # Update even if empty to allow clearing fields
                 setattr(current_user, field, data[field])
         
         # Handle date fields separately
@@ -174,10 +175,6 @@ def edit_profile():
                 current_user.license_expiry = datetime.strptime(data['license_expiry'], '%Y-%m-%d').date()
             except ValueError:
                 pass
-        
-        # Store additional license fields in session or a JSON field if needed
-        # For now, we'll store license_state and license_class as part of the user's address info
-        # This is a temporary solution - ideally these should be added to the User model
         
         # Handle password change
         if data.get('new_password'):

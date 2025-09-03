@@ -9,8 +9,6 @@ from .vehicle_return import VehicleReturn
 from .vehicle_photo import VehiclePhoto, PhotoType
 from .booking_photo import BookingPhoto
 from .pay_advantage import PayAdvantageCustomer, DirectDebitSchedule
-from .vehicle_handover import VehicleHandover, HandoverPhoto
-from .additional_charge import AdditionalCharge, ChargeType, ChargeStatus
 
 __all__ = [
     'User', 'Role',
@@ -23,9 +21,7 @@ __all__ = [
     'VehicleReturn',
     'VehiclePhoto', 'PhotoType',
     'BookingPhoto',
-    'PayAdvantageCustomer', 'DirectDebitSchedule',
-    'VehicleHandover', 'HandoverPhoto',
-    'AdditionalCharge', 'ChargeType', 'ChargeStatus'
+    'PayAdvantageCustomer', 'DirectDebitSchedule'
 ]
 
 

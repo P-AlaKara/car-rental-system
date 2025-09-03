@@ -1155,11 +1155,10 @@ def get_handover_details(booking_id):
 def complete_handover(booking_id):
     """Complete the vehicle handover process."""
     from app.services.pay_advantage import PayAdvantageService
-    from app.models import BookingPhoto, DirectDebitSchedule, VehicleHandover, HandoverPhoto
+    from app.models import BookingPhoto, DirectDebitSchedule
     import base64
     from io import BytesIO
     from PIL import Image
-    import uuid
     
     booking = Booking.query.get_or_404(booking_id)
     
@@ -1169,25 +1168,14 @@ def complete_handover(booking_id):
     data = request.get_json()
     
     try:
-        # Create or update VehicleHandover record
-        handover = VehicleHandover.query.filter_by(booking_id=booking_id).first()
-        if not handover:
-            handover = VehicleHandover(
-                booking_id=booking_id,
-                handover_by=current_user.id
-            )
-            db.session.add(handover)
-        
         # 1. Update license verification
         if data.get('license_verified'):
             booking.license_verified = True
             booking.license_verified_at = datetime.utcnow()
-            handover.license_verified = True
         
         # 2. Store odometer reading
         if data.get('odometer_reading'):
             booking.pickup_odometer = data['odometer_reading']
-            handover.odometer_reading = data['odometer_reading']
         
         # 3. Save photos
         photos = data.get('photos', [])
@@ -1209,27 +1197,15 @@ def complete_handover(booking_id):
                 with open(filepath, 'wb') as f:
                     f.write(image_data)
                 
-                # Save photo record to both models for compatibility
-                # Save to BookingPhoto for backward compatibility
-                booking_photo = BookingPhoto(
+                # Save photo record to database
+                photo = BookingPhoto(
                     booking_id=booking_id,
                     photo_type='pickup',
                     photo_url=f'/uploads/booking_photos/{filename}',
                     description=photo_data.get('name', ''),
                     uploaded_by=current_user.id
                 )
-                db.session.add(booking_photo)
-                
-                # Save to HandoverPhoto for new structure
-                handover_photo = HandoverPhoto(
-                    handover_id=handover.id,
-                    file_path=filepath,
-                    file_name=filename,
-                    description=photo_data.get('name', ''),
-                    photo_type='vehicle_condition',
-                    uploaded_by=current_user.id
-                )
-                db.session.add(handover_photo)
+                db.session.add(photo)
         
         # 4. Set up direct debit if provided
         direct_debit = data.get('direct_debit')
@@ -1279,11 +1255,6 @@ def complete_handover(booking_id):
         booking.handover_completed_at = datetime.utcnow()
         booking.handover_completed_by = current_user.id
         booking.actual_pickup_date = datetime.utcnow()
-        
-        # Update handover record
-        handover.handover_completed = True
-        handover.handover_date = datetime.utcnow()
-        handover.direct_debit_setup = direct_debit
         
         # Add admin note
         handover_note = f"Handover completed by {current_user.full_name} at {datetime.utcnow().strftime('%Y-%m-%d %H:%M')}"
@@ -1435,23 +1406,26 @@ def xero_settings():
     return render_template('admin/xero_settings.html', callback_url=callback_url)
 
 
-# API endpoint for fetching collection photos
+# API endpoint for fetching collection photos  
 @admin_bp.route('/api/booking/<int:booking_id>/collection-photos', methods=['GET'])
 @admin_required
 def get_collection_photos(booking_id):
     """Get collection photos for a booking."""
-    from app.models import VehicleHandover, HandoverPhoto
+    from app.models import BookingPhoto
     
     try:
-        # Check if handover exists for this booking
-        handover = VehicleHandover.query.filter_by(booking_id=booking_id).first()
+        # Get photos from BookingPhoto model
+        booking_photos = BookingPhoto.query.filter_by(
+            booking_id=booking_id,
+            photo_type='pickup'
+        ).all()
         
-        if handover and handover.photos:
+        if booking_photos:
             photos = []
-            for photo in handover.photos:
+            for photo in booking_photos:
                 photos.append({
-                    'url': photo.to_dict()['url'],
-                    'description': photo.description or f'Collection photo - {photo.photo_type}',
+                    'url': photo.photo_url,
+                    'description': photo.description or 'Collection photo',
                     'timestamp': photo.uploaded_at.strftime('%Y-%m-%d %H:%M') if photo.uploaded_at else ''
                 })
             
@@ -1459,32 +1433,11 @@ def get_collection_photos(booking_id):
                 'success': True,
                 'photos': photos
             })
-        else:
-            # Try to get photos from BookingPhoto model (backward compatibility)
-            from app.models import BookingPhoto
-            booking_photos = BookingPhoto.query.filter_by(
-                booking_id=booking_id,
-                photo_type='pickup'
-            ).all()
-            
-            if booking_photos:
-                photos = []
-                for photo in booking_photos:
-                    photos.append({
-                        'url': photo.photo_url,
-                        'description': photo.description or 'Collection photo',
-                        'timestamp': photo.uploaded_at.strftime('%Y-%m-%d %H:%M') if photo.uploaded_at else ''
-                    })
-                
-                return jsonify({
-                    'success': True,
-                    'photos': photos
-                })
-            
-            return jsonify({
-                'success': True,
-                'photos': []
-            })
+        
+        return jsonify({
+            'success': True,
+            'photos': []
+        })
             
     except Exception as e:
         current_app.logger.error(f"Error fetching collection photos: {str(e)}")
@@ -1493,113 +1446,3 @@ def get_collection_photos(booking_id):
             'message': 'Error fetching photos'
         })
 
-
-# API endpoint for managing additional charges
-@admin_bp.route('/api/booking/<int:booking_id>/additional-charges', methods=['GET'])
-@admin_required
-def get_additional_charges(booking_id):
-    """Get all additional charges for a booking."""
-    from app.models import AdditionalCharge
-    
-    charges = AdditionalCharge.query.filter_by(booking_id=booking_id).order_by(
-        AdditionalCharge.incurred_date.desc()
-    ).all()
-    
-    return jsonify({
-        'success': True,
-        'charges': [charge.to_dict() for charge in charges],
-        'pending_total': AdditionalCharge.get_pending_charges_total(booking_id),
-        'approved_total': AdditionalCharge.get_approved_charges_total(booking_id)
-    })
-
-
-@admin_bp.route('/api/booking/<int:booking_id>/additional-charges', methods=['POST'])
-@admin_required
-def add_additional_charge(booking_id):
-    """Add a new additional charge to a booking."""
-    from app.models import AdditionalCharge, ChargeType, ChargeStatus
-    
-    booking = Booking.query.get_or_404(booking_id)
-    data = request.get_json()
-    
-    try:
-        charge = AdditionalCharge(
-            booking_id=booking_id,
-            charge_type=ChargeType(data.get('charge_type', 'other')),
-            description=data.get('description', ''),
-            amount=float(data.get('amount', 0)),
-            status=ChargeStatus.PENDING,
-            notes=data.get('notes'),
-            created_by=current_user.id
-        )
-        
-        db.session.add(charge)
-        
-        # Update booking's additional charges total
-        booking.additional_charges = (booking.additional_charges or 0) + charge.amount
-        booking.total_amount = booking.subtotal + booking.tax_amount - booking.discount_amount + booking.additional_charges
-        
-        db.session.commit()
-        
-        return jsonify({
-            'success': True,
-            'message': 'Additional charge added successfully',
-            'charge': charge.to_dict()
-        })
-        
-    except Exception as e:
-        db.session.rollback()
-        current_app.logger.error(f"Error adding additional charge: {str(e)}")
-        return jsonify({
-            'success': False,
-            'message': f'Error adding charge: {str(e)}'
-        })
-
-
-@admin_bp.route('/api/additional-charge/<int:charge_id>/approve', methods=['POST'])
-@admin_required
-def approve_additional_charge(charge_id):
-    """Approve an additional charge."""
-    from app.models import AdditionalCharge
-    
-    charge = AdditionalCharge.query.get_or_404(charge_id)
-    
-    try:
-        charge.approve(current_user.id)
-        db.session.commit()
-        
-        return jsonify({
-            'success': True,
-            'message': 'Charge approved successfully'
-        })
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({
-            'success': False,
-            'message': f'Error approving charge: {str(e)}'
-        })
-
-
-@admin_bp.route('/api/additional-charge/<int:charge_id>/dispute', methods=['POST'])
-@admin_required
-def dispute_additional_charge(charge_id):
-    """Mark an additional charge as disputed."""
-    from app.models import AdditionalCharge
-    
-    charge = AdditionalCharge.query.get_or_404(charge_id)
-    data = request.get_json()
-    
-    try:
-        charge.dispute(data.get('reason', 'No reason provided'))
-        db.session.commit()
-        
-        return jsonify({
-            'success': True,
-            'message': 'Charge marked as disputed'
-        })
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({
-            'success': False,
-            'message': f'Error disputing charge: {str(e)}'
-        })
