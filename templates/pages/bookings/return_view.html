@@ -1,0 +1,285 @@
+{% extends "base.html" %}
+
+{% block title %}Return Details - Booking #{{ booking.booking_number }} - Aurora Motors{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="container">
+        <h1>Vehicle Return Details</h1>
+        <nav class="breadcrumb">
+            <a href="{{ url_for('main.index') }}">Home</a>
+            <span>/</span>
+            <a href="{{ url_for('bookings.index') }}">Bookings</a>
+            <span>/</span>
+            <a href="{{ url_for('bookings.view', id=booking.id) }}">#{{ booking.booking_number }}</a>
+            <span>/</span>
+            <span>Return Details</span>
+        </nav>
+    </div>
+</div>
+
+<section class="return-details-section py-5">
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8">
+                <!-- Return Status Card -->
+                <div class="detail-card mb-4">
+                    <div class="card-header">
+                        <h4>Return Status</h4>
+                        <span class="badge badge-success">Completed</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <label class="text-muted">Return Date</label>
+                                <p class="font-weight-bold">{{ vehicle_return.return_date.strftime('%B %d, %Y at %I:%M %p') }}</p>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="text-muted">Processed By</label>
+                                <p class="font-weight-bold">{{ vehicle_return.processor.full_name }}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Checklist Results -->
+                <div class="detail-card mb-4">
+                    <div class="card-header">
+                        <h4><i class="fas fa-clipboard-check"></i> Return Checklist</h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="checklist-results">
+                            <div class="checklist-item">
+                                {% if vehicle_return.bond_returned %}
+                                    <i class="fas fa-check-circle text-success"></i>
+                                {% else %}
+                                    <i class="fas fa-times-circle text-danger"></i>
+                                {% endif %}
+                                <span>Bond/Deposit Returned</span>
+                            </div>
+                            
+                            <div class="checklist-item">
+                                {% if vehicle_return.all_payments_received %}
+                                    <i class="fas fa-check-circle text-success"></i>
+                                {% else %}
+                                    <i class="fas fa-times-circle text-danger"></i>
+                                {% endif %}
+                                <span>All Payments Received</span>
+                            </div>
+                            
+                            <div class="checklist-item">
+                                {% if vehicle_return.car_in_good_condition %}
+                                    <i class="fas fa-check-circle text-success"></i>
+                                {% else %}
+                                    <i class="fas fa-times-circle text-danger"></i>
+                                {% endif %}
+                                <span>Car Returned in Good Condition</span>
+                            </div>
+                            
+                            <div class="checklist-item">
+                                {% if vehicle_return.fuel_tank_full %}
+                                    <i class="fas fa-check-circle text-success"></i>
+                                {% else %}
+                                    <i class="fas fa-times-circle text-danger"></i>
+                                {% endif %}
+                                <span>Fuel Tank Full</span>
+                            </div>
+                        </div>
+                        
+                        {% if not vehicle_return.is_checklist_complete() %}
+                        <div class="alert alert-warning mt-3">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            Some checklist items were not completed. Please review the details above.
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Vehicle Condition -->
+                <div class="detail-card mb-4">
+                    <div class="card-header">
+                        <h4><i class="fas fa-car"></i> Vehicle Condition</h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <label class="text-muted">Odometer Reading</label>
+                                <p class="font-weight-bold">{{ vehicle_return.odometer_reading }} km</p>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="text-muted">Fuel Level</label>
+                                <p class="font-weight-bold">{{ vehicle_return.fuel_level }}</p>
+                            </div>
+                        </div>
+                        
+                        {% if vehicle_return.damage_noted %}
+                        <div class="damage-section mt-3">
+                            <h6 class="text-danger"><i class="fas fa-exclamation-circle"></i> Damage Reported</h6>
+                            <div class="alert alert-danger">
+                                <p><strong>Damage Description:</strong></p>
+                                <p>{{ vehicle_return.damage_description or "No description provided" }}</p>
+                                {% if vehicle_return.damage_charges > 0 %}
+                                <p><strong>Damage Charges:</strong> ${{ "%.2f"|format(vehicle_return.damage_charges) }}</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Additional Charges -->
+                {% if vehicle_return.calculate_total_charges() > 0 %}
+                <div class="detail-card mb-4">
+                    <div class="card-header">
+                        <h4><i class="fas fa-dollar-sign"></i> Additional Charges</h4>
+                    </div>
+                    <div class="card-body">
+                        <table class="table">
+                            <tbody>
+                                {% if vehicle_return.damage_charges > 0 %}
+                                <tr>
+                                    <td>Damage Charges</td>
+                                    <td class="text-right">${{ "%.2f"|format(vehicle_return.damage_charges) }}</td>
+                                </tr>
+                                {% endif %}
+                                {% if vehicle_return.fuel_charges > 0 %}
+                                <tr>
+                                    <td>Fuel Charges</td>
+                                    <td class="text-right">${{ "%.2f"|format(vehicle_return.fuel_charges) }}</td>
+                                </tr>
+                                {% endif %}
+                                {% if vehicle_return.late_return_charges > 0 %}
+                                <tr>
+                                    <td>Late Return Charges</td>
+                                    <td class="text-right">${{ "%.2f"|format(vehicle_return.late_return_charges) }}</td>
+                                </tr>
+                                {% endif %}
+                                {% if vehicle_return.other_charges > 0 %}
+                                <tr>
+                                    <td>Other Charges</td>
+                                    <td class="text-right">${{ "%.2f"|format(vehicle_return.other_charges) }}</td>
+                                </tr>
+                                {% endif %}
+                                <tr class="font-weight-bold">
+                                    <td>Total Additional Charges</td>
+                                    <td class="text-right">${{ "%.2f"|format(vehicle_return.calculate_total_charges()) }}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        
+                        {% if vehicle_return.charges_description %}
+                        <div class="mt-3">
+                            <label class="text-muted">Charges Description</label>
+                            <p>{{ vehicle_return.charges_description }}</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Return Notes -->
+                {% if vehicle_return.return_notes %}
+                <div class="detail-card mb-4">
+                    <div class="card-header">
+                        <h4><i class="fas fa-sticky-note"></i> Return Notes</h4>
+                    </div>
+                    <div class="card-body">
+                        <p>{{ vehicle_return.return_notes }}</p>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="col-lg-4">
+                <!-- Summary Card -->
+                <div class="detail-card">
+                    <div class="card-header">
+                        <h4>Summary</h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="summary-item">
+                            <span>Booking Number:</span>
+                            <strong>#{{ booking.booking_number }}</strong>
+                        </div>
+                        <div class="summary-item">
+                            <span>Customer:</span>
+                            <strong>{{ booking.customer.full_name }}</strong>
+                        </div>
+                        <div class="summary-item">
+                            <span>Vehicle:</span>
+                            <strong>{{ booking.car.year }} {{ booking.car.make }} {{ booking.car.model }}</strong>
+                        </div>
+                        <hr>
+                        <div class="summary-item">
+                            <span>Rental Amount:</span>
+                            <strong>${{ "%.2f"|format(booking.subtotal) }}</strong>
+                        </div>
+                        <div class="summary-item">
+                            <span>Tax:</span>
+                            <strong>${{ "%.2f"|format(booking.tax_amount) }}</strong>
+                        </div>
+                        {% if vehicle_return.calculate_total_charges() > 0 %}
+                        <div class="summary-item">
+                            <span>Additional Charges:</span>
+                            <strong>${{ "%.2f"|format(vehicle_return.calculate_total_charges()) }}</strong>
+                        </div>
+                        {% endif %}
+                        <hr>
+                        <div class="summary-item total">
+                            <span>Total Amount:</span>
+                            <strong>${{ "%.2f"|format(booking.total_amount) }}</strong>
+                        </div>
+                        
+                        <div class="mt-4">
+                            <a href="{{ url_for('bookings.view', id=booking.id) }}" class="btn btn-primary btn-block">
+                                <i class="fas fa-arrow-left"></i> Back to Booking
+                            </a>
+                            <button onclick="window.print()" class="btn btn-secondary btn-block">
+                                <i class="fas fa-print"></i> Print Return Receipt
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<style>
+    .checklist-results .checklist-item {
+        padding: 10px;
+        background: #f8f9fa;
+        border-radius: 5px;
+        margin-bottom: 10px;
+        display: flex;
+        align-items: center;
+    }
+    
+    .checklist-results .checklist-item i {
+        font-size: 1.2rem;
+        margin-right: 10px;
+    }
+    
+    .summary-item {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 10px;
+    }
+    
+    .summary-item.total {
+        font-size: 1.2rem;
+        color: #333;
+    }
+    
+    .damage-section {
+        border-left: 3px solid #dc3545;
+        padding-left: 15px;
+    }
+    
+    @media print {
+        .btn, .breadcrumb {
+            display: none;
+        }
+    }
+</style>
+{% endblock %}

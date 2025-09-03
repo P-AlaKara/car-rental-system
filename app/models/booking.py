@@ -105,6 +105,21 @@ class Booking(db.Model):
             return datetime.utcnow() > self.return_date
         return False
     
+    @property
+    def should_be_in_progress(self):
+        """Check if booking should be automatically set to in_progress."""
+        if self.status == BookingStatus.CONFIRMED and self.pickup_date:
+            return datetime.utcnow() >= self.pickup_date
+        return False
+    
+    def auto_update_status(self):
+        """Automatically update booking status based on dates."""
+        if self.should_be_in_progress:
+            self.status = BookingStatus.IN_PROGRESS
+            self.actual_pickup_date = self.pickup_date
+            return True
+        return False
+    
     def calculate_late_fees(self):
         """Calculate late fees if applicable."""
         if self.is_past_due and self.actual_return_date:

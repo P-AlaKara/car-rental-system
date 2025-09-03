@@ -5,6 +5,8 @@ from .driver import Driver, DriverStatus
 from .payment import Payment, PaymentStatus, PaymentMethod
 from .maintenance import Maintenance, MaintenanceType, MaintenanceStatus
 from .xero_token import XeroToken
+from .vehicle_return import VehicleReturn
+from .vehicle_photo import VehiclePhoto, PhotoType
 
 __all__ = [
     'User', 'Role',

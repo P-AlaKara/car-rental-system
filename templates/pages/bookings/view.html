@@ -259,7 +259,38 @@
                         </button>
                     {% endif %}
                     
+                    {% if booking.status.value == 'confirmed' and current_user.is_manager %}
+                        <form method="POST" action="{{ url_for('bookings.start', id=booking.id) }}" class="mb-2">
+                            <button type="submit" class="btn btn-primary btn-block">
+                                <i class="fas fa-play-circle"></i> Start Rental (Vehicle Pickup)
+                            </button>
+                        </form>
+                        <a href="{{ url_for('bookings.upload_photos', id=booking.id) }}" class="btn btn-info btn-block mb-2">
+                            <i class="fas fa-camera"></i> Upload Pickup Photos
+                        </a>
+                    {% endif %}
+                    
+                    {% if booking.status.value == 'in_progress' and current_user.is_manager %}
+                        <a href="{{ url_for('bookings.process_return', id=booking.id) }}" class="btn btn-success btn-block mb-2">
+                            <i class="fas fa-check-circle"></i> Process Return
+                        </a>
+                        <a href="{{ url_for('bookings.upload_photos', id=booking.id) }}" class="btn btn-info btn-block mb-2">
+                            <i class="fas fa-camera"></i> Upload Photos
+                        </a>
+                    {% endif %}
+                    
+                    {% if pickup_photos and pickup_photos|length > 0 %}
+                        <a href="{{ url_for('bookings.view_photos', id=booking.id) }}" class="btn btn-outline-info btn-block mb-2">
+                            <i class="fas fa-images"></i> View Photos ({{ pickup_photos|length }})
+                        </a>
+                    {% endif %}
+                    
                     {% if booking.status.value == 'completed' %}
+                        {% if booking.vehicle_return %}
+                        <a href="{{ url_for('bookings.view_return', id=booking.id) }}" class="btn btn-info btn-block mb-2">
+                            <i class="fas fa-clipboard-check"></i> View Return Details
+                        </a>
+                        {% endif %}
                         <a href="{{ url_for('bookings.receipt', id=booking.id) }}" class="btn btn-info btn-block mb-2">
                             <i class="fas fa-receipt"></i> Download Receipt
                         </a>

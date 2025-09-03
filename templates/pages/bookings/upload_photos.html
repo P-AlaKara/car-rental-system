@@ -1,0 +1,238 @@
+{% extends "base.html" %}
+
+{% block title %}Upload Vehicle Photos - Aurora Motors{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="container">
+        <h1>Upload Vehicle Photos</h1>
+        <nav class="breadcrumb">
+            <a href="{{ url_for('main.index') }}">Home</a>
+            <span>/</span>
+            <a href="{{ url_for('bookings.index') }}">Bookings</a>
+            <span>/</span>
+            <a href="{{ url_for('bookings.view', id=booking.id) }}">#{{ booking.booking_number }}</a>
+            <span>/</span>
+            <span>Upload Photos</span>
+        </nav>
+    </div>
+</div>
+
+<section class="upload-photos-section py-5">
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 mx-auto">
+                <!-- Booking Info -->
+                <div class="detail-card mb-4">
+                    <div class="card-header">
+                        <h4>Booking Information</h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <label class="text-muted">Booking Number</label>
+                                <p class="font-weight-bold">#{{ booking.booking_number }}</p>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="text-muted">Vehicle</label>
+                                <p class="font-weight-bold">{{ booking.car.year }} {{ booking.car.make }} {{ booking.car.model }}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Upload Form -->
+                <div class="detail-card">
+                    <div class="card-header">
+                        <h4><i class="fas fa-camera"></i> Upload Vehicle Photos</h4>
+                    </div>
+                    <div class="card-body">
+                        <form method="POST" enctype="multipart/form-data" id="uploadForm">
+                            <div class="form-group">
+                                <label for="photo_type">Photo Type</label>
+                                <select class="form-control" id="photo_type" name="photo_type">
+                                    <option value="pickup">Pickup (Vehicle Collection)</option>
+                                    <option value="return">Return (Vehicle Return)</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label>Select Photos</label>
+                                <div class="custom-file">
+                                    <input type="file" class="custom-file-input" id="photos" name="photos" 
+                                           multiple accept="image/*" required>
+                                    <label class="custom-file-label" for="photos">Choose photos...</label>
+                                </div>
+                                <small class="text-muted">You can select multiple photos at once</small>
+                            </div>
+
+                            <div id="photo-preview" class="row mt-4" style="display: none;">
+                                <!-- Photo previews will be added here -->
+                            </div>
+
+                            <div class="recommended-photos mt-4">
+                                <h6>Recommended Photos to Take:</h6>
+                                <div class="photo-checklist">
+                                    <div class="custom-control custom-checkbox">
+                                        <input type="checkbox" class="custom-control-input" id="front">
+                                        <label class="custom-control-label" for="front">
+                                            <i class="fas fa-check-circle text-success"></i> Front view
+                                        </label>
+                                    </div>
+                                    <div class="custom-control custom-checkbox">
+                                        <input type="checkbox" class="custom-control-input" id="back">
+                                        <label class="custom-control-label" for="back">
+                                            <i class="fas fa-check-circle text-success"></i> Back view
+                                        </label>
+                                    </div>
+                                    <div class="custom-control custom-checkbox">
+                                        <input type="checkbox" class="custom-control-input" id="left">
+                                        <label class="custom-control-label" for="left">
+                                            <i class="fas fa-check-circle text-success"></i> Left side
+                                        </label>
+                                    </div>
+                                    <div class="custom-control custom-checkbox">
+                                        <input type="checkbox" class="custom-control-input" id="right">
+                                        <label class="custom-control-label" for="right">
+                                            <i class="fas fa-check-circle text-success"></i> Right side
+                                        </label>
+                                    </div>
+                                    <div class="custom-control custom-checkbox">
+                                        <input type="checkbox" class="custom-control-input" id="interior">
+                                        <label class="custom-control-label" for="interior">
+                                            <i class="fas fa-check-circle text-success"></i> Interior/Dashboard
+                                        </label>
+                                    </div>
+                                    <div class="custom-control custom-checkbox">
+                                        <input type="checkbox" class="custom-control-input" id="odometer">
+                                        <label class="custom-control-label" for="odometer">
+                                            <i class="fas fa-check-circle text-success"></i> Odometer reading
+                                        </label>
+                                    </div>
+                                    <div class="custom-control custom-checkbox">
+                                        <input type="checkbox" class="custom-control-input" id="damage">
+                                        <label class="custom-control-label" for="damage">
+                                            <i class="fas fa-exclamation-triangle text-warning"></i> Any existing damage
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-group mt-4">
+                                <button type="submit" class="btn btn-primary btn-block">
+                                    <i class="fas fa-upload"></i> Upload Photos
+                                </button>
+                                <a href="{{ url_for('bookings.view', id=booking.id) }}" class="btn btn-secondary btn-block">
+                                    <i class="fas fa-arrow-left"></i> Cancel
+                                </a>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<style>
+    .photo-checklist {
+        background: #f8f9fa;
+        padding: 15px;
+        border-radius: 5px;
+    }
+    
+    .photo-checklist .custom-control {
+        margin-bottom: 10px;
+    }
+    
+    .photo-preview-item {
+        position: relative;
+        margin-bottom: 15px;
+    }
+    
+    .photo-preview-item img {
+        width: 100%;
+        height: 150px;
+        object-fit: cover;
+        border-radius: 5px;
+    }
+    
+    .photo-preview-item .remove-photo {
+        position: absolute;
+        top: 5px;
+        right: 5px;
+        background: rgba(220, 53, 69, 0.9);
+        color: white;
+        border: none;
+        border-radius: 50%;
+        width: 25px;
+        height: 25px;
+        cursor: pointer;
+    }
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const fileInput = document.getElementById('photos');
+    const fileLabel = document.querySelector('.custom-file-label');
+    const previewContainer = document.getElementById('photo-preview');
+    
+    fileInput.addEventListener('change', function(e) {
+        const files = e.target.files;
+        const fileCount = files.length;
+        
+        if (fileCount > 0) {
+            fileLabel.textContent = `${fileCount} photo(s) selected`;
+            
+            // Clear previous previews
+            previewContainer.innerHTML = '';
+            previewContainer.style.display = 'flex';
+            
+            // Create previews
+            Array.from(files).forEach((file, index) => {
+                if (file.type.startsWith('image/')) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        const col = document.createElement('div');
+                        col.className = 'col-md-4';
+                        col.innerHTML = `
+                            <div class="photo-preview-item">
+                                <img src="${e.target.result}" alt="Preview ${index + 1}">
+                                <input type="text" class="form-control mt-2" 
+                                       name="caption_${index}" 
+                                       placeholder="Caption (optional)">
+                                <select class="form-control mt-2" name="angle_${index}">
+                                    <option value="">Select angle...</option>
+                                    <option value="front">Front</option>
+                                    <option value="back">Back</option>
+                                    <option value="left">Left Side</option>
+                                    <option value="right">Right Side</option>
+                                    <option value="interior">Interior</option>
+                                    <option value="odometer">Odometer</option>
+                                    <option value="damage">Damage</option>
+                                    <option value="other">Other</option>
+                                </select>
+                            </div>
+                        `;
+                        previewContainer.appendChild(col);
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+        } else {
+            fileLabel.textContent = 'Choose photos...';
+            previewContainer.style.display = 'none';
+        }
+    });
+    
+    // Form submission
+    document.getElementById('uploadForm').addEventListener('submit', function(e) {
+        if (fileInput.files.length === 0) {
+            e.preventDefault();
+            alert('Please select at least one photo to upload');
+            return false;
+        }
+    });
+});
+</script>
+{% endblock %}
