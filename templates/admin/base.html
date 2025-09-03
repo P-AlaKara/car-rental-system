@@ -34,37 +34,37 @@
             <nav class="sidebar-nav">
                 <ul>
                     <li class="{% if request.endpoint == 'admin.dashboard' %}active{% endif %}">
-                        <a href="{{ url_for('admin.dashboard') }}">
+                        <a href="{{ url_for('admin.dashboard') }}" data-tooltip="Dashboard">
                             <i class="fas fa-tachometer-alt"></i>
                             <span>Dashboard</span>
                         </a>
                     </li>
                     <li class="{% if request.endpoint and 'admin.booking' in request.endpoint %}active{% endif %}">
-                        <a href="{{ url_for('admin.bookings') }}">
+                        <a href="{{ url_for('admin.bookings') }}" data-tooltip="Bookings">
                             <i class="fas fa-calendar-check"></i>
                             <span>Bookings</span>
                         </a>
                     </li>
                     <li class="{% if request.endpoint and 'admin.fleet' in request.endpoint or 'admin.add_car' in request.endpoint or 'admin.edit_car' in request.endpoint %}active{% endif %}">
-                        <a href="{{ url_for('admin.fleet') }}">
+                        <a href="{{ url_for('admin.fleet') }}" data-tooltip="Fleet Management">
                             <i class="fas fa-car-side"></i>
                             <span>Fleet Management</span>
                         </a>
                     </li>
                     <li class="{% if request.endpoint and 'admin.user' in request.endpoint %}active{% endif %}">
-                        <a href="{{ url_for('admin.users') }}">
+                        <a href="{{ url_for('admin.users') }}" data-tooltip="Users">
                             <i class="fas fa-users"></i>
                             <span>Users</span>
                         </a>
                     </li>
                     <li class="{% if request.endpoint == 'admin.payments' %}active{% endif %}">
-                        <a href="{{ url_for('admin.payments') }}">
+                        <a href="{{ url_for('admin.payments') }}" data-tooltip="Payments">
                             <i class="fas fa-credit-card"></i>
                             <span>Payments</span>
                         </a>
                     </li>
                     <li class="{% if request.endpoint and 'admin.maintenance' in request.endpoint %}active{% endif %}">
-                        <a href="{{ url_for('admin.maintenance') }}">
+                        <a href="{{ url_for('admin.maintenance') }}" data-tooltip="Maintenance">
                             <i class="fas fa-wrench"></i>
                             <span>Maintenance</span>
                         </a>
@@ -126,13 +126,24 @@
     
     <!-- JavaScript -->
     <script>
-        // Sidebar toggle
+        // Sidebar toggle with localStorage persistence
         document.getElementById('sidebarToggle').addEventListener('click', function() {
-            document.querySelector('.admin-wrapper').classList.toggle('sidebar-collapsed');
+            const wrapper = document.querySelector('.admin-wrapper');
+            wrapper.classList.toggle('sidebar-collapsed');
+            
+            // Save state to localStorage
+            const isCollapsed = wrapper.classList.contains('sidebar-collapsed');
+            localStorage.setItem('adminSidebarCollapsed', isCollapsed);
         });
         
         // Initialize tooltips
         document.addEventListener('DOMContentLoaded', function() {
+            // Restore sidebar state from localStorage
+            const isCollapsed = localStorage.getItem('adminSidebarCollapsed') === 'true';
+            if (isCollapsed) {
+                document.querySelector('.admin-wrapper').classList.add('sidebar-collapsed');
+            }
+            
             // Initialize date pickers
             if (typeof flatpickr !== 'undefined') {
                 flatpickr('.date-picker', {

@@ -47,7 +47,7 @@ body.admin-body {
     top: 0;
     display: flex;
     flex-direction: column;
-    transition: transform 0.3s ease;
+    transition: width 0.3s ease, transform 0.3s ease;
     z-index: 1000;
 }
 
@@ -136,6 +136,7 @@ body.admin-body {
     flex: 1;
     display: flex;
     flex-direction: column;
+    transition: margin-left 0.3s ease;
 }
 
 /* Header */
@@ -155,12 +156,14 @@ body.admin-body {
 }
 
 .sidebar-toggle {
-    display: none;
     background: none;
     border: none;
     font-size: 1.25rem;
     cursor: pointer;
     color: var(--admin-dark);
+    padding: 0.5rem;
+    border-radius: 0.25rem;
+    transition: background 0.2s;
 }
 
 .admin-header h1 {
@@ -1006,14 +1009,120 @@ body.admin-body {
     margin-top: 2rem;
 }
 
+/* Sidebar Collapsed State - Icon Only View */
+.sidebar-toggle {
+    display: block;
+    background: none;
+    border: none;
+    font-size: 1.25rem;
+    cursor: pointer;
+    color: var(--admin-dark);
+    padding: 0.5rem;
+    border-radius: 0.25rem;
+    transition: background 0.2s;
+}
+
+.sidebar-toggle:hover {
+    background: var(--admin-light);
+}
+
+/* Collapsed sidebar - icon only view for desktop */
+.admin-wrapper.sidebar-collapsed .admin-sidebar {
+    width: 70px;
+    transition: width 0.3s ease;
+}
+
+.admin-wrapper.sidebar-collapsed .admin-main {
+    margin-left: 70px;
+    transition: margin-left 0.3s ease;
+}
+
+.admin-wrapper.sidebar-collapsed .sidebar-header h2 {
+    display: none;
+}
+
+.admin-wrapper.sidebar-collapsed .sidebar-header {
+    padding: 1.5rem 0.5rem;
+    text-align: center;
+}
+
+.admin-wrapper.sidebar-collapsed .sidebar-header::after {
+    content: "AM";
+    font-weight: 700;
+    font-size: 1.2rem;
+}
+
+.admin-wrapper.sidebar-collapsed .sidebar-nav a {
+    padding: 0.75rem;
+    justify-content: center;
+}
+
+.admin-wrapper.sidebar-collapsed .sidebar-nav a span {
+    display: none;
+}
+
+.admin-wrapper.sidebar-collapsed .sidebar-nav a i {
+    font-size: 1.25rem;
+}
+
+.admin-wrapper.sidebar-collapsed .user-info span {
+    display: none;
+}
+
+.admin-wrapper.sidebar-collapsed .user-info {
+    justify-content: center;
+}
+
+.admin-wrapper.sidebar-collapsed .logout-btn {
+    justify-content: center;
+}
+
+.admin-wrapper.sidebar-collapsed .logout-btn i {
+    margin: 0;
+}
+
+.admin-wrapper.sidebar-collapsed .sidebar-footer {
+    padding: 1rem 0.5rem;
+}
+
+/* Add tooltips for collapsed state */
+.admin-wrapper.sidebar-collapsed .sidebar-nav a {
+    position: relative;
+}
+
+.admin-wrapper.sidebar-collapsed .sidebar-nav a::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    left: 100%;
+    top: 50%;
+    transform: translateY(-50%);
+    background: var(--admin-dark);
+    color: white;
+    padding: 0.5rem 0.75rem;
+    border-radius: 0.25rem;
+    white-space: nowrap;
+    font-size: 0.875rem;
+    margin-left: 0.5rem;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s;
+    z-index: 1000;
+}
+
+.admin-wrapper.sidebar-collapsed .sidebar-nav a:hover::after {
+    opacity: 1;
+}
+
 /* Responsive */
 @media (max-width: 1024px) {
     .sidebar-toggle {
         display: block;
     }
     
+    /* On mobile, fully hide sidebar instead of icon-only */
     .admin-wrapper.sidebar-collapsed .admin-sidebar {
         transform: translateX(-100%);
+        width: 260px;
     }
     
     .admin-wrapper.sidebar-collapsed .admin-main {
