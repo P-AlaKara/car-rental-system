@@ -1,0 +1,378 @@
+<!-- Vehicle Return Modal -->
+<div class="modal fade" id="returnModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-xl" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Vehicle Return Process</h5>
+                <button type="button" class="close" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div id="returnContent">
+                    <!-- Content will be loaded dynamically -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.return-section {
+    margin-bottom: 30px;
+    padding: 20px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+}
+
+.return-section h6 {
+    margin-bottom: 15px;
+    color: #333;
+    font-weight: 600;
+}
+
+.checklist-item {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 5px;
+    margin-bottom: 10px;
+}
+
+.checklist-item .form-check {
+    margin-bottom: 0;
+}
+
+.damage-assessment {
+    background: #fff3cd;
+    padding: 15px;
+    border-radius: 5px;
+    border: 1px solid #ffc107;
+}
+
+.charges-section {
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 8px;
+}
+
+.charges-section .form-row {
+    margin-bottom: 15px;
+}
+
+.total-charges {
+    font-size: 1.2em;
+    font-weight: bold;
+    color: #dc3545;
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 2px solid #dee2e6;
+}
+
+.btn-group-return {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    margin-top: 20px;
+}
+
+.vehicle-info {
+    background: #e9ecef;
+    padding: 15px;
+    border-radius: 5px;
+    margin-bottom: 20px;
+}
+
+.vehicle-info .row {
+    margin-bottom: 10px;
+}
+
+.vehicle-info label {
+    font-weight: 600;
+}
+</style>
+
+<script>
+let currentReturnBookingId = null;
+
+function processVehicleReturn(bookingId) {
+    currentReturnBookingId = bookingId;
+    
+    // Show loading state
+    $('#returnContent').html('<div class="text-center"><i class="fas fa-spinner fa-spin fa-3x"></i><p>Loading return details...</p></div>');
+    $('#returnModal').modal('show');
+    
+    // Fetch booking details and render form
+    fetch(`/admin/api/booking/${bookingId}/return-details`)
+        .then(response => response.json())
+        .then(data => {
+            renderReturnForm(data);
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            $('#returnContent').html('<div class="alert alert-danger">Failed to load return details</div>');
+        });
+}
+
+function renderReturnForm(data) {
+    const html = `
+        <!-- Vehicle Information -->
+        <div class="return-section">
+            <h6><i class="fas fa-car"></i> Vehicle Information</h6>
+            <div class="vehicle-info">
+                <div class="row">
+                    <div class="col-md-4">
+                        <label>Vehicle:</label>
+                        <span>${data.car.full_name || 'N/A'}</span>
+                    </div>
+                    <div class="col-md-4">
+                        <label>License Plate:</label>
+                        <span>${data.car.license_plate || 'N/A'}</span>
+                    </div>
+                    <div class="col-md-4">
+                        <label>Booking #:</label>
+                        <span>${data.booking.booking_number}</span>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-4">
+                        <label>Customer:</label>
+                        <span>${data.customer.full_name}</span>
+                    </div>
+                    <div class="col-md-4">
+                        <label>Pickup Date:</label>
+                        <span>${data.booking.pickup_date}</span>
+                    </div>
+                    <div class="col-md-4">
+                        <label>Expected Return:</label>
+                        <span>${data.booking.return_date}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Return Checklist -->
+        <div class="return-section">
+            <h6><i class="fas fa-clipboard-check"></i> Return Checklist</h6>
+            
+            <div class="checklist-item">
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="bondReturned">
+                    <label class="form-check-label" for="bondReturned">
+                        <strong>Bond Returned</strong> - Customer's bond has been processed for return
+                    </label>
+                </div>
+            </div>
+            
+            <div class="checklist-item">
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="paymentsReceived">
+                    <label class="form-check-label" for="paymentsReceived">
+                        <strong>All Payments Received</strong> - All rental payments have been collected
+                    </label>
+                </div>
+            </div>
+            
+            <div class="checklist-item">
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="carCondition">
+                    <label class="form-check-label" for="carCondition">
+                        <strong>Car in Good Condition</strong> - Vehicle has been inspected and is in acceptable condition
+                    </label>
+                </div>
+            </div>
+            
+            <div class="checklist-item">
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="fuelFull">
+                    <label class="form-check-label" for="fuelFull">
+                        <strong>Fuel Tank Full</strong> - Vehicle has been returned with a full tank
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <!-- Vehicle Condition -->
+        <div class="return-section">
+            <h6><i class="fas fa-car-crash"></i> Vehicle Condition Assessment</h6>
+            
+            <div class="form-group">
+                <label>Odometer Reading (km):</label>
+                <input type="number" class="form-control" id="odometerReturn" placeholder="Enter current odometer reading" required>
+            </div>
+            
+            <div class="form-group">
+                <label>Fuel Level:</label>
+                <select class="form-control" id="fuelLevel">
+                    <option value="Full">Full</option>
+                    <option value="3/4">3/4</option>
+                    <option value="1/2">1/2</option>
+                    <option value="1/4">1/4</option>
+                    <option value="Empty">Empty</option>
+                </select>
+            </div>
+            
+            <div class="damage-assessment">
+                <div class="form-check mb-3">
+                    <input class="form-check-input" type="checkbox" id="damageNoted" onchange="toggleDamageFields()">
+                    <label class="form-check-label" for="damageNoted">
+                        <strong>Damage Noted</strong> - Check if any damage is found
+                    </label>
+                </div>
+                
+                <div id="damageFields" style="display: none;">
+                    <div class="form-group">
+                        <label>Damage Description:</label>
+                        <textarea class="form-control" id="damageDescription" rows="3" placeholder="Describe the damage in detail"></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Estimated Damage Charges ($):</label>
+                        <input type="number" class="form-control" id="damageCharges" step="0.01" value="0" onchange="calculateTotalCharges()">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Additional Charges -->
+        <div class="return-section">
+            <h6><i class="fas fa-dollar-sign"></i> Additional Charges</h6>
+            <div class="charges-section">
+                <div class="form-row">
+                    <div class="col-md-6">
+                        <label>Fuel Charges ($):</label>
+                        <input type="number" class="form-control" id="fuelCharges" step="0.01" value="0" onchange="calculateTotalCharges()">
+                    </div>
+                    <div class="col-md-6">
+                        <label>Late Return Charges ($):</label>
+                        <input type="number" class="form-control" id="lateCharges" step="0.01" value="0" onchange="calculateTotalCharges()">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="col-md-6">
+                        <label>Other Charges ($):</label>
+                        <input type="number" class="form-control" id="otherCharges" step="0.01" value="0" onchange="calculateTotalCharges()">
+                    </div>
+                    <div class="col-md-6">
+                        <label>Charges Description:</label>
+                        <input type="text" class="form-control" id="chargesDescription" placeholder="Describe other charges">
+                    </div>
+                </div>
+                <div class="total-charges">
+                    Total Additional Charges: $<span id="totalCharges">0.00</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Return Notes -->
+        <div class="return-section">
+            <h6><i class="fas fa-sticky-note"></i> Return Notes</h6>
+            <div class="form-group">
+                <textarea class="form-control" id="returnNotes" rows="3" placeholder="Add any additional notes about the return"></textarea>
+            </div>
+        </div>
+
+        <div class="btn-group-return">
+            <button class="btn btn-secondary" onclick="$('#returnModal').modal('hide')">
+                <i class="fas fa-times"></i> Cancel
+            </button>
+            <button class="btn btn-primary" onclick="completeReturn()">
+                <i class="fas fa-check"></i> Process Return
+            </button>
+        </div>
+    `;
+    
+    $('#returnContent').html(html);
+}
+
+function toggleDamageFields() {
+    const damageNoted = document.getElementById('damageNoted').checked;
+    document.getElementById('damageFields').style.display = damageNoted ? 'block' : 'none';
+    if (!damageNoted) {
+        document.getElementById('damageDescription').value = '';
+        document.getElementById('damageCharges').value = '0';
+        calculateTotalCharges();
+    }
+}
+
+function calculateTotalCharges() {
+    const damageCharges = parseFloat(document.getElementById('damageCharges').value) || 0;
+    const fuelCharges = parseFloat(document.getElementById('fuelCharges').value) || 0;
+    const lateCharges = parseFloat(document.getElementById('lateCharges').value) || 0;
+    const otherCharges = parseFloat(document.getElementById('otherCharges').value) || 0;
+    
+    const total = damageCharges + fuelCharges + lateCharges + otherCharges;
+    document.getElementById('totalCharges').textContent = total.toFixed(2);
+}
+
+function completeReturn() {
+    // Validate required fields
+    const odometerReading = document.getElementById('odometerReturn').value;
+    
+    if (!odometerReading) {
+        alert('Please enter the odometer reading');
+        return;
+    }
+    
+    // Check if all checklist items are completed
+    const bondReturned = document.getElementById('bondReturned').checked;
+    const paymentsReceived = document.getElementById('paymentsReceived').checked;
+    const carCondition = document.getElementById('carCondition').checked;
+    const fuelFull = document.getElementById('fuelFull').checked;
+    
+    if (!bondReturned || !paymentsReceived || !carCondition || !fuelFull) {
+        if (!confirm('Not all checklist items are completed. Do you want to proceed anyway?')) {
+            return;
+        }
+    }
+    
+    // Prepare return data
+    const returnData = {
+        bond_returned: bondReturned,
+        all_payments_received: paymentsReceived,
+        car_in_good_condition: carCondition,
+        fuel_tank_full: fuelFull,
+        odometer_reading: parseInt(odometerReading),
+        fuel_level: document.getElementById('fuelLevel').value,
+        damage_noted: document.getElementById('damageNoted').checked,
+        damage_description: document.getElementById('damageDescription').value,
+        damage_charges: parseFloat(document.getElementById('damageCharges').value) || 0,
+        fuel_charges: parseFloat(document.getElementById('fuelCharges').value) || 0,
+        late_return_charges: parseFloat(document.getElementById('lateCharges').value) || 0,
+        other_charges: parseFloat(document.getElementById('otherCharges').value) || 0,
+        charges_description: document.getElementById('chargesDescription').value,
+        return_notes: document.getElementById('returnNotes').value
+    };
+    
+    // Show loading
+    const btn = event.target;
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+    
+    // Submit return
+    fetch(`/admin/api/booking/${currentReturnBookingId}/process-return`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(returnData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Vehicle return processed successfully!');
+            $('#returnModal').modal('hide');
+            location.reload();
+        } else {
+            alert('Error: ' + data.message);
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-check"></i> Process Return';
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred during return processing');
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-check"></i> Process Return';
+    });
+}
+</script>
