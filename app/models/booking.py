@@ -65,6 +65,19 @@ class Booking(db.Model):
     cancellation_reason = db.Column(db.Text)
     cancellation_fee = db.Column(db.Float, default=0)
     
+    # Handover and Return fields
+    license_verified = db.Column(db.Boolean, default=False)
+    license_verified_at = db.Column(db.DateTime)
+    contract_signed_url = db.Column(db.Text)
+    contract_signed_at = db.Column(db.DateTime)
+    pickup_odometer = db.Column(db.Integer)
+    return_odometer = db.Column(db.Integer)
+    handover_completed_at = db.Column(db.DateTime)
+    handover_completed_by = db.Column(db.Integer, db.ForeignKey('users.id'))
+    return_completed_at = db.Column(db.DateTime)
+    return_completed_by = db.Column(db.Integer, db.ForeignKey('users.id'))
+    direct_debit_schedule_id = db.Column(db.String(100))
+    
     # Timestamps
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)

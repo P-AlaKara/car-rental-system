@@ -880,13 +880,176 @@ def payment_history(booking_id):
         'message': 'Payment history functionality will be implemented'
     })
 
-@admin_bp.route('/api/booking/<int:booking_id>/handover', methods=['POST'])
+@admin_bp.route('/api/booking/<int:booking_id>/handover-details', methods=['GET'])
 @admin_required
-def handover_vehicle(booking_id):
-    """Handle vehicle handover (placeholder)."""
+def get_handover_details(booking_id):
+    """Get booking details for handover process."""
     booking = Booking.query.get_or_404(booking_id)
-    # TODO: Implement handover logic
-    return jsonify({'success': True, 'message': 'Handover functionality will be implemented'})
+    customer = booking.customer
+    
+    return jsonify({
+        'booking': {
+            'id': booking.id,
+            'booking_number': booking.booking_number,
+            'total_amount': booking.total_amount,
+            'deposit_amount': booking.deposit_amount,
+            'daily_rate': booking.daily_rate,
+            'pickup_date': booking.pickup_date.isoformat() if booking.pickup_date else None,
+            'return_date': booking.return_date.isoformat() if booking.return_date else None
+        },
+        'customer': {
+            'id': customer.id,
+            'full_name': customer.full_name,
+            'email': customer.email,
+            'phone': customer.phone,
+            'license_number': customer.license_number,
+            'license_expiry': customer.license_expiry.isoformat() if customer.license_expiry else None,
+            'date_of_birth': customer.date_of_birth.isoformat() if customer.date_of_birth else None
+        },
+        'car': {
+            'id': booking.car.id,
+            'name': booking.car.full_name,
+            'license_plate': booking.car.license_plate
+        }
+    })
+
+@admin_bp.route('/api/booking/<int:booking_id>/complete-handover', methods=['POST'])
+@admin_required
+def complete_handover(booking_id):
+    """Complete the vehicle handover process."""
+    from app.services.pay_advantage import PayAdvantageService
+    from app.models import BookingPhoto, DirectDebitSchedule
+    import base64
+    from io import BytesIO
+    from PIL import Image
+    
+    booking = Booking.query.get_or_404(booking_id)
+    
+    if booking.status != BookingStatus.CONFIRMED:
+        return jsonify({'success': False, 'message': 'Booking must be confirmed to process handover'})
+    
+    data = request.get_json()
+    
+    try:
+        # 1. Update license verification
+        if data.get('license_verified'):
+            booking.license_verified = True
+            booking.license_verified_at = datetime.utcnow()
+        
+        # 2. Store odometer reading
+        if data.get('odometer_reading'):
+            booking.pickup_odometer = data['odometer_reading']
+        
+        # 3. Save photos
+        photos = data.get('photos', [])
+        for photo_data in photos:
+            # Process base64 image data
+            if 'data' in photo_data and photo_data['data'].startswith('data:image'):
+                # Extract base64 data
+                header, encoded = photo_data['data'].split(',', 1)
+                
+                # Save to file system (you might want to use cloud storage in production)
+                import uuid
+                filename = f"pickup_{booking_id}_{uuid.uuid4().hex[:8]}.jpg"
+                filepath = os.path.join(current_app.config.get('UPLOAD_FOLDER', 'uploads'), 'booking_photos', filename)
+                
+                # Create directory if it doesn't exist
+                os.makedirs(os.path.dirname(filepath), exist_ok=True)
+                
+                # Decode and save image
+                image_data = base64.b64decode(encoded)
+                with open(filepath, 'wb') as f:
+                    f.write(image_data)
+                
+                # Save photo record to database
+                photo = BookingPhoto(
+                    booking_id=booking_id,
+                    photo_type='pickup',
+                    photo_url=f'/uploads/booking_photos/{filename}',
+                    description=photo_data.get('name', ''),
+                    uploaded_by=current_user.id
+                )
+                db.session.add(photo)
+        
+        # 4. Set up direct debit if provided
+        direct_debit = data.get('direct_debit')
+        authorization_url = None
+        
+        if direct_debit and (direct_debit.get('upfront_amount') or direct_debit.get('recurring_amount')):
+            try:
+                # Initialize PayAdvantage service
+                pa_service = PayAdvantageService()
+                
+                # Get or create customer
+                pa_customer = pa_service.get_or_create_customer(booking.customer)
+                
+                # Create direct debit schedule
+                from datetime import datetime, date
+                
+                upfront_date = None
+                if direct_debit.get('upfront_date'):
+                    upfront_date = datetime.strptime(direct_debit['upfront_date'], '%Y-%m-%d').date()
+                
+                recurring_start = None
+                if direct_debit.get('recurring_start_date'):
+                    recurring_start = datetime.strptime(direct_debit['recurring_start_date'], '%Y-%m-%d').date()
+                
+                result = pa_service.create_direct_debit_schedule(
+                    booking_id=booking_id,
+                    customer_code=pa_customer.customer_code,
+                    description=direct_debit.get('description', f'Booking {booking.booking_number}'),
+                    upfront_amount=direct_debit.get('upfront_amount'),
+                    upfront_date=upfront_date,
+                    recurring_amount=direct_debit.get('recurring_amount'),
+                    recurring_start_date=recurring_start,
+                    frequency=direct_debit.get('frequency'),
+                    end_condition_amount=direct_debit.get('end_condition_amount'),
+                    reminder_days=2
+                )
+                
+                booking.direct_debit_schedule_id = result['schedule_id']
+                authorization_url = result['authorization_url']
+                
+            except Exception as e:
+                print(f"Error setting up direct debit: {e}")
+                # Continue with handover even if direct debit fails
+        
+        # 5. Update booking status and handover completion
+        booking.status = BookingStatus.IN_PROGRESS
+        booking.handover_completed_at = datetime.utcnow()
+        booking.handover_completed_by = current_user.id
+        booking.actual_pickup_date = datetime.utcnow()
+        
+        # Add admin note
+        handover_note = f"Handover completed by {current_user.full_name} at {datetime.utcnow().strftime('%Y-%m-%d %H:%M')}"
+        if booking.admin_notes:
+            booking.admin_notes += f"\n{handover_note}"
+        else:
+            booking.admin_notes = handover_note
+        
+        db.session.commit()
+        
+        # 6. Schedule Xero invoice if direct debit is set up
+        if direct_debit and direct_debit.get('recurring_amount'):
+            from app.services.xero_scheduler import XeroInvoiceScheduler
+            scheduler = XeroInvoiceScheduler()
+            scheduler.schedule_recurring_invoices(booking_id)
+        
+        response = {
+            'success': True,
+            'message': 'Handover completed successfully'
+        }
+        
+        if authorization_url:
+            response['authorization_url'] = authorization_url
+            response['message'] += '. Direct debit authorization required.'
+        
+        return jsonify(response)
+        
+    except Exception as e:
+        db.session.rollback()
+        print(f"Error in handover: {e}")
+        return jsonify({'success': False, 'message': str(e)})
 
 @admin_bp.route('/api/booking/<int:booking_id>/complete', methods=['POST'])
 @admin_required
