@@ -94,6 +94,48 @@ class User(UserMixin, db.Model):
         """Check if user can access admin dashboard."""
         return self.role in [Role.ADMIN, Role.MANAGER]
     
+    def has_complete_driver_details(self):
+        """Check if user has complete driver license and address details."""
+        # Check driver license details
+        has_license = bool(self.license_number and self.license_expiry)
+        
+        # Check if license is not expired
+        if has_license and self.license_expiry:
+            from datetime import date
+            if self.license_expiry < date.today():
+                return False
+        
+        # Check address details
+        has_address = bool(self.address and self.city and self.state and self.zip_code)
+        
+        return has_license and has_address
+    
+    def get_missing_details(self):
+        """Get list of missing driver and address details."""
+        missing = []
+        
+        # Check driver license details
+        if not self.license_number:
+            missing.append("Driver's license number")
+        if not self.license_expiry:
+            missing.append("Driver's license expiry date")
+        elif self.license_expiry:
+            from datetime import date
+            if self.license_expiry < date.today():
+                missing.append("Valid driver's license (current license is expired)")
+        
+        # Check address details
+        if not self.address:
+            missing.append("Street address")
+        if not self.city:
+            missing.append("City")
+        if not self.state:
+            missing.append("State")
+        if not self.zip_code:
+            missing.append("ZIP code")
+        
+        return missing
+    
     def to_dict(self):
         """Convert user object to dictionary."""
         return {

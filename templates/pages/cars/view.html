@@ -218,9 +218,35 @@
             <div class="card">
                 <div class="card-body">
                     {% if car.is_available %}
-                    <a href="{{ url_for('bookings.create', car_id=car.id) }}" class="btn btn-primary btn-lg btn-block">
-                        <i class="fas fa-calendar-check"></i> Book Now
-                    </a>
+                        {% if current_user.is_authenticated %}
+                            {% if has_complete_profile %}
+                            <a href="{{ url_for('bookings.create', car_id=car.id) }}" class="btn btn-primary btn-lg btn-block">
+                                <i class="fas fa-calendar-check"></i> Book Now
+                            </a>
+                            {% else %}
+                            <div class="alert alert-danger">
+                                <h5 class="alert-heading">
+                                    <i class="fas fa-exclamation-circle"></i> 
+                                    Driver Profile Incomplete
+                                </h5>
+                                <p class="mb-2"><strong>You cannot book a car without the following required information:</strong></p>
+                                <ul class="mb-3 text-left">
+                                    {% for detail in missing_details %}
+                                    <li>{{ detail }}</li>
+                                    {% endfor %}
+                                </ul>
+                                <hr>
+                                <p class="mb-0 small">For safety and legal compliance, all drivers must provide valid license and address details before making a booking.</p>
+                            </div>
+                            <a href="{{ url_for('auth.edit_profile') }}#license" class="btn btn-danger btn-lg btn-block">
+                                <i class="fas fa-user-edit"></i> Complete Driver Profile Now
+                            </a>
+                            {% endif %}
+                        {% else %}
+                        <a href="{{ url_for('auth.login') }}" class="btn btn-primary btn-lg btn-block">
+                            <i class="fas fa-sign-in-alt"></i> Login to Book
+                        </a>
+                        {% endif %}
                     {% else %}
                     <button class="btn btn-secondary btn-lg btn-block" disabled>
                         Not Available

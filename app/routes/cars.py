@@ -1,5 +1,5 @@
 from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify
-from flask_login import login_required
+from flask_login import login_required, current_user
 from app import db
 from app.models import Car, CarCategory, CarStatus, Booking
 from app.utils.decorators import manager_required
@@ -36,10 +36,20 @@ def index():
     cars = query.order_by(Car.created_at.desc()).paginate(
         page=page, per_page=12, error_out=False)
     
+    # Check if user has complete profile (for booking eligibility)
+    has_complete_profile = False
+    missing_details = []
+    if current_user.is_authenticated:
+        has_complete_profile = current_user.has_complete_driver_details()
+        if not has_complete_profile:
+            missing_details = current_user.get_missing_details()
+    
     return render_template('pages/cars/index.html', 
                          cars=cars,
                          categories=CarCategory,
-                         statuses=CarStatus)
+                         statuses=CarStatus,
+                         has_complete_profile=has_complete_profile,
+                         missing_details=missing_details)
 
 
 @bp.route('/<int:id>')
@@ -51,9 +61,19 @@ def view(id):
     recent_bookings = Booking.query.filter_by(car_id=car.id).order_by(
         Booking.created_at.desc()).limit(5).all()
     
+    # Check if user has complete profile (for booking eligibility)
+    has_complete_profile = False
+    missing_details = []
+    if current_user.is_authenticated:
+        has_complete_profile = current_user.has_complete_driver_details()
+        if not has_complete_profile:
+            missing_details = current_user.get_missing_details()
+    
     return render_template('pages/cars/view.html', 
                          car=car,
-                         recent_bookings=recent_bookings)
+                         recent_bookings=recent_bookings,
+                         has_complete_profile=has_complete_profile,
+                         missing_details=missing_details)
 
 
 @bp.route('/new', methods=['GET', 'POST'])
