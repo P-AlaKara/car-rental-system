@@ -33,7 +33,7 @@ class VehiclePhoto(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
     # Relationships
-    booking = db.relationship('Booking', backref='photos', lazy=True)
+    booking = db.relationship('Booking', backref='vehicle_photos', lazy=True)
     uploader = db.relationship('User', foreign_keys=[uploaded_by])
     
     def __repr__(self):
