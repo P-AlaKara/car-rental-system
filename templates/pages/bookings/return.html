@@ -94,6 +94,11 @@
                                     <label class="custom-control-label" for="car_in_good_condition">
                                         <strong>Car Returned in Good Condition</strong>
                                         <small class="d-block text-muted">Vehicle has been inspected and is in acceptable condition</small>
+                                        {% if pickup_photos %}
+                                        <a href="#" class="btn btn-sm btn-info mt-2" data-toggle="modal" data-target="#pickupPhotosModal">
+                                            <i class="fas fa-images"></i> View Pickup Photos ({{ pickup_photos|length }})
+                                        </a>
+                                        {% endif %}
                                     </label>
                                 </div>
                                 
@@ -384,4 +389,68 @@ document.addEventListener('DOMContentLoaded', function() {
     updateProgress();
 });
 </script>
+
+<!-- Pickup Photos Modal -->
+{% if pickup_photos %}
+<div class="modal fade" id="pickupPhotosModal" tabindex="-1" role="dialog" aria-labelledby="pickupPhotosModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="pickupPhotosModalLabel">
+                    <i class="fas fa-images"></i> Vehicle Condition at Pickup
+                </h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i> These photos were taken during vehicle pickup. Compare with current condition to identify any new damage.
+                </div>
+                <div class="row">
+                    {% for photo in pickup_photos %}
+                    <div class="col-md-4 mb-3">
+                        <div class="photo-card">
+                            <img src="{{ photo.photo_url }}" class="img-fluid rounded" alt="{{ photo.caption or 'Pickup photo' }}">
+                            <div class="photo-info mt-2">
+                                {% if photo.angle %}
+                                <span class="badge badge-secondary">{{ photo.angle|title }}</span>
+                                {% endif %}
+                                {% if photo.caption %}
+                                <p class="small mb-0 mt-1">{{ photo.caption }}</p>
+                                {% endif %}
+                                <p class="text-muted small mb-0">
+                                    <i class="fas fa-clock"></i> {{ photo.upload_date.strftime('%b %d, %Y %I:%M %p') }}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .photo-card {
+        border: 1px solid #dee2e6;
+        padding: 10px;
+        border-radius: 5px;
+        background: #f8f9fa;
+    }
+    
+    .photo-card img {
+        cursor: pointer;
+        transition: transform 0.2s;
+    }
+    
+    .photo-card img:hover {
+        transform: scale(1.05);
+    }
+</style>
+{% endif %}
 {% endblock %}

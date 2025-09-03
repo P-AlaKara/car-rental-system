@@ -1,9 +1,11 @@
 from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify
 from flask_login import login_required, current_user
 from app import db
-from app.models import Booking, Car, User, Payment, BookingStatus, PaymentStatus, Role, VehicleReturn
+from app.models import Booking, Car, User, Payment, BookingStatus, PaymentStatus, Role, VehicleReturn, VehiclePhoto, PhotoType
 from app.utils.decorators import manager_required
 from datetime import datetime
+import os
+from werkzeug.utils import secure_filename
 
 bp = Blueprint('bookings', __name__, url_prefix='/bookings')
 
@@ -13,6 +15,16 @@ bp = Blueprint('bookings', __name__, url_prefix='/bookings')
 def index():
     """List all bookings for the current user or all bookings for admin."""
     page = request.args.get('page', 1, type=int)
+    
+    # Auto-update booking statuses for confirmed bookings past pickup date
+    confirmed_bookings = Booking.query.filter_by(status=BookingStatus.CONFIRMED).all()
+    for booking in confirmed_bookings:
+        if booking.auto_update_status():
+            # Also update car status when auto-transitioning
+            if booking.car:
+                from app.models.car import CarStatus
+                booking.car.status = CarStatus.BOOKED
+    db.session.commit()
     
     if current_user.is_manager:
         # Admin sees all bookings
@@ -135,12 +147,27 @@ def view(id):
         flash('You do not have permission to view this booking.', 'error')
         return redirect(url_for('bookings.index'))
     
+    # Auto-update status if needed
+    if booking.auto_update_status():
+        if booking.car:
+            from app.models.car import CarStatus
+            booking.car.status = CarStatus.BOOKED
+        db.session.commit()
+        flash('Booking status automatically updated to In Progress as pickup date has passed.', 'info')
+    
     # Get payment history
     payments = Payment.query.filter_by(booking_id=booking.id).all()
     
+    # Get pickup photos if any
+    pickup_photos = VehiclePhoto.query.filter_by(
+        booking_id=booking.id, 
+        photo_type=PhotoType.PICKUP
+    ).all()
+    
     return render_template('pages/bookings/view.html', 
                          booking=booking, 
-                         payments=payments)
+                         payments=payments,
+                         pickup_photos=pickup_photos)
 
 
 @bp.route('/<int:id>/edit', methods=['GET', 'POST'])
@@ -409,10 +436,17 @@ def process_return(id):
         days_late = (datetime.utcnow() - booking.return_date).days
         late_fees = days_late * booking.daily_rate * 1.5  # 150% of daily rate for late fees
     
+    # Get pickup photos for comparison
+    pickup_photos = VehiclePhoto.query.filter_by(
+        booking_id=booking.id,
+        photo_type=PhotoType.PICKUP
+    ).all()
+    
     return render_template('pages/bookings/return.html', 
                          booking=booking,
                          late_fees=late_fees,
-                         days_late=days_late)
+                         days_late=days_late,
+                         pickup_photos=pickup_photos)
 
 
 @bp.route('/<int:id>/return/view')
@@ -434,3 +468,80 @@ def view_return(id):
     return render_template('pages/bookings/return_view.html', 
                          booking=booking,
                          vehicle_return=vehicle_return)
+
+
+@bp.route('/<int:id>/photos/upload', methods=['GET', 'POST'])
+@login_required
+@manager_required
+def upload_photos(id):
+    """Upload photos for vehicle condition."""
+    booking = Booking.query.get_or_404(id)
+    
+    if request.method == 'POST':
+        photo_type = request.form.get('photo_type', 'pickup')
+        photos = request.files.getlist('photos')
+        
+        # Create upload directory if it doesn't exist
+        upload_dir = os.path.join('static', 'uploads', 'vehicle_photos', str(booking.id))
+        os.makedirs(upload_dir, exist_ok=True)
+        
+        uploaded_count = 0
+        for photo in photos:
+            if photo and photo.filename:
+                # Secure the filename
+                filename = secure_filename(photo.filename)
+                timestamp = datetime.utcnow().strftime('%Y%m%d_%H%M%S')
+                filename = f"{timestamp}_{filename}"
+                filepath = os.path.join(upload_dir, filename)
+                
+                # Save the file
+                photo.save(filepath)
+                
+                # Create database record
+                vehicle_photo = VehiclePhoto(
+                    booking_id=booking.id,
+                    photo_url=f"/{filepath}",
+                    photo_type=PhotoType.PICKUP if photo_type == 'pickup' else PhotoType.RETURN,
+                    caption=request.form.get(f'caption_{uploaded_count}', ''),
+                    angle=request.form.get(f'angle_{uploaded_count}', ''),
+                    uploaded_by=current_user.id
+                )
+                db.session.add(vehicle_photo)
+                uploaded_count += 1
+        
+        if uploaded_count > 0:
+            db.session.commit()
+            flash(f'{uploaded_count} photo(s) uploaded successfully!', 'success')
+        else:
+            flash('No photos were uploaded.', 'warning')
+        
+        return redirect(url_for('bookings.view', id=id))
+    
+    return render_template('pages/bookings/upload_photos.html', booking=booking)
+
+
+@bp.route('/<int:id>/photos')
+@login_required
+def view_photos(id):
+    """View all photos for a booking."""
+    booking = Booking.query.get_or_404(id)
+    
+    # Check permission
+    if not current_user.is_manager and booking.customer_id != current_user.id:
+        flash('You do not have permission to view these photos.', 'error')
+        return redirect(url_for('bookings.index'))
+    
+    pickup_photos = VehiclePhoto.query.filter_by(
+        booking_id=booking.id,
+        photo_type=PhotoType.PICKUP
+    ).all()
+    
+    return_photos = VehiclePhoto.query.filter_by(
+        booking_id=booking.id,
+        photo_type=PhotoType.RETURN
+    ).all()
+    
+    return render_template('pages/bookings/view_photos.html', 
+                         booking=booking,
+                         pickup_photos=pickup_photos,
+                         return_photos=return_photos)
