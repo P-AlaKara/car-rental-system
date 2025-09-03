@@ -7,9 +7,7 @@ from app import db, login_manager
 
 class Role(Enum):
     CUSTOMER = 'customer'
-    DRIVER = 'driver'
     ADMIN = 'admin'
-    MANAGER = 'manager'
 
 
 class User(UserMixin, db.Model):
@@ -77,13 +75,13 @@ class User(UserMixin, db.Model):
     
     @property
     def is_manager(self):
-        """Check if user has manager role."""
-        return self.role in [Role.ADMIN, Role.MANAGER]
+        """Check if user has manager/admin role."""
+        return self.role == Role.ADMIN
     
     @property
     def is_driver(self):
-        """Check if user has driver role."""
-        return self.role == Role.DRIVER
+        """Check if user is a driver (deprecated - drivers are now customers)."""
+        return False  # Drivers are now just customers with driver details
     
     @property
     def is_customer(self):
@@ -92,7 +90,7 @@ class User(UserMixin, db.Model):
     
     def can_access_dashboard(self):
         """Check if user can access admin dashboard."""
-        return self.role in [Role.ADMIN, Role.MANAGER]
+        return self.role == Role.ADMIN
     
     def has_complete_driver_details(self):
         """Check if user has complete driver license and address details."""

@@ -83,7 +83,7 @@ def create():
             first_name=data['first_name'],
             last_name=data['last_name'],
             phone=data['phone'],
-            role=Role.DRIVER,
+            role=Role.CUSTOMER,  # Drivers are now customers with driver privileges
             address=data.get('address'),
             city=data.get('city'),
             state=data.get('state'),

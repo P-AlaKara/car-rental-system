@@ -322,7 +322,7 @@ def complete(id):
 def send_invoice_page(booking_id):
     """Display the send invoice page for a booking."""
     # Check if user is admin or manager
-    if current_user.role not in [Role.ADMIN, Role.MANAGER]:
+    if current_user.role != Role.ADMIN:
         flash('You do not have permission to send invoices.', 'error')
         return redirect(url_for('bookings.view', id=booking_id))
     

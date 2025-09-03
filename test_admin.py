@@ -29,7 +29,7 @@ def create_test_data():
                 username='admin',
                 first_name='Admin',
                 last_name='User',
-                role=Role.MANAGER,
+                role=Role.ADMIN,
                 phone='+61 400 000 000'
             )
             admin.set_password('admin123')

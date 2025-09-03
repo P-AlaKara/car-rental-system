@@ -458,7 +458,8 @@ body.admin-body {
     border: 1px solid #dc2626;
 }
 
-.badge-role-manager {
+/* Legacy role badges - kept for backward compatibility */
+/* .badge-role-manager {
     background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
     color: white;
     border: 1px solid #7c3aed;
@@ -469,6 +470,12 @@ body.admin-body {
     color: white;
     border: 1px solid #2563eb;
 }
+
+.badge-role-driver {
+    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+    color: white;
+    border: 1px solid #2563eb;
+} */
 
 .badge-role-customer {
     background: linear-gradient(135deg, #10b981 0%, #059669 100%);

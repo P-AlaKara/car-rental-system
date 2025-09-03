@@ -46,15 +46,17 @@ def manager_required(f):
 
 
 def driver_required(f):
-    """Decorator to require driver role."""
+    """Decorator to require driver privileges (customer with driver details)."""
     @wraps(f)
     def decorated_function(*args, **kwargs):
         if not current_user.is_authenticated:
             flash('Please log in to access this page.', 'error')
             return redirect(url_for('auth.login'))
         
-        if not current_user.is_driver:
-            flash('You do not have permission to access this page.', 'error')
+        # Drivers are now customers with complete driver details
+        # Admin can also access driver functions
+        if not (current_user.is_admin or current_user.has_complete_driver_details()):
+            flash('You need to complete your driver profile to access this page.', 'error')
             return redirect(url_for('main.index'))
         
         return f(*args, **kwargs)
