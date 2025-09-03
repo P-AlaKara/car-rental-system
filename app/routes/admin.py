@@ -4,7 +4,7 @@ from functools import wraps
 from datetime import datetime, timedelta
 from sqlalchemy import func, and_, or_, desc
 from app import db
-from app.models import User, Role, Car, Booking, Payment, Maintenance, CarStatus, BookingStatus, MaintenanceType, MaintenanceStatus, PaymentStatus
+from app.models import User, Role, Car, Booking, Payment, Maintenance, CarStatus, BookingStatus, MaintenanceType, MaintenanceStatus, PaymentStatus, VehicleReturn
 import json
 import os
 from werkzeug.utils import secure_filename
@@ -1288,13 +1288,100 @@ def complete_handover(booking_id):
         print(f"Error in handover: {e}")
         return jsonify({'success': False, 'message': str(e)})
 
-@admin_bp.route('/api/booking/<int:booking_id>/complete', methods=['POST'])
+@admin_bp.route('/api/booking/<int:booking_id>/return-details', methods=['GET'])
 @admin_required
-def complete_booking(booking_id):
-    """Complete a booking (placeholder)."""
+def get_return_details(booking_id):
+    """Get booking details for return process."""
     booking = Booking.query.get_or_404(booking_id)
-    # TODO: Implement completion logic
-    return jsonify({'success': True, 'message': 'Booking completion functionality will be implemented'})
+    customer = booking.customer
+    car = booking.car
+    
+    return jsonify({
+        'booking': {
+            'id': booking.id,
+            'booking_number': booking.booking_number,
+            'pickup_date': booking.pickup_date.strftime('%Y-%m-%d') if booking.pickup_date else '',
+            'return_date': booking.return_date.strftime('%Y-%m-%d') if booking.return_date else '',
+            'total_amount': booking.total_amount,
+            'deposit_amount': booking.deposit_amount
+        },
+        'customer': {
+            'id': customer.id if customer else None,
+            'full_name': customer.full_name if customer else 'N/A',
+            'email': customer.email if customer else 'N/A',
+            'phone': customer.phone if customer else 'N/A'
+        },
+        'car': {
+            'id': car.id if car else None,
+            'full_name': car.full_name if car else 'N/A',
+            'license_plate': car.license_plate if car else 'N/A'
+        }
+    })
+
+@admin_bp.route('/api/booking/<int:booking_id>/process-return', methods=['POST'])
+@admin_required
+def process_return(booking_id):
+    """Process vehicle return."""
+    booking = Booking.query.get_or_404(booking_id)
+    
+    # Check if booking is in progress
+    if booking.status != BookingStatus.IN_PROGRESS:
+        return jsonify({'success': False, 'message': 'Only in-progress bookings can be returned'})
+    
+    # Check if return already exists
+    existing_return = VehicleReturn.query.filter_by(booking_id=booking_id).first()
+    if existing_return:
+        return jsonify({'success': False, 'message': 'Return has already been processed for this booking'})
+    
+    try:
+        data = request.get_json()
+        
+        # Create vehicle return record
+        vehicle_return = VehicleReturn(
+            booking_id=booking_id,
+            bond_returned=data.get('bond_returned', False),
+            all_payments_received=data.get('all_payments_received', False),
+            car_in_good_condition=data.get('car_in_good_condition', False),
+            fuel_tank_full=data.get('fuel_tank_full', False),
+            odometer_reading=data.get('odometer_reading', 0),
+            fuel_level=data.get('fuel_level', 'Full'),
+            damage_noted=data.get('damage_noted', False),
+            damage_description=data.get('damage_description'),
+            damage_charges=data.get('damage_charges', 0),
+            fuel_charges=data.get('fuel_charges', 0),
+            late_return_charges=data.get('late_return_charges', 0),
+            other_charges=data.get('other_charges', 0),
+            charges_description=data.get('charges_description'),
+            return_notes=data.get('return_notes'),
+            returned_by=current_user.id
+        )
+        
+        db.session.add(vehicle_return)
+        
+        # Update booking status to completed
+        booking.status = BookingStatus.COMPLETED
+        
+        # Update car status to available if all checks pass
+        if vehicle_return.is_checklist_complete():
+            if booking.car:
+                booking.car.status = CarStatus.AVAILABLE
+        
+        db.session.commit()
+        
+        # Log the return
+        current_app.logger.info(f"Vehicle return processed for booking {booking.booking_number} by {current_user.email}")
+        
+        return jsonify({
+            'success': True,
+            'message': 'Vehicle return processed successfully',
+            'return_id': vehicle_return.id,
+            'total_charges': vehicle_return.calculate_total_charges()
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f"Error processing vehicle return: {str(e)}")
+        return jsonify({'success': False, 'message': str(e)})
 
 
 @admin_bp.route('/settings')

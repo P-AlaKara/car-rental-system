@@ -160,10 +160,10 @@
                                     <i class="fas fa-key"></i>
                                 </button>
                                 
-                                <!-- Complete -->
+                                <!-- Return Vehicle -->
                                 <button class="action-icon" 
-                                        onclick="completeBooking({{ booking.id }})"
-                                        data-tooltip="Mark booking as complete"
+                                        onclick="processVehicleReturn({{ booking.id }})"
+                                        data-tooltip="Process vehicle return"
                                         {% if booking.status != BookingStatus.IN_PROGRESS %}disabled{% endif %}>
                                     <i class="fas fa-check-circle"></i>
                                 </button>
@@ -283,6 +283,9 @@
 <!-- Include Handover Modal -->
 {% include 'admin/handover_modal.html' %}
 
+<!-- Include Return Modal -->
+{% include 'admin/return_modal.html' %}
+
 {% endblock %}
 
 {% block extra_js %}
@@ -355,23 +358,7 @@ function handoverVehicle(bookingId) {
     loadHandoverModal(bookingId);
 }
 
-function completeBooking(bookingId) {
-    if (confirm('Mark booking as complete?')) {
-        fetch(`/admin/api/booking/${bookingId}/complete`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            alert(data.message);
-            if (data.success) {
-                location.reload();
-            }
-        });
-    }
-}
+// Vehicle return is now handled by processVehicleReturn function in return_modal.html
 
 function cancelBooking(bookingId) {
     document.getElementById('cancelModal').style.display = 'block';
