@@ -14,9 +14,5 @@ __all__ = [
     'Payment', 'PaymentStatus', 'PaymentMethod',
     'Maintenance', 'MaintenanceType', 'MaintenanceStatus',
     'XeroToken',
-    'VehicleReturn',
-    'VehiclePhoto', 'PhotoType',
-    'BookingPhoto',
-    'PayAdvantageCustomer', 'DirectDebitSchedule'
 ]
 
