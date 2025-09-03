@@ -16,7 +16,7 @@ class BookingPhoto(db.Model):
     uploaded_by = db.Column(db.Integer, db.ForeignKey('users.id'))
     
     # Relationships
-    booking = db.relationship('Booking', backref='photos', lazy=True)
+    booking = db.relationship('Booking', backref='booking_photos', lazy=True)
     uploader = db.relationship('User', backref='uploaded_photos', lazy=True)
     
     def __repr__(self):
