@@ -339,6 +339,19 @@ body.admin-body {
 .table td {
     padding: 0.75rem 1rem;
     border-bottom: 1px solid var(--admin-border);
+    white-space: nowrap;
+}
+
+/* Prevent wrapping in table cells */
+.table td strong,
+.table td span,
+.table td small {
+    white-space: nowrap;
+}
+
+/* Allow wrapping only for specific content that needs it */
+.table td.wrap-content {
+    white-space: normal;
 }
 
 .table tbody tr:hover {

@@ -13,7 +13,7 @@
                 <select name="user_id" class="form-control">
                     <option value="">All Users</option>
                     {% for user in users %}
-                    <option value="{{ user.id }}" {% if request.args.get('user_id', type=int) == user.id %}selected{% endif %}>
+                    <option value="{{ user.id }}" {% if request.args.get('user_id')|int == user.id %}selected{% endif %}>
                         {{ user.full_name }} ({{ user.email }})
                     </option>
                     {% endfor %}
@@ -25,7 +25,7 @@
                 <select name="car_id" class="form-control">
                     <option value="">All Vehicles</option>
                     {% for car in cars %}
-                    <option value="{{ car.id }}" {% if request.args.get('car_id', type=int) == car.id %}selected{% endif %}>
+                    <option value="{{ car.id }}" {% if request.args.get('car_id')|int == car.id %}selected{% endif %}>
                         {{ car.full_name }} - {{ car.license_plate }}
                     </option>
                     {% endfor %}

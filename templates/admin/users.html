@@ -6,13 +6,24 @@
 {% block head %}
 <style>
 .users-table td {
-    white-space: nowrap;
+    white-space: nowrap !important;
     overflow: hidden;
     text-overflow: ellipsis;
 }
-.users-table td strong {
+.users-table td strong,
+.users-table td span,
+.users-table td small {
     display: inline-block;
-    white-space: nowrap;
+    white-space: nowrap !important;
+}
+.users-table .badge {
+    display: inline-block;
+    white-space: nowrap !important;
+}
+.users-table .action-buttons {
+    display: flex;
+    gap: 0.25rem;
+    white-space: nowrap !important;
 }
 </style>
 {% endblock %}
