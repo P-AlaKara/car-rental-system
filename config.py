@@ -40,6 +40,20 @@ class Config:
     # Application
     APP_NAME = os.environ.get('APP_NAME') or 'Aurora Motors'
     APP_URL = os.environ.get('APP_URL') or 'http://localhost:5000'
+    
+    # Xero Configuration
+    XERO_CLIENT_ID = os.environ.get('XERO_CLIENT_ID')
+    XERO_CLIENT_SECRET = os.environ.get('XERO_CLIENT_SECRET')
+    XERO_CALLBACK_URL = os.environ.get('XERO_CALLBACK_URL') or 'http://localhost:5000/xero/callback'
+    XERO_SCOPES = [
+        'openid',
+        'profile',
+        'email',
+        'accounting.transactions',
+        'accounting.contacts',
+        'accounting.settings',
+        'offline_access'
+    ]
 
 
 class DevelopmentConfig(Config):
