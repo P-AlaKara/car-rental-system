@@ -608,7 +608,7 @@ def payments():
     )
     
     # Get total amount
-    total_amount = query.filter_by(status=PaymentStatus.COMPLETED).with_entities(
+    total_amount = query.filter(Payment.status == PaymentStatus.COMPLETED).with_entities(
         func.sum(Payment.amount)
     ).scalar() or 0
     
