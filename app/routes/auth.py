@@ -54,7 +54,7 @@ def login():
                 
                 # Redirect based on role
                 if user.is_admin or user.is_manager:
-                    return redirect(next_page or url_for('dashboard.index'))
+                    return redirect(next_page or url_for('admin.dashboard'))
                 else:
                     return redirect(next_page or url_for('main.index'))
         else:
