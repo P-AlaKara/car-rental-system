@@ -1,0 +1,246 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Payments - Admin{% endblock %}
+{% block page_title %}Payment History{% endblock %}
+
+{% block content %}
+<div class="payments-container">
+    <!-- Summary Cards -->
+    <div class="summary-cards">
+        <div class="summary-card">
+            <div class="summary-icon bg-success">
+                <i class="fas fa-dollar-sign"></i>
+            </div>
+            <div class="summary-content">
+                <h3>${{ "{:,.2f}".format(total_amount) }}</h3>
+                <p>Total Revenue</p>
+            </div>
+        </div>
+        
+        <div class="summary-card">
+            <div class="summary-icon bg-info">
+                <i class="fas fa-receipt"></i>
+            </div>
+            <div class="summary-content">
+                <h3>{{ payments.total }}</h3>
+                <p>Total Transactions</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Filters -->
+    <div class="filters-card">
+        <form method="get" class="filters-form">
+            <div class="filter-row">
+                <div class="filter-group">
+                    <label>Booking ID</label>
+                    <input type="number" name="booking_id" class="form-control" 
+                           value="{{ request.args.get('booking_id', '') }}"
+                           placeholder="Enter booking ID">
+                </div>
+                
+                <div class="filter-group">
+                    <label>Status</label>
+                    <select name="status" class="form-control">
+                        <option value="">All Status</option>
+                        {% for status in PaymentStatus %}
+                        <option value="{{ status.value }}" {% if request.args.get('status') == status.value %}selected{% endif %}>
+                            {{ status.value.replace('_', ' ').title() }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="filter-group">
+                    <label>From Date</label>
+                    <input type="date" name="date_from" class="form-control" 
+                           value="{{ request.args.get('date_from', '') }}">
+                </div>
+                
+                <div class="filter-group">
+                    <label>To Date</label>
+                    <input type="date" name="date_to" class="form-control" 
+                           value="{{ request.args.get('date_to', '') }}">
+                </div>
+                
+                <div class="filter-group filter-actions">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-filter"></i> Filter
+                    </button>
+                    <a href="{{ url_for('admin.payments') }}" class="btn btn-outline">
+                        <i class="fas fa-times"></i> Clear
+                    </a>
+                </div>
+            </div>
+        </form>
+    </div>
+    
+    <!-- Payments Table -->
+    <div class="table-card">
+        <div class="table-responsive">
+            <table class="table payments-table">
+                <thead>
+                    <tr>
+                        <th>Transaction ID</th>
+                        <th>Booking</th>
+                        <th>User</th>
+                        <th>Vehicle</th>
+                        <th>Amount</th>
+                        <th>Method</th>
+                        <th>Status</th>
+                        <th>Date</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for payment in payments.items %}
+                    <tr>
+                        <td>
+                            <strong>{{ payment.transaction_id }}</strong>
+                        </td>
+                        <td>
+                            {% if payment.booking %}
+                                {{ payment.booking.booking_number }}
+                            {% else %}
+                                N/A
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if payment.user %}
+                                {{ payment.user.full_name }}
+                                <br>
+                                <small class="text-muted">{{ payment.user.email }}</small>
+                            {% else %}
+                                N/A
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if payment.booking and payment.booking.car %}
+                                {{ payment.booking.car.full_name }}
+                                <br>
+                                <small class="text-muted">{{ payment.booking.car.license_plate }}</small>
+                            {% else %}
+                                N/A
+                            {% endif %}
+                        </td>
+                        <td>
+                            <strong>${{ "{:,.2f}".format(payment.amount) }}</strong>
+                        </td>
+                        <td>
+                            <span class="badge badge-method">
+                                {{ payment.payment_method.value.replace('_', ' ').title() if payment.payment_method else 'N/A' }}
+                            </span>
+                        </td>
+                        <td>
+                            <span class="badge badge-{{ payment.status.value }}">
+                                {{ payment.status.value.replace('_', ' ').title() }}
+                            </span>
+                        </td>
+                        <td>
+                            {{ payment.created_at.strftime('%Y-%m-%d %H:%M') if payment.created_at else '' }}
+                        </td>
+                        <td>
+                            <button class="btn btn-sm btn-outline" onclick="viewPaymentDetails({{ payment.id }})">
+                                <i class="fas fa-eye"></i> View
+                            </button>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="9" class="text-center py-4">
+                            <i class="fas fa-file-invoice-dollar fa-3x text-muted mb-3"></i>
+                            <p>No payments found</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Pagination -->
+        {% if payments.pages > 1 %}
+        <div class="pagination-wrapper">
+            <nav aria-label="Page navigation">
+                <ul class="pagination">
+                    {% if payments.has_prev %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('admin.payments', page=payments.prev_num, **request.args) }}">
+                            Previous
+                        </a>
+                    </li>
+                    {% endif %}
+                    
+                    {% for page_num in payments.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+                        {% if page_num %}
+                            {% if page_num != payments.page %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('admin.payments', page=page_num, **request.args) }}">
+                                    {{ page_num }}
+                                </a>
+                            </li>
+                            {% else %}
+                            <li class="page-item active">
+                                <span class="page-link">{{ page_num }}</span>
+                            </li>
+                            {% endif %}
+                        {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link">...</span>
+                            </li>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if payments.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('admin.payments', page=payments.next_num, **request.args) }}">
+                            Next
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Payment Details Modal -->
+<div class="modal" id="paymentDetailsModal">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Payment Details</h5>
+                <button type="button" class="close" onclick="closeModal('paymentDetailsModal')">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <div class="modal-body" id="paymentDetailsContent">
+                Loading...
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function viewPaymentDetails(paymentId) {
+    document.getElementById('paymentDetailsModal').style.display = 'block';
+    // In a real implementation, fetch payment details via API
+    document.getElementById('paymentDetailsContent').innerHTML = 
+        '<p>Payment details will be displayed here.</p>' +
+        '<p>This feature will be fully implemented with the payment gateway integration.</p>';
+}
+
+function closeModal(modalId) {
+    document.getElementById(modalId).style.display = 'none';
+}
+
+// Close modal when clicking outside
+window.onclick = function(event) {
+    if (event.target.classList.contains('modal')) {
+        event.target.style.display = 'none';
+    }
+}
+</script>
+{% endblock %}

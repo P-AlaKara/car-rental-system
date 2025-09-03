@@ -37,7 +37,7 @@ def create_app(config_name='default'):
     login_manager.login_message_category = 'info'
     
     # Register blueprints
-    from app.routes import main, auth, dashboard, bookings, users, cars, drivers, payments, reports
+    from app.routes import main, auth, dashboard, bookings, users, cars, drivers, payments, reports, admin
     
     app.register_blueprint(main.bp)
     app.register_blueprint(auth.bp)
@@ -48,6 +48,7 @@ def create_app(config_name='default'):
     app.register_blueprint(drivers.bp)
     app.register_blueprint(payments.bp)
     app.register_blueprint(reports.bp)
+    app.register_blueprint(admin.admin_bp)
     
     # Register API blueprints
     from app.routes.api import api_bp

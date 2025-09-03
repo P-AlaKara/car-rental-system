@@ -1,0 +1,251 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Dashboard - Admin{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <!-- Statistics Cards -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-icon bg-primary">
+                <i class="fas fa-calendar-check"></i>
+            </div>
+            <div class="stat-content">
+                <h3>{{ stats.total_bookings }}</h3>
+                <p>Total Bookings</p>
+                <span class="stat-badge">{{ stats.active_bookings }} Active</span>
+            </div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-icon bg-success">
+                <i class="fas fa-car"></i>
+            </div>
+            <div class="stat-content">
+                <h3>{{ stats.total_cars }}</h3>
+                <p>Total Vehicles</p>
+                <span class="stat-badge">{{ stats.available_cars }} Available</span>
+            </div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-icon bg-info">
+                <i class="fas fa-users"></i>
+            </div>
+            <div class="stat-content">
+                <h3>{{ stats.total_users }}</h3>
+                <p>Total Users</p>
+            </div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-icon bg-warning">
+                <i class="fas fa-dollar-sign"></i>
+            </div>
+            <div class="stat-content">
+                <h3>${{ "{:,.2f}".format(stats.total_revenue) }}</h3>
+                <p>Total Revenue</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Charts Section -->
+    <div class="charts-row">
+        <div class="chart-card">
+            <div class="card-header">
+                <h3>Revenue Trend</h3>
+            </div>
+            <div class="card-body">
+                <canvas id="revenueChart"></canvas>
+            </div>
+        </div>
+        
+        <div class="chart-card">
+            <div class="card-header">
+                <h3>Booking Status Distribution</h3>
+            </div>
+            <div class="card-body">
+                <canvas id="bookingStatusChart"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Fleet and Maintenance Overview -->
+    <div class="overview-row">
+        <div class="overview-card">
+            <div class="card-header">
+                <h3>Fleet Status</h3>
+            </div>
+            <div class="card-body">
+                <canvas id="fleetStatusChart"></canvas>
+            </div>
+        </div>
+        
+        <div class="overview-card">
+            <div class="card-header">
+                <h3>Maintenance Overview</h3>
+            </div>
+            <div class="card-body">
+                <div class="maintenance-stats">
+                    <div class="maintenance-stat">
+                        <span class="stat-label">Healthy</span>
+                        <span class="stat-value text-success">{{ stats.cars_healthy }}</span>
+                    </div>
+                    <div class="maintenance-stat">
+                        <span class="stat-label">Due Soon</span>
+                        <span class="stat-value text-warning">{{ stats.cars_due_soon }}</span>
+                    </div>
+                    <div class="maintenance-stat">
+                        <span class="stat-label">Overdue</span>
+                        <span class="stat-value text-danger">{{ stats.cars_overdue }}</span>
+                    </div>
+                    <div class="maintenance-stat">
+                        <span class="stat-label">In Service</span>
+                        <span class="stat-value text-info">{{ stats.cars_in_service }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Recent Bookings -->
+    <div class="recent-section">
+        <div class="card">
+            <div class="card-header">
+                <h3>Recent Bookings</h3>
+                <a href="{{ url_for('admin.bookings') }}" class="btn btn-sm btn-primary">View All</a>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Booking #</th>
+                                <th>Customer</th>
+                                <th>Vehicle</th>
+                                <th>Pickup Date</th>
+                                <th>Return Date</th>
+                                <th>Status</th>
+                                <th>Amount</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for booking in recent_bookings %}
+                            <tr>
+                                <td>{{ booking.booking_number }}</td>
+                                <td>{{ booking.customer.full_name if booking.customer else 'N/A' }}</td>
+                                <td>{{ booking.car.full_name if booking.car else 'N/A' }}</td>
+                                <td>{{ booking.pickup_date.strftime('%Y-%m-%d') if booking.pickup_date else '' }}</td>
+                                <td>{{ booking.return_date.strftime('%Y-%m-%d') if booking.return_date else '' }}</td>
+                                <td>
+                                    <span class="badge badge-{{ booking.status.value }}">
+                                        {{ booking.status.value.replace('_', ' ').title() }}
+                                    </span>
+                                </td>
+                                <td>${{ "{:,.2f}".format(booking.total_amount) }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Revenue Chart
+    const revenueCtx = document.getElementById('revenueChart').getContext('2d');
+    new Chart(revenueCtx, {
+        type: 'line',
+        data: {
+            labels: {{ chart_data.monthly_revenue.labels | tojson }},
+            datasets: [{
+                label: 'Monthly Revenue',
+                data: {{ chart_data.monthly_revenue.data | tojson }},
+                borderColor: 'rgb(75, 192, 192)',
+                backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                tension: 0.1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            return '$' + value.toLocaleString();
+                        }
+                    }
+                }
+            }
+        }
+    });
+    
+    // Booking Status Chart
+    const bookingStatusCtx = document.getElementById('bookingStatusChart').getContext('2d');
+    new Chart(bookingStatusCtx, {
+        type: 'doughnut',
+        data: {
+            labels: {{ chart_data.booking_status.labels | tojson }},
+            datasets: [{
+                data: {{ chart_data.booking_status.data | tojson }},
+                backgroundColor: [
+                    '#ffc107',
+                    '#28a745',
+                    '#17a2b8',
+                    '#6c757d',
+                    '#dc3545',
+                    '#343a40'
+                ]
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            }
+        }
+    });
+    
+    // Fleet Status Chart
+    const fleetStatusCtx = document.getElementById('fleetStatusChart').getContext('2d');
+    new Chart(fleetStatusCtx, {
+        type: 'pie',
+        data: {
+            labels: {{ chart_data.fleet_status.labels | tojson }},
+            datasets: [{
+                data: {{ chart_data.fleet_status.data | tojson }},
+                backgroundColor: [
+                    '#28a745',
+                    '#ffc107',
+                    '#dc3545',
+                    '#6c757d'
+                ]
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            }
+        }
+    });
+</script>
+{% endblock %}

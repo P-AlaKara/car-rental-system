@@ -1,0 +1,146 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Edit Booking - Admin{% endblock %}
+{% block page_title %}Edit Booking{% endblock %}
+
+{% block content %}
+<div class="form-container">
+    <div class="form-card">
+        <form method="POST">
+            <div class="form-section">
+                <h3>Booking Information</h3>
+                
+                <div class="form-row">
+                    <div class="form-group col-md-4">
+                        <label>Booking Number</label>
+                        <input type="text" class="form-control" value="{{ booking.booking_number }}" readonly>
+                    </div>
+                    
+                    <div class="form-group col-md-4">
+                        <label>Customer</label>
+                        <input type="text" class="form-control" value="{{ booking.customer.full_name if booking.customer else 'N/A' }}" readonly>
+                    </div>
+                    
+                    <div class="form-group col-md-4">
+                        <label>Status *</label>
+                        <select name="status" class="form-control" required>
+                            {% for status in BookingStatus %}
+                            <option value="{{ status.value }}" {% if booking.status == status %}selected{% endif %}>
+                                {{ status.value.replace('_', ' ').title() }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-section">
+                <h3>Vehicle Details</h3>
+                
+                <div class="form-row">
+                    <div class="form-group col-md-12">
+                        <label>Vehicle *</label>
+                        <select name="car_id" class="form-control" required>
+                            {% for car in cars %}
+                            <option value="{{ car.id }}" {% if booking.car_id == car.id %}selected{% endif %}>
+                                {{ car.full_name }} - {{ car.license_plate }} 
+                                ({{ car.status.value.replace('_', ' ').title() }})
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-section">
+                <h3>Booking Schedule</h3>
+                
+                <div class="form-row">
+                    <div class="form-group col-md-6">
+                        <label>Pickup Date & Time *</label>
+                        <input type="datetime-local" name="pickup_date" class="form-control" 
+                               value="{{ booking.pickup_date.strftime('%Y-%m-%dT%H:%M') if booking.pickup_date else '' }}" required>
+                    </div>
+                    
+                    <div class="form-group col-md-6">
+                        <label>Return Date & Time *</label>
+                        <input type="datetime-local" name="return_date" class="form-control" 
+                               value="{{ booking.return_date.strftime('%Y-%m-%dT%H:%M') if booking.return_date else '' }}" required>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group col-md-6">
+                        <label>Pickup Location *</label>
+                        <input type="text" name="pickup_location" class="form-control" 
+                               value="{{ booking.pickup_location }}" required>
+                    </div>
+                    
+                    <div class="form-group col-md-6">
+                        <label>Return Location *</label>
+                        <input type="text" name="return_location" class="form-control" 
+                               value="{{ booking.return_location }}" required>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-section">
+                <h3>Pricing Details</h3>
+                
+                <div class="form-row">
+                    <div class="form-group col-md-3">
+                        <label>Daily Rate</label>
+                        <input type="text" class="form-control" value="${{ booking.daily_rate }}" readonly>
+                    </div>
+                    
+                    <div class="form-group col-md-3">
+                        <label>Total Days</label>
+                        <input type="text" class="form-control" value="{{ booking.total_days }}" readonly>
+                    </div>
+                    
+                    <div class="form-group col-md-3">
+                        <label>Subtotal</label>
+                        <input type="text" class="form-control" value="${{ booking.subtotal }}" readonly>
+                    </div>
+                    
+                    <div class="form-group col-md-3">
+                        <label>Total Amount</label>
+                        <input type="text" class="form-control" value="${{ booking.total_amount }}" readonly>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-section">
+                <h3>Notes</h3>
+                
+                <div class="form-group">
+                    <label>Admin Notes</label>
+                    <textarea name="admin_notes" class="form-control" rows="3">{{ booking.admin_notes or '' }}</textarea>
+                </div>
+                
+                {% if booking.customer_notes %}
+                <div class="form-group">
+                    <label>Customer Notes</label>
+                    <textarea class="form-control" rows="3" readonly>{{ booking.customer_notes }}</textarea>
+                </div>
+                {% endif %}
+                
+                {% if booking.status == BookingStatus.CANCELLED %}
+                <div class="form-group">
+                    <label>Cancellation Reason</label>
+                    <input type="text" name="cancellation_reason" class="form-control" 
+                           value="{{ booking.cancellation_reason or '' }}">
+                </div>
+                {% endif %}
+            </div>
+            
+            <div class="form-actions">
+                <a href="{{ url_for('admin.bookings') }}" class="btn btn-secondary">Cancel</a>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save"></i> Update Booking
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
