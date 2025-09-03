@@ -133,7 +133,7 @@
                                 
                                 <!-- Send Invoice -->
                                 <button class="action-icon" 
-                                        onclick="sendInvoice({{ booking.id }})"
+                                        onclick="sendInvoice('{{ booking.id }}')"
                                         data-tooltip="Quick send invoice via Xero">
                                     <i class="fas fa-file-invoice"></i>
                                 </button>
@@ -147,14 +147,14 @@
                                 
                                 <!-- Payment History -->
                                 <button class="action-icon" 
-                                        onclick="viewPaymentHistory({{ booking.id }})"
+                                        onclick="viewPaymentHistory('{{ booking.id }}')"
                                         data-tooltip="View payment history">
                                     <i class="fas fa-history"></i>
                                 </button>
                                 
                                 <!-- Handover -->
                                 <button class="action-icon" 
-                                        onclick="handoverVehicle({{ booking.id }})"
+                                        onclick="handoverVehicle('{{ booking.id }}')"
                                         data-tooltip="Process vehicle handover"
                                         {% if booking.status.value != 'confirmed' %}disabled{% endif %}>
                                     <i class="fas fa-key"></i>
@@ -162,7 +162,7 @@
                                 
                                 <!-- Return Vehicle -->
                                 <button class="action-icon" 
-                                        onclick="processVehicleReturn({{ booking.id }})"
+                                        onclick="processVehicleReturn('{{ booking.id }}')"
                                         data-tooltip="Process vehicle return"
                                         {% if booking.status.value != 'in_progress' %}disabled{% endif %}>
                                     <i class="fas fa-check-circle"></i>
@@ -171,7 +171,7 @@
                                 <!-- Cancel (if applicable) -->
                                 {% if booking.can_cancel %}
                                 <button class="action-icon text-danger" 
-                                        onclick="cancelBooking({{ booking.id }})"
+                                        onclick="cancelBooking('{{ booking.id }}')"
                                         data-tooltip="Cancel booking">
                                     <i class="fas fa-times-circle"></i>
                                 </button>
@@ -288,9 +288,73 @@
 
 {% endblock %}
 
+{% block extra_css %}
+<style>
+/* Modal Styles */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0,0,0,0.4);
+}
+
+.modal-content {
+    background-color: #fefefe;
+    margin: 15% auto;
+    padding: 20px;
+    border: 1px solid #888;
+    border-radius: 5px;
+    width: 80%;
+    max-width: 500px;
+}
+
+.modal-content h2 {
+    margin-top: 0;
+    color: #333;
+}
+
+.modal-content .close {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.modal-content .close:hover,
+.modal-content .close:focus {
+    color: #000;
+    text-decoration: none;
+}
+
+.modal-content .form-group {
+    margin-bottom: 15px;
+}
+
+.modal-content .form-control {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+.modal-content button {
+    margin-right: 10px;
+}
+</style>
+{% endblock %}
+
 {% block extra_js %}
 <script>
 function sendInvoice(bookingId) {
+    // Ensure bookingId is treated as a string/number
+    bookingId = String(bookingId).replace(/['"]/g, '');
+    
     if (confirm('Send invoice to customer via Xero?')) {
         // Show loading state
         const button = event.target.closest('button');
@@ -336,6 +400,9 @@ function sendInvoice(bookingId) {
 }
 
 function viewPaymentHistory(bookingId) {
+    // Ensure bookingId is treated as a string/number
+    bookingId = String(bookingId).replace(/['"]/g, '');
+    
     document.getElementById('paymentHistoryModal').style.display = 'block';
     fetch(`/admin/api/booking/${bookingId}/payment-history`)
         .then(response => response.json())
@@ -355,13 +422,43 @@ function viewPaymentHistory(bookingId) {
 }
 
 function handoverVehicle(bookingId) {
+    // Ensure bookingId is treated as a string/number
+    bookingId = String(bookingId).replace(/['"]/g, '');
     loadHandoverModal(bookingId);
 }
 
 // Vehicle return is now handled by processVehicleReturn function in return_modal.html
 
 function cancelBooking(bookingId) {
-    document.getElementById('cancelModal').style.display = 'block';
+    // Ensure bookingId is treated as a string/number
+    bookingId = String(bookingId).replace(/['"]/g, '');
+    
+    // Check if cancel modal exists, if not create it
+    let cancelModal = document.getElementById('cancelModal');
+    if (!cancelModal) {
+        // Create cancel modal dynamically
+        cancelModal = document.createElement('div');
+        cancelModal.id = 'cancelModal';
+        cancelModal.className = 'modal';
+        cancelModal.innerHTML = `
+            <div class="modal-content">
+                <span class="close" onclick="closeModal('cancelModal')">&times;</span>
+                <h2>Cancel Booking</h2>
+                <p>Are you sure you want to cancel this booking?</p>
+                <form id="cancelForm" method="POST">
+                    <div class="form-group">
+                        <label for="cancelReason">Reason for cancellation:</label>
+                        <textarea id="cancelReason" name="reason" class="form-control" rows="3" required></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-danger">Confirm Cancellation</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('cancelModal')">Cancel</button>
+                </form>
+            </div>
+        `;
+        document.body.appendChild(cancelModal);
+    }
+    
+    cancelModal.style.display = 'block';
     document.getElementById('cancelForm').action = `/admin/bookings/${bookingId}/cancel`;
 }
 

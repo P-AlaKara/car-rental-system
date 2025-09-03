@@ -95,7 +95,16 @@
 let currentReturnBookingId = null;
 
 function processVehicleReturn(bookingId) {
+    // Ensure bookingId is treated as a string/number
+    bookingId = String(bookingId).replace(/['"]/g, '');
     currentReturnBookingId = bookingId;
+    
+    // Check if modal exists
+    if (!$('#returnModal').length) {
+        console.error('Return modal not found. Please ensure return_modal.html is included.');
+        alert('Error: Return modal not found. Please refresh the page and try again.');
+        return;
+    }
     
     // Show loading state
     $('#returnContent').html('<div class="text-center"><i class="fas fa-spinner fa-spin fa-3x"></i><p>Loading return details...</p></div>');
@@ -103,13 +112,21 @@ function processVehicleReturn(bookingId) {
     
     // Fetch booking details and render form
     fetch(`/admin/api/booking/${bookingId}/return-details`)
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
         .then(data => {
+            if (data.error) {
+                throw new Error(data.error);
+            }
             renderReturnForm(data);
         })
         .catch(error => {
-            console.error('Error:', error);
-            $('#returnContent').html('<div class="alert alert-danger">Failed to load return details</div>');
+            console.error('Error loading return details:', error);
+            $('#returnContent').html(`<div class="alert alert-danger">Failed to load return details: ${error.message}</div>`);
         });
 }
 
