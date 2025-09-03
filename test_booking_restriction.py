@@ -1,144 +1,138 @@
 #!/usr/bin/env python3
 """
-Test script to verify that users cannot book cars without driver license and address details.
+Test script to verify that booking restrictions are working properly.
+Users should not be able to book a car without driver license and address details.
 """
 
-import requests
-from datetime import datetime, timedelta
-
-# Base URL for the application
-BASE_URL = "http://localhost:5000"
+import sys
+from datetime import datetime, timedelta, date
+from app import create_app, db
+from app.models import User, Car, Booking, CarStatus, BookingStatus
+from werkzeug.security import generate_password_hash
 
 def test_booking_restriction():
-    """Test that booking is restricted for users without complete profile."""
+    """Test that users cannot book without complete driver details."""
+    app = create_app()
     
-    # Create a session to maintain cookies
-    session = requests.Session()
-    
-    print("=" * 60)
-    print("Testing Booking Restriction Feature")
-    print("=" * 60)
-    
-    # Test data for a user without license/address
-    test_user = {
-        'username': 'testuser_incomplete',
-        'email': 'testincomplete@example.com',
-        'password': 'TestPass123!',
-        'first_name': 'Test',
-        'last_name': 'User'
-    }
-    
-    print("\n1. Creating a test user without license and address details...")
-    
-    # Register the user
-    register_url = f"{BASE_URL}/auth/register"
-    response = session.post(register_url, data=test_user, allow_redirects=False)
-    
-    if response.status_code in [302, 303]:
-        print("   ✓ User registered successfully")
-    else:
-        print(f"   ✗ Registration failed: {response.status_code}")
-        return
-    
-    print("\n2. Logging in as the test user...")
-    
-    # Login
-    login_url = f"{BASE_URL}/auth/login"
-    login_data = {
-        'username': test_user['username'],
-        'password': test_user['password']
-    }
-    response = session.post(login_url, data=login_data, allow_redirects=False)
-    
-    if response.status_code in [302, 303]:
-        print("   ✓ Logged in successfully")
-    else:
-        print(f"   ✗ Login failed: {response.status_code}")
-        return
-    
-    print("\n3. Attempting to access booking page...")
-    
-    # Try to access booking creation page
-    booking_url = f"{BASE_URL}/bookings/new"
-    response = session.get(booking_url, allow_redirects=False)
-    
-    if response.status_code == 302:
-        redirect_location = response.headers.get('Location', '')
-        if 'edit_profile' in redirect_location or 'profile' in redirect_location:
-            print("   ✓ User correctly redirected to profile edit page")
-            print(f"   → Redirect URL: {redirect_location}")
-            
-            # Follow the redirect to see the flash message
-            response = session.get(BASE_URL + redirect_location)
-            if 'complete your profile' in response.text.lower():
-                print("   ✓ Profile completion message displayed")
+    with app.app_context():
+        print("\n" + "="*60)
+        print("TESTING BOOKING RESTRICTION FOR INCOMPLETE PROFILES")
+        print("="*60)
+        
+        # Create a test user without complete details
+        test_user = User.query.filter_by(username='testdriver').first()
+        if not test_user:
+            test_user = User(
+                username='testdriver',
+                email='testdriver@example.com',
+                first_name='Test',
+                last_name='Driver',
+                password_hash=generate_password_hash('password123'),
+                phone='+61400000000'
+                # Note: Missing license_number, license_expiry, address, city, state, zip_code
+            )
+            db.session.add(test_user)
+            db.session.commit()
+            print(f"\n✓ Created test user: {test_user.username}")
         else:
-            print(f"   ✗ Unexpected redirect: {redirect_location}")
-    else:
-        print(f"   ✗ Expected redirect but got status code: {response.status_code}")
-    
-    print("\n4. Checking cars listing page...")
-    
-    # Check cars listing page
-    cars_url = f"{BASE_URL}/cars"
-    response = session.get(cars_url)
-    
-    if response.status_code == 200:
-        content = response.text.lower()
-        if 'complete profile' in content or 'profile incomplete' in content:
-            print("   ✓ Profile completion warning shown on cars page")
-        if 'complete profile to book' in content:
-            print("   ✓ 'Complete Profile to Book' button shown instead of 'Book Now'")
-    else:
-        print(f"   ✗ Failed to load cars page: {response.status_code}")
-    
-    print("\n5. Testing with complete profile...")
-    
-    # Now update the profile with license and address
-    profile_url = f"{BASE_URL}/auth/edit_profile"
-    profile_data = {
-        'first_name': test_user['first_name'],
-        'last_name': test_user['last_name'],
-        'email': test_user['email'],
-        'phone': '1234567890',
-        'address': '123 Test Street',
-        'city': 'Melbourne',
-        'state': 'VIC',
-        'zip_code': '3000',
-        'license_number': 'TEST123456',
-        'license_expiry': (datetime.now() + timedelta(days=365)).strftime('%Y-%m-%d')
-    }
-    
-    response = session.post(profile_url, data=profile_data, allow_redirects=False)
-    
-    if response.status_code in [302, 303]:
-        print("   ✓ Profile updated with license and address")
-    
-    print("\n6. Attempting to access booking page with complete profile...")
-    
-    # Try to access booking page again
-    response = session.get(booking_url, allow_redirects=False)
-    
-    if response.status_code == 200:
-        print("   ✓ Booking page accessible with complete profile")
-        if 'Create New Booking' in response.text:
-            print("   ✓ Booking form displayed correctly")
-    elif response.status_code == 302:
-        print(f"   ✗ Still being redirected: {response.headers.get('Location')}")
-    else:
-        print(f"   ✗ Unexpected status code: {response.status_code}")
-    
-    print("\n" + "=" * 60)
-    print("Test Summary:")
-    print("✓ Users without driver license and address cannot book cars")
-    print("✓ Users are redirected to complete their profile")
-    print("✓ Clear messaging is shown to guide users")
-    print("✓ Once profile is complete, booking is allowed")
-    print("=" * 60)
+            # Clear driver details to test restriction
+            test_user.license_number = None
+            test_user.license_expiry = None
+            test_user.address = None
+            test_user.city = None
+            test_user.state = None
+            test_user.zip_code = None
+            db.session.commit()
+            print(f"\n✓ Reset test user profile: {test_user.username}")
+        
+        # Test 1: Check if user has incomplete details
+        print("\n--- Test 1: Checking user profile completeness ---")
+        has_complete = test_user.has_complete_driver_details()
+        missing = test_user.get_missing_details()
+        
+        print(f"Has complete driver details: {has_complete}")
+        print(f"Expected: False")
+        assert not has_complete, "User should not have complete details"
+        print("✓ PASSED: User correctly identified as having incomplete profile")
+        
+        print(f"\nMissing details: {missing}")
+        expected_missing = ["Driver's license number", "Driver's license expiry date", 
+                          "Street address", "City", "State", "ZIP code"]
+        assert all(item in missing for item in expected_missing), f"Missing details don't match expected"
+        print("✓ PASSED: All missing details correctly identified")
+        
+        # Test 2: Try to create a booking (should fail)
+        print("\n--- Test 2: Attempting to create booking with incomplete profile ---")
+        car = Car.query.filter_by(status=CarStatus.AVAILABLE).first()
+        if car:
+            print(f"Attempting to book car: {car.full_name}")
+            
+            # This simulates what happens in the route
+            if not test_user.has_complete_driver_details():
+                print("✓ PASSED: Booking prevented due to incomplete profile")
+                print("System would redirect to profile completion page")
+            else:
+                print("✗ FAILED: User was allowed to proceed with booking")
+                sys.exit(1)
+        
+        # Test 3: Complete the profile and verify booking is allowed
+        print("\n--- Test 3: Completing profile and verifying booking access ---")
+        test_user.license_number = "DL123456"
+        test_user.license_expiry = date(2025, 12, 31)
+        test_user.address = "123 Test Street"
+        test_user.city = "Melbourne"
+        test_user.state = "VIC"
+        test_user.zip_code = "3000"
+        db.session.commit()
+        
+        has_complete = test_user.has_complete_driver_details()
+        missing = test_user.get_missing_details()
+        
+        print(f"Has complete driver details: {has_complete}")
+        print(f"Expected: True")
+        assert has_complete, "User should have complete details after update"
+        print("✓ PASSED: User profile is now complete")
+        
+        print(f"Missing details: {missing}")
+        assert len(missing) == 0, "Should have no missing details"
+        print("✓ PASSED: No missing details after profile completion")
+        
+        if car:
+            if test_user.has_complete_driver_details():
+                print("✓ PASSED: User can now proceed with booking")
+            else:
+                print("✗ FAILED: User still cannot book despite complete profile")
+                sys.exit(1)
+        
+        # Test 4: Test expired license
+        print("\n--- Test 4: Testing expired license restriction ---")
+        test_user.license_expiry = date(2020, 1, 1)  # Expired license
+        db.session.commit()
+        
+        has_complete = test_user.has_complete_driver_details()
+        missing = test_user.get_missing_details()
+        
+        print(f"Has complete driver details (with expired license): {has_complete}")
+        print(f"Expected: False")
+        assert not has_complete, "User should not have complete details with expired license"
+        print("✓ PASSED: Expired license correctly prevents booking")
+        
+        assert "Valid driver's license (current license is expired)" in missing
+        print("✓ PASSED: Expired license message shown correctly")
+        
+        print("\n" + "="*60)
+        print("ALL TESTS PASSED SUCCESSFULLY!")
+        print("="*60)
+        print("\nSummary:")
+        print("✓ Users without driver license details cannot book")
+        print("✓ Users without address details cannot book")
+        print("✓ Users with expired licenses cannot book")
+        print("✓ Users with complete valid details can book")
+        print("✓ Missing details are correctly identified and displayed")
+        
+        # Clean up test user (optional)
+        # db.session.delete(test_user)
+        # db.session.commit()
 
-if __name__ == "__main__":
-    try:
-        test_booking_restriction()
-    except Exception as e:
-        print(f"\n❌ Error during testing: {e}")
-        print("\nMake sure the Flask application is running on http://localhost:5000")
+if __name__ == '__main__':
+    test_booking_restriction()

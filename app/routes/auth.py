@@ -190,6 +190,14 @@ def edit_profile():
         db.session.add(current_user)
         db.session.commit()
         flash('Profile updated successfully!', 'success')
+        
+        # Check if there was a pending booking and redirect back if profile is now complete
+        from flask import session
+        if 'pending_booking_car' in session and current_user.has_complete_driver_details():
+            car_id = session.pop('pending_booking_car')
+            flash('Your profile is now complete! You can proceed with your booking.', 'info')
+            return redirect(url_for('bookings.create', car_id=car_id))
+        
         return redirect(url_for('auth.profile'))
     
     return render_template('pages/edit_profile.html', user=current_user)

@@ -13,20 +13,26 @@
 <div class="container">
     <!-- Profile Completion Warning -->
     {% if current_user.is_authenticated and not has_complete_profile %}
-    <div class="alert alert-warning alert-dismissible fade show" role="alert">
-        <i class="fas fa-exclamation-triangle"></i> 
-        <strong>Profile Incomplete!</strong> You need to complete your profile before booking a car.
-        <ul class="mb-2 mt-2">
-            {% for detail in missing_details %}
-            <li>{{ detail }}</li>
-            {% endfor %}
-        </ul>
-        <a href="{{ url_for('auth.edit_profile') }}" class="btn btn-warning btn-sm">
-            <i class="fas fa-user-edit"></i> Complete Profile
-        </a>
-        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-            <span aria-hidden="true">&times;</span>
-        </button>
+    <div class="alert alert-danger" role="alert">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h5 class="alert-heading">
+                    <i class="fas fa-exclamation-circle"></i> 
+                    Driver Profile Required for Booking
+                </h5>
+                <p class="mb-2"><strong>You cannot book any vehicle without providing:</strong></p>
+                <ul class="mb-0">
+                    {% for detail in missing_details %}
+                    <li>{{ detail }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            <div class="col-md-4 text-right">
+                <a href="{{ url_for('auth.edit_profile') }}#license" class="btn btn-danger">
+                    <i class="fas fa-user-edit"></i> Complete Driver Profile
+                </a>
+            </div>
+        </div>
     </div>
     {% endif %}
     
@@ -146,9 +152,9 @@
                             {% if has_complete_profile %}
                             <a href="{{ url_for('bookings.create', car_id=car.id) }}" class="btn btn-primary btn-sm">Book Now</a>
                             {% else %}
-                            <a href="{{ url_for('auth.edit_profile') }}" class="btn btn-warning btn-sm" 
-                               title="Complete your profile to book this car">
-                                <i class="fas fa-user-edit"></i> Complete Profile to Book
+                            <a href="{{ url_for('auth.edit_profile') }}#license" class="btn btn-danger btn-sm" 
+                               title="Driver license and address required for booking">
+                                <i class="fas fa-lock"></i> Profile Required
                             </a>
                             {% endif %}
                         {% endif %}

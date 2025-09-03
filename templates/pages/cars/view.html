@@ -224,17 +224,22 @@
                                 <i class="fas fa-calendar-check"></i> Book Now
                             </a>
                             {% else %}
-                            <div class="alert alert-warning">
-                                <i class="fas fa-exclamation-triangle"></i> 
-                                <strong>Complete your profile to book this car</strong>
-                                <ul class="mb-2 mt-2 text-left">
+                            <div class="alert alert-danger">
+                                <h5 class="alert-heading">
+                                    <i class="fas fa-exclamation-circle"></i> 
+                                    Driver Profile Incomplete
+                                </h5>
+                                <p class="mb-2"><strong>You cannot book a car without the following required information:</strong></p>
+                                <ul class="mb-3 text-left">
                                     {% for detail in missing_details %}
                                     <li>{{ detail }}</li>
                                     {% endfor %}
                                 </ul>
+                                <hr>
+                                <p class="mb-0 small">For safety and legal compliance, all drivers must provide valid license and address details before making a booking.</p>
                             </div>
-                            <a href="{{ url_for('auth.edit_profile') }}" class="btn btn-warning btn-lg btn-block">
-                                <i class="fas fa-user-edit"></i> Complete Profile
+                            <a href="{{ url_for('auth.edit_profile') }}#license" class="btn btn-danger btn-lg btn-block">
+                                <i class="fas fa-user-edit"></i> Complete Driver Profile Now
                             </a>
                             {% endif %}
                         {% else %}

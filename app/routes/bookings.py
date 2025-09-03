@@ -33,10 +33,21 @@ def create():
     # Check if user has complete driver license and address details
     if not current_user.has_complete_driver_details():
         missing_details = current_user.get_missing_details()
-        flash('Please complete your profile before making a booking. Missing: ' + ', '.join(missing_details), 'warning')
-        return redirect(url_for('auth.edit_profile'))
+        flash('⚠️ You cannot book a car without completing your driver profile. Please provide the following information:', 'danger')
+        for detail in missing_details:
+            flash(f'• {detail}', 'danger')
+        # Store the intended car_id in session to redirect back after profile completion
+        if request.args.get('car_id'):
+            from flask import session
+            session['pending_booking_car'] = request.args.get('car_id')
+        return redirect(url_for('auth.edit_profile') + '#license')
     
     if request.method == 'POST':
+        # Double-check profile completion in case of direct POST manipulation
+        if not current_user.has_complete_driver_details():
+            flash('⚠️ Profile validation failed. Please complete your driver details first.', 'danger')
+            return redirect(url_for('auth.edit_profile') + '#license')
+        
         data = request.form.to_dict()
         
         # Validate car availability
