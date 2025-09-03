@@ -57,7 +57,15 @@
                 <h3>Revenue Trend</h3>
             </div>
             <div class="card-body">
+                {% if chart_data.monthly_revenue.data and chart_data.monthly_revenue.data|length > 0 %}
                 <canvas id="revenueChart"></canvas>
+                {% else %}
+                <div style="display: flex; align-items: center; justify-content: center; height: 300px; flex-direction: column;">
+                    <i class="fas fa-chart-line fa-3x text-muted mb-3"></i>
+                    <p class="text-muted">No revenue data available yet</p>
+                    <small class="text-muted">Revenue data will appear here once payments are recorded</small>
+                </div>
+                {% endif %}
             </div>
         </div>
         
@@ -71,40 +79,14 @@
         </div>
     </div>
     
-    <!-- Fleet and Maintenance Overview -->
+    <!-- Fleet Overview -->
     <div class="overview-row">
-        <div class="overview-card">
+        <div class="overview-card" style="width: 100%;">
             <div class="card-header">
                 <h3>Fleet Status</h3>
             </div>
             <div class="card-body">
                 <canvas id="fleetStatusChart"></canvas>
-            </div>
-        </div>
-        
-        <div class="overview-card">
-            <div class="card-header">
-                <h3>Maintenance Overview</h3>
-            </div>
-            <div class="card-body">
-                <div class="maintenance-stats">
-                    <div class="maintenance-stat">
-                        <span class="stat-label">Healthy</span>
-                        <span class="stat-value text-success">{{ stats.cars_healthy }}</span>
-                    </div>
-                    <div class="maintenance-stat">
-                        <span class="stat-label">Due Soon</span>
-                        <span class="stat-value text-warning">{{ stats.cars_due_soon }}</span>
-                    </div>
-                    <div class="maintenance-stat">
-                        <span class="stat-label">Overdue</span>
-                        <span class="stat-value text-danger">{{ stats.cars_overdue }}</span>
-                    </div>
-                    <div class="maintenance-stat">
-                        <span class="stat-label">In Service</span>
-                        <span class="stat-value text-info">{{ stats.cars_in_service }}</span>
-                    </div>
-                </div>
             </div>
         </div>
     </div>
@@ -158,6 +140,7 @@
 {% block extra_js %}
 <script>
     // Revenue Chart
+    {% if chart_data.monthly_revenue.data and chart_data.monthly_revenue.data|length > 0 %}
     const revenueCtx = document.getElementById('revenueChart').getContext('2d');
     new Chart(revenueCtx, {
         type: 'line',
@@ -191,6 +174,7 @@
             }
         }
     });
+    {% endif %}
     
     // Booking Status Chart
     const bookingStatusCtx = document.getElementById('bookingStatusChart').getContext('2d');

@@ -6,71 +6,57 @@
 {% block content %}
 <div class="payments-container">
     <!-- Summary Cards -->
-    <div class="summary-cards">
-        <div class="summary-card">
-            <div class="summary-icon bg-success">
+    <div class="summary-cards" style="display: flex; gap: 1.5rem; margin-bottom: 1.5rem;">
+        <div class="summary-card" style="background: white; border-radius: 0.75rem; padding: 1.5rem; flex: 1; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1); display: flex; align-items: center; gap: 1rem;">
+            <div class="summary-icon bg-success" style="width: 60px; height: 60px; background: #10b981; border-radius: 0.5rem; display: flex; align-items: center; justify-content: center; color: white; font-size: 1.5rem;">
                 <i class="fas fa-dollar-sign"></i>
             </div>
             <div class="summary-content">
-                <h3>${{ "{:,.2f}".format(total_amount) }}</h3>
-                <p>Total Revenue</p>
+                <h3 style="font-size: 1.75rem; font-weight: 700; margin-bottom: 0.25rem;">${{ "{:,.2f}".format(total_amount) }}</h3>
+                <p style="color: #6b7280; margin: 0;">Total Revenue</p>
             </div>
         </div>
         
-        <div class="summary-card">
-            <div class="summary-icon bg-info">
+        <div class="summary-card" style="background: white; border-radius: 0.75rem; padding: 1.5rem; flex: 1; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1); display: flex; align-items: center; gap: 1rem;">
+            <div class="summary-icon bg-info" style="width: 60px; height: 60px; background: #3b82f6; border-radius: 0.5rem; display: flex; align-items: center; justify-content: center; color: white; font-size: 1.5rem;">
                 <i class="fas fa-receipt"></i>
             </div>
             <div class="summary-content">
-                <h3>{{ payments.total }}</h3>
-                <p>Total Transactions</p>
+                <h3 style="font-size: 1.75rem; font-weight: 700; margin-bottom: 0.25rem;">{{ payments.total }}</h3>
+                <p style="color: #6b7280; margin: 0;">Total Transactions</p>
             </div>
         </div>
     </div>
     
     <!-- Filters -->
     <div class="filters-card">
-        <form method="get" class="filters-form">
-            <div class="filter-row">
-                <div class="filter-group">
-                    <label>Booking ID</label>
-                    <input type="number" name="booking_id" class="form-control" 
-                           value="{{ request.args.get('booking_id', '') }}"
-                           placeholder="Enter booking ID">
-                </div>
-                
-                <div class="filter-group">
-                    <label>Status</label>
-                    <select name="status" class="form-control">
-                        <option value="">All Status</option>
-                        {% for status in PaymentStatus %}
-                        <option value="{{ status.value }}" {% if request.args.get('status') == status.value %}selected{% endif %}>
-                            {{ status.value.replace('_', ' ').title() }}
-                        </option>
-                        {% endfor %}
-                    </select>
-                </div>
-                
-                <div class="filter-group">
-                    <label>From Date</label>
-                    <input type="date" name="date_from" class="form-control" 
-                           value="{{ request.args.get('date_from', '') }}">
-                </div>
-                
-                <div class="filter-group">
-                    <label>To Date</label>
-                    <input type="date" name="date_to" class="form-control" 
-                           value="{{ request.args.get('date_to', '') }}">
-                </div>
-                
-                <div class="filter-group filter-actions">
-                    <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-filter"></i> Filter
-                    </button>
-                    <a href="{{ url_for('admin.payments') }}" class="btn btn-outline">
-                        <i class="fas fa-times"></i> Clear
-                    </a>
-                </div>
+        <form method="get" class="filters-form" style="display: flex; gap: 1rem; align-items: flex-end; flex-wrap: wrap;">
+            <div class="filter-group" style="flex: 1; min-width: 150px;">
+                <label>Booking ID</label>
+                <input type="number" name="booking_id" class="form-control" 
+                       value="{{ request.args.get('booking_id', '') }}"
+                       placeholder="Enter booking ID">
+            </div>
+            
+            <div class="filter-group" style="flex: 1; min-width: 150px;">
+                <label>From Date</label>
+                <input type="date" name="date_from" class="form-control" 
+                       value="{{ request.args.get('date_from', '') }}">
+            </div>
+            
+            <div class="filter-group" style="flex: 1; min-width: 150px;">
+                <label>To Date</label>
+                <input type="date" name="date_to" class="form-control" 
+                       value="{{ request.args.get('date_to', '') }}">
+            </div>
+            
+            <div class="filter-group filter-actions" style="display: flex; gap: 0.5rem;">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-filter"></i> Filter
+                </button>
+                <a href="{{ url_for('admin.payments') }}" class="btn btn-outline">
+                    <i class="fas fa-times"></i> Clear
+                </a>
             </div>
         </form>
     </div>
@@ -86,8 +72,6 @@
                         <th>User</th>
                         <th>Vehicle</th>
                         <th>Amount</th>
-                        <th>Method</th>
-                        <th>Status</th>
                         <th>Date</th>
                         <th>Actions</th>
                     </tr>
@@ -126,17 +110,7 @@
                         <td>
                             <strong>${{ "{:,.2f}".format(payment.amount) }}</strong>
                         </td>
-                        <td>
-                            <span class="badge badge-method">
-                                {{ payment.payment_method.value.replace('_', ' ').title() if payment.payment_method else 'N/A' }}
-                            </span>
-                        </td>
-                        <td>
-                            <span class="badge badge-{{ payment.status.value }}">
-                                {{ payment.status.value.replace('_', ' ').title() }}
-                            </span>
-                        </td>
-                        <td>
+                        <td style="white-space: nowrap;">
                             {{ payment.created_at.strftime('%Y-%m-%d %H:%M') if payment.created_at else '' }}
                         </td>
                         <td>
@@ -147,7 +121,7 @@
                     </tr>
                     {% else %}
                     <tr>
-                        <td colspan="9" class="text-center py-4">
+                        <td colspan="7" class="text-center py-4">
                             <i class="fas fa-file-invoice-dollar fa-3x text-muted mb-3"></i>
                             <p>No payments found</p>
                         </td>
