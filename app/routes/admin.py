@@ -445,6 +445,30 @@ def add_car():
             if uploaded_images:
                 car.images = uploaded_images
         
+        # Handle document uploads (PDFs and images)
+        if 'documents' in request.files:
+            doc_files = request.files.getlist('documents')
+            uploaded_documents = []
+            doc_upload_dir = os.path.join('static', 'uploads', 'car-documents')
+            os.makedirs(doc_upload_dir, exist_ok=True)
+            for file in doc_files:
+                if file and file.filename:
+                    filename = secure_filename(file.filename)
+                    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+                    filename = f"{car.id}_{timestamp}_{filename}"
+                    filepath = os.path.join(doc_upload_dir, filename)
+                    file.save(filepath)
+                    web_path = f"/static/uploads/car-documents/{filename}"
+                    mime_type = file.mimetype or 'application/octet-stream'
+                    uploaded_documents.append({
+                        'name': file.filename,
+                        'url': web_path,
+                        'mime': mime_type,
+                        'type': 'document'
+                    })
+            if uploaded_documents:
+                car.documents = uploaded_documents
+        
         db.session.commit()
         
         flash('Car added successfully!', 'success')
