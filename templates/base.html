@@ -39,10 +39,11 @@
                     <li><a href="{{ url_for('main.contact') }}">Contact</a></li>
                     
                     {% if current_user.is_authenticated %}
-                        <li><a href="{{ url_for('bookings.index') }}">My Bookings</a></li>
-                        
+                        {% if not current_user.is_manager %}
+                            <li><a href="{{ url_for('bookings.index') }}">My Bookings</a></li>
+                        {% endif %}
                         {% if current_user.is_manager %}
-                            <li><a href="{{ url_for('dashboard.index') }}">Dashboard</a></li>
+                            <li><a href="{{ url_for('admin.dashboard') }}">Dashboard</a></li>
                         {% endif %}
                     {% endif %}
                 </ul>
