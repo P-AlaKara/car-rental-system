@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify
+from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify, current_app
 from flask_login import login_required, current_user
 from app import db
 from app.models import Car, CarCategory, CarStatus, Booking
@@ -135,13 +135,11 @@ def create():
         if 'main_image' in request.files:
             file = request.files['main_image']
             if file and file.filename:
+                from app.services.storage import get_storage
+                storage = get_storage()
                 filename = secure_filename(file.filename)
-                # Save under UPLOAD_FOLDER/cars and expose via /uploads
-                upload_base = current_app.config.get('UPLOAD_FOLDER', 'uploads')
-                upload_path = os.path.join(upload_base, 'cars')
-                os.makedirs(upload_path, exist_ok=True)
-                file.save(os.path.join(upload_path, filename))
-                car.main_image = f'/uploads/cars/{filename}'
+                key = storage.generate_key('cars', filename)
+                car.main_image = storage.upload_fileobj(file, key, content_type=file.mimetype)
         
         db.session.add(car)
         db.session.commit()
@@ -192,12 +190,11 @@ def edit(id):
         if 'main_image' in request.files:
             file = request.files['main_image']
             if file and file.filename:
+                from app.services.storage import get_storage
+                storage = get_storage()
                 filename = secure_filename(file.filename)
-                upload_base = current_app.config.get('UPLOAD_FOLDER', 'uploads')
-                upload_path = os.path.join(upload_base, 'cars')
-                os.makedirs(upload_path, exist_ok=True)
-                file.save(os.path.join(upload_path, filename))
-                car.main_image = f'/uploads/cars/{filename}'
+                key = storage.generate_key('cars', filename)
+                car.main_image = storage.upload_fileobj(file, key, content_type=file.mimetype)
         
         db.session.commit()
         flash('Car updated successfully!', 'success')

@@ -427,10 +427,9 @@ def add_car():
             files = request.files.getlist('images')
             uploaded_images = []
             
-            # Create upload directory if it doesn't exist
-            upload_base = current_app.config.get('UPLOAD_FOLDER', 'uploads')
-            upload_dir = os.path.join(upload_base, 'cars')
-            os.makedirs(upload_dir, exist_ok=True)
+            # Upload to storage (Spaces or local)
+            from app.services.storage import get_storage
+            storage = get_storage()
             
             for file in files:
                 if file and file.filename:
@@ -439,14 +438,9 @@ def add_car():
                     # Add timestamp to make filename unique
                     timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
                     filename = f"{car.id}_{timestamp}_{filename}"
-                    filepath = os.path.join(upload_dir, filename)
-                    
-                    # Save the file
-                    file.save(filepath)
-                    
-                    # Store the relative path for web access
-                    web_path = f"/uploads/cars/{filename}"
-                    uploaded_images.append(web_path)
+                    key = storage.generate_key('cars', filename)
+                    url = storage.upload_fileobj(file, key, content_type=file.mimetype)
+                    uploaded_images.append(url)
             
             if uploaded_images:
                 car.images = uploaded_images
@@ -538,10 +532,8 @@ def upload_car_images(car_id):
     files = request.files.getlist('images')
     uploaded_images = []
     
-    # Create upload directory if it doesn't exist
-    upload_base = current_app.config.get('UPLOAD_FOLDER', 'uploads')
-    upload_dir = os.path.join(upload_base, 'cars')
-    os.makedirs(upload_dir, exist_ok=True)
+    from app.services.storage import get_storage
+    storage = get_storage()
     
     for file in files:
         if file and file.filename:
@@ -550,14 +542,9 @@ def upload_car_images(car_id):
             # Add timestamp to make filename unique
             timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
             filename = f"{car_id}_{timestamp}_{filename}"
-            filepath = os.path.join(upload_dir, filename)
-            
-            # Save the file
-            file.save(filepath)
-            
-            # Store the relative path for web access
-            web_path = f"/uploads/cars/{filename}"
-            uploaded_images.append(web_path)
+            key = storage.generate_key('cars', filename)
+            url = storage.upload_fileobj(file, key, content_type=file.mimetype)
+            uploaded_images.append(url)
     
     # Update car images
     if car.images:
@@ -585,22 +572,22 @@ def delete_car_image(car_id):
         # Remove the image from the list
         car.images = [img for img in car.images if img != image_url]
         
-        # Try to delete the physical file
-        try:
-            # Convert web path to file path
-            # Support both legacy /static/uploads and new /uploads paths
-            base_dir = current_app.config.get('UPLOAD_FOLDER', 'uploads')
-            file_path = None
-            if image_url.startswith('/uploads/'):
-                file_path = os.path.join(base_dir, image_url[len('/uploads/'):])
-            elif image_url.startswith('/static/uploads/'):
-                # Legacy path stored; map to new base dir if exists
-                file_path = os.path.join(base_dir, image_url[len('/static/uploads/'):])
-            if file_path and os.path.exists(file_path):
-                os.remove(file_path)
-        except Exception as e:
-            # Log error but don't fail the operation
-            print(f"Error deleting file: {e}")
+        # Delete via storage abstraction; attempt legacy local path as fallback
+        from app.services.storage import get_storage
+        storage = get_storage()
+        deleted = storage.delete(image_url)
+        if not deleted:
+            try:
+                base_dir = current_app.config.get('UPLOAD_FOLDER', 'uploads')
+                file_path = None
+                if image_url.startswith('/uploads/'):
+                    file_path = os.path.join(base_dir, image_url[len('/uploads/'):])
+                elif image_url.startswith('/static/uploads/'):
+                    file_path = os.path.join(base_dir, image_url[len('/static/uploads/'):])
+                if file_path and os.path.exists(file_path):
+                    os.remove(file_path)
+            except Exception:
+                pass
         
         db.session.commit()
         return jsonify({'success': True, 'message': 'Image deleted successfully'})
@@ -1291,13 +1278,12 @@ def complete_handover(booking_id):
                     # Prefer original extension when present
                     ext = license_doc['name'].rsplit('.', 1)[1].lower()
                 filename = f"{filename_root}.{ext}"
-                base_dir = current_app.config.get('UPLOAD_FOLDER', 'uploads')
-                filepath = os.path.join(base_dir, 'licenses', filename)
-                os.makedirs(os.path.dirname(filepath), exist_ok=True)
+                from app.services.storage import get_storage
+                storage = get_storage()
                 import base64 as _b64
-                with open(filepath, 'wb') as f:
-                    f.write(_b64.b64decode(encoded))
-                booking.license_document_url = f"/uploads/licenses/{filename}"
+                key = f"licenses/{filename}"
+                url = storage.upload_bytes(_b64.b64decode(encoded), key, content_type=license_doc.get('mime'))
+                booking.license_document_url = url
         
         # 2. Store odometer reading
         if data.get('odometer_reading'):
@@ -1311,23 +1297,20 @@ def complete_handover(booking_id):
                 # Extract base64 data
                 header, encoded = photo_data['data'].split(',', 1)
                 
-                # Save to file system (you might want to use cloud storage in production)
+                # Upload to storage
                 filename = f"pickup_{booking_id}_{uuid.uuid4().hex[:8]}.jpg"
-                filepath = os.path.join(current_app.config.get('UPLOAD_FOLDER', 'uploads'), 'booking_photos', filename)
-                
-                # Create directory if it doesn't exist
-                os.makedirs(os.path.dirname(filepath), exist_ok=True)
-                
-                # Decode and save image
-                image_data = base64.b64decode(encoded)
-                with open(filepath, 'wb') as f:
-                    f.write(image_data)
+                from app.services.storage import get_storage
+                storage = get_storage()
+                import base64 as _b64
+                image_data = _b64.b64decode(encoded)
+                key = f"booking_photos/{filename}"
+                url = storage.upload_bytes(image_data, key, content_type='image/jpeg')
                 
                 # Save photo record to database
                 photo = BookingPhoto(
                     booking_id=booking_id,
                     photo_type='pickup',
-                    photo_url=f'/uploads/booking_photos/{filename}',
+                    photo_url=url,
                     description=photo_data.get('name', ''),
                     uploaded_by=current_user.id
                 )

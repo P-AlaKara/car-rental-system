@@ -41,6 +41,14 @@ class Config:
     UPLOAD_FOLDER = os.environ.get('UPLOAD_FOLDER') or 'static/uploads'
     MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # 16MB max file size
     ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'pdf'}
+
+    # DigitalOcean Spaces / S3-compatible storage
+    SPACES_BUCKET = os.environ.get('SPACES_BUCKET')
+    SPACES_REGION = os.environ.get('SPACES_REGION')
+    SPACES_ENDPOINT_URL = os.environ.get('SPACES_ENDPOINT_URL')  # e.g. https://nyc3.digitaloceanspaces.com
+    SPACES_ACCESS_KEY_ID = os.environ.get('SPACES_ACCESS_KEY_ID')
+    SPACES_SECRET_ACCESS_KEY = os.environ.get('SPACES_SECRET_ACCESS_KEY')
+    SPACES_CDN_BASE_URL = os.environ.get('SPACES_CDN_BASE_URL')  # optional CDN base
     
     # Pagination
     POSTS_PER_PAGE = int(os.environ.get('POSTS_PER_PAGE') or 10)
