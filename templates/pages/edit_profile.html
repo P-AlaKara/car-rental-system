@@ -621,6 +621,34 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
+    
+    // Auto-sync license state with address state if license state is empty
+    const addressStateSelect = document.getElementById('state');
+    const licenseStateSelect = document.getElementById('license_state');
+    
+    if (addressStateSelect && licenseStateSelect) {
+        // On address state change, if license state is empty, set it to match
+        addressStateSelect.addEventListener('change', function() {
+            if (!licenseStateSelect.value && this.value) {
+                licenseStateSelect.value = this.value;
+                // Add a visual indicator that it was auto-filled
+                licenseStateSelect.style.borderColor = '#0ea5e9';
+                setTimeout(() => {
+                    licenseStateSelect.style.borderColor = '';
+                }, 2000);
+            }
+        });
+        
+        // On page load, if address state is set but license state is not, suggest it
+        if (addressStateSelect.value && !licenseStateSelect.value) {
+            // Add a helpful message
+            const licenseStateContainer = licenseStateSelect.closest('.mb-3');
+            const helpText = document.createElement('small');
+            helpText.className = 'text-info';
+            helpText.innerHTML = '<i class="fas fa-info-circle"></i> Tip: Your license state is typically the same as your address state.';
+            licenseStateContainer.appendChild(helpText);
+        }
+    }
 });
 </script>
 {% endblock %}
