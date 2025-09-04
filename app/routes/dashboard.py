@@ -1,6 +1,7 @@
 from flask import Blueprint, render_template, redirect, url_for, flash, jsonify, request
 from flask_login import login_required, current_user
-from app.models import User, Car, Booking, Payment, Driver
+from app import db
+from app.models import User, Car, Booking, Payment, Driver, BookingStatus, PaymentStatus, CarStatus
 from app.utils.decorators import admin_required, manager_required
 from sqlalchemy import func
 from datetime import datetime, timedelta
@@ -18,11 +19,11 @@ def index():
         'total_users': User.query.count(),
         'total_cars': Car.query.count(),
         'total_bookings': Booking.query.count(),
-        'total_revenue': db.session.query(func.sum(Payment.amount)).filter_by(status='completed').scalar() or 0,
-        'active_bookings': Booking.query.filter_by(status='in_progress').count(),
-        'available_cars': Car.query.filter_by(status='available').count(),
+        'total_revenue': db.session.query(func.sum(Payment.amount)).filter(Payment.status == PaymentStatus.COMPLETED).scalar() or 0,
+        'active_bookings': Booking.query.filter_by(status=BookingStatus.IN_PROGRESS).count(),
+        'available_cars': Car.query.filter_by(status=CarStatus.AVAILABLE).count(),
         'total_drivers': Driver.query.count(),
-        'pending_bookings': Booking.query.filter_by(status='pending').count()
+        'pending_bookings': Booking.query.filter_by(status=BookingStatus.PENDING).count()
     }
     
     # Get recent bookings
@@ -34,7 +35,7 @@ def index():
         date = datetime.utcnow() - timedelta(days=i)
         daily_revenue = db.session.query(func.sum(Payment.amount)).filter(
             func.date(Payment.created_at) == date.date(),
-            Payment.status == 'completed'
+            Payment.status == PaymentStatus.COMPLETED
         ).scalar() or 0
         revenue_data.append({
             'date': date.strftime('%Y-%m-%d'),

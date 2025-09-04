@@ -4,7 +4,7 @@ from functools import wraps
 from datetime import datetime, timedelta
 from sqlalchemy import func, and_, or_, desc
 from app import db
-from app.models import User, Role, Car, Booking, Payment, Maintenance, CarStatus, BookingStatus, MaintenanceType, MaintenanceStatus, PaymentStatus, VehicleReturn
+from app.models import User, Role, Car, Booking, Payment, Maintenance, CarStatus, BookingStatus, MaintenanceType, MaintenanceStatus, PaymentStatus, VehicleReturn, CarCategory
 import json
 import os
 from werkzeug.utils import secure_filename
@@ -333,9 +333,15 @@ def fleet():
     query = Car.query
     
     if status:
-        query = query.filter_by(status=CarStatus(status))
+        try:
+            query = query.filter_by(status=CarStatus(status))
+        except ValueError:
+            pass
     if category:
-        query = query.filter_by(category=category)
+        try:
+            query = query.filter_by(category=CarCategory(category))
+        except ValueError:
+            pass
     if search:
         query = query.filter(
             or_(
@@ -361,7 +367,7 @@ def add_car():
             year=request.form.get('year', type=int),
             license_plate=request.form.get('license_plate'),
             vin=request.form.get('vin'),
-            category=request.form.get('category'),
+            category=CarCategory(request.form.get('category')),
             seats=request.form.get('seats', type=int),
             transmission=request.form.get('transmission'),
             fuel_type=request.form.get('fuel_type'),
@@ -431,7 +437,10 @@ def edit_car(car_id):
         car.year = request.form.get('year', type=int)
         car.license_plate = request.form.get('license_plate')
         car.vin = request.form.get('vin')
-        car.category = request.form.get('category')
+        try:
+            car.category = CarCategory(request.form.get('category'))
+        except Exception:
+            pass
         car.seats = request.form.get('seats', type=int)
         car.transmission = request.form.get('transmission')
         car.fuel_type = request.form.get('fuel_type')

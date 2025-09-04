@@ -1,6 +1,7 @@
 from flask import Blueprint, jsonify, request
 from app import db
 from app.models import User, Car, Booking, Payment, Driver
+from sqlalchemy import func
 from app.routes.auth import verify_token
 from functools import wraps
 
@@ -99,9 +100,14 @@ def get_cars():
     query = Car.query
     
     if category:
-        query = query.filter_by(category=category)
+        try:
+            from app.models.car import CarCategory
+            query = query.filter_by(category=CarCategory(category))
+        except Exception:
+            pass
     if available_only:
-        query = query.filter_by(status='available', is_active=True)
+        from app.models.car import CarStatus
+        query = query.filter_by(status=CarStatus.AVAILABLE, is_active=True)
     
     cars = query.all()
     return jsonify([car.to_dict() for car in cars])
@@ -298,16 +304,18 @@ def dashboard_stats():
     
     from sqlalchemy import func
     
+    from app.models.booking import BookingStatus
+    from app.models.payment import PaymentStatus
+    from app.models.driver import DriverStatus
     stats = {
         'total_users': User.query.count(),
         'total_cars': Car.query.count(),
-        'available_cars': Car.query.filter_by(status='available').count(),
+        'available_cars': Car.query.filter_by(status=CarStatus.AVAILABLE).count(),
         'total_bookings': Booking.query.count(),
-        'active_bookings': Booking.query.filter_by(status='in_progress').count(),
-        'total_revenue': db.session.query(func.sum(Payment.amount)).filter_by(
-            status='completed').scalar() or 0,
+        'active_bookings': Booking.query.filter_by(status=BookingStatus.IN_PROGRESS).count(),
+        'total_revenue': db.session.query(func.sum(Payment.amount)).filter(Payment.status == PaymentStatus.COMPLETED).scalar() or 0,
         'total_drivers': Driver.query.count(),
-        'available_drivers': Driver.query.filter_by(status='available').count()
+        'available_drivers': Driver.query.filter_by(status=DriverStatus.AVAILABLE).count()
     }
     
     return jsonify(stats)

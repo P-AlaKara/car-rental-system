@@ -2,6 +2,7 @@ from flask import Blueprint, render_template, redirect, url_for, flash, request,
 from flask_login import login_required, current_user
 from app import db
 from app.models import Car, CarCategory, CarStatus, Booking
+from app.models.booking import BookingStatus
 from app.utils.decorators import manager_required
 from werkzeug.utils import secure_filename
 import os
@@ -99,13 +100,20 @@ def create():
         data = request.form.to_dict()
         
         # Create new car
+        # Parse category accepting both enum name and value
+        category_value = data['category']
+        try:
+            parsed_category = CarCategory[category_value.upper()]
+        except (KeyError, AttributeError):
+            parsed_category = CarCategory(category_value)
+
         car = Car(
             make=data['make'],
             model=data['model'],
             year=int(data['year']),
             license_plate=data['license_plate'],
             vin=data['vin'],
-            category=CarCategory[data['category'].upper()],
+            category=parsed_category,
             seats=int(data['seats']),
             transmission=data.get('transmission', 'Automatic'),
             fuel_type=data.get('fuel_type', 'Gasoline'),
@@ -207,7 +215,7 @@ def delete(id):
     
     # Check if car has active bookings
     active_bookings = Booking.query.filter_by(car_id=car.id).filter(
-        Booking.status.in_(['pending', 'confirmed', 'in_progress'])
+        Booking.status.in_([BookingStatus.PENDING, BookingStatus.CONFIRMED, BookingStatus.IN_PROGRESS])
     ).count()
     
     if active_bookings > 0:
@@ -238,7 +246,7 @@ def check_availability(id):
     # Check for overlapping bookings
     overlapping = Booking.query.filter(
         Booking.car_id == car.id,
-        Booking.status.in_(['confirmed', 'in_progress']),
+        Booking.status.in_([BookingStatus.CONFIRMED, BookingStatus.IN_PROGRESS]),
         db.or_(
             db.and_(
                 Booking.pickup_date <= start_date,
