@@ -1,0 +1,43 @@
+# Python
+__pycache__
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.venv/
+
+# Git
+.git
+.gitignore
+
+# Byte-compiled / compiled / caches
+*.egg-info
+.mypy_cache
+.pytest_cache
+
+# OS / editor
+.DS_Store
+*.swp
+*.swo
+.idea/
+.vscode/
+
+# Tests and logs
+tests/
+test_*.py
+*_test.py
+*.log
+app.log
+
+# Local env and instance data
+.env
+instance/
+uploads/
+static/uploads/
+
+# Build artifacts
+node_modules/
+dist/
+build/
