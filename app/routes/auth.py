@@ -161,6 +161,11 @@ def edit_profile():
             if field in data:  # Update even if empty to allow clearing fields
                 setattr(current_user, field, data[field])
         
+        # Auto-sync license_state with state if license_state is empty but state is provided
+        # This helps users who update their address state but forget to update license state
+        if data.get('state') and not data.get('license_state') and not current_user.license_state:
+            current_user.license_state = data.get('state')
+        
         # Handle date fields separately
         if data.get('date_of_birth'):
             from datetime import datetime
