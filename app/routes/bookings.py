@@ -545,3 +545,28 @@ def view_photos(id):
                          booking=booking,
                          pickup_photos=pickup_photos,
                          return_photos=return_photos)
+
+
+@bp.route('/<int:id>/receipt')
+@login_required
+def receipt(id):
+    """Redirect to the payment receipt for this booking."""
+    booking = Booking.query.get_or_404(id)
+    
+    # Permission check
+    if not current_user.is_manager and booking.customer_id != current_user.id:
+        flash('You do not have permission to view this receipt.', 'error')
+        return redirect(url_for('bookings.view', id=id))
+    
+    # Find the most recent completed payment for this booking
+    payment = (Payment.query
+               .filter_by(booking_id=booking.id)
+               .filter(Payment.status == PaymentStatus.COMPLETED)
+               .order_by(Payment.created_at.desc())
+               .first())
+    
+    if not payment:
+        flash('No completed payment found for this booking. Receipt unavailable.', 'warning')
+        return redirect(url_for('bookings.view', id=id))
+    
+    return redirect(url_for('payments.receipt', id=payment.id))
