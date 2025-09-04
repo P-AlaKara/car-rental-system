@@ -409,16 +409,41 @@ function viewPaymentHistory(bookingId) {
         .then(response => response.json())
         .then(data => {
             let content = '';
-            if (data.payments && data.payments.length > 0) {
-                content = '<ul>';
-                data.payments.forEach(payment => {
-                    content += `<li>${payment.date} - $${payment.amount} - ${payment.status}</li>`;
-                });
-                content += '</ul>';
+            const rows = data.rows || [];
+            if (rows.length > 0) {
+                content = `
+                    <div style="overflow-x:auto;">
+                        <table class="table" style="width:100%;">
+                            <thead>
+                                <tr>
+                                    <th>Date to be paid</th>
+                                    <th>Amount to be paid</th>
+                                    <th>Date paid</th>
+                                    <th>Amount paid</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${rows.map(r => `
+                                    <tr>
+                                        <td>${r.due_date || '-'}</td>
+                                        <td>$${(r.due_amount ?? 0).toFixed(2)}</td>
+                                        <td>${r.paid_date || '-'}</td>
+                                        <td>${r.paid_amount != null ? `$${Number(r.paid_amount).toFixed(2)}` : '-'}</td>
+                                        <td>${r.status}</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>`;
             } else {
-                content = '<p>' + data.message + '</p>';
+                const message = data.message || 'No scheduled payments found for this booking.';
+                content = `<p>${message}</p>`;
             }
             document.getElementById('paymentHistoryContent').innerHTML = content;
+        })
+        .catch(() => {
+            document.getElementById('paymentHistoryContent').innerHTML = '<p>Failed to load payment history.</p>';
         });
 }
 

@@ -2,6 +2,7 @@ from flask import Blueprint, render_template, redirect, url_for, flash, request,
 from flask_login import login_required, current_user
 from app import db
 from app.models import Payment, Booking, PaymentStatus, PaymentMethod
+from sqlalchemy import func
 from app.utils.decorators import manager_required
 from datetime import datetime
 
@@ -36,12 +37,12 @@ def index():
     
     # Calculate totals
     totals = {
-        'all': db.session.query(db.func.sum(Payment.amount)).scalar() or 0,
-        'completed': db.session.query(db.func.sum(Payment.amount)).filter_by(
+        'all': db.session.query(func.sum(Payment.amount)).scalar() or 0,
+        'completed': db.session.query(func.sum(Payment.amount)).filter_by(
             status=PaymentStatus.COMPLETED).scalar() or 0,
-        'pending': db.session.query(db.func.sum(Payment.amount)).filter_by(
+        'pending': db.session.query(func.sum(Payment.amount)).filter_by(
             status=PaymentStatus.PENDING).scalar() or 0,
-        'refunded': db.session.query(db.func.sum(Payment.refund_amount)).scalar() or 0
+        'refunded': db.session.query(func.sum(Payment.refund_amount)).scalar() or 0
     }
     
     return render_template('pages/payments/index.html',
