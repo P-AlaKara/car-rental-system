@@ -214,6 +214,7 @@ class PayAdvantageService:
         schedule = DirectDebitSchedule(
             booking_id=booking_id,
             schedule_id=schedule_id,
+            customer_code=customer_code,
             description=description,
             upfront_amount=upfront_amount,
             upfront_date=upfront_date,

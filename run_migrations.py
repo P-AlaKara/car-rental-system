@@ -7,6 +7,7 @@ This adds the necessary fields and tables for vehicle handover process.
 import os
 import sys
 from app import create_app, db
+from sqlalchemy import text
 from app.models import Booking, BookingPhoto, PayAdvantageCustomer, DirectDebitSchedule
 
 def run_migrations():
@@ -40,6 +41,16 @@ def run_migrations():
                 print("✓ direct_debit_schedules table created")
             else:
                 print("direct_debit_schedules table already exists")
+                # Add customer_code column if missing
+                dds_columns = [col['name'] for col in inspector.get_columns('direct_debit_schedules')]
+                if 'customer_code' not in dds_columns:
+                    print("Adding customer_code to direct_debit_schedules table...")
+                    try:
+                        db.session.execute(text('ALTER TABLE direct_debit_schedules ADD COLUMN customer_code VARCHAR(100)'))
+                        db.session.commit()
+                        print("✓ customer_code column added")
+                    except Exception as e:
+                        print(f"⚠ Could not add customer_code: {e}")
             
             # Add new columns to bookings table if they don't exist
             booking_columns = [col['name'] for col in inspector.get_columns('bookings')]
