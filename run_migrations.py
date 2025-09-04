@@ -67,6 +67,7 @@ def run_migrations():
                 'license_verified_at': 'DATETIME',
                 'contract_signed_url': 'TEXT',
                 'contract_signed_at': 'DATETIME',
+                'license_document_url': 'TEXT',
                 'pickup_odometer': 'INTEGER',
                 'return_odometer': 'INTEGER',
                 'handover_completed_at': 'DATETIME',
@@ -80,18 +81,33 @@ def run_migrations():
                 if column_name not in booking_columns:
                     print(f"Adding column {column_name} to bookings table...")
                     try:
-                        db.engine.execute(f'ALTER TABLE bookings ADD COLUMN {column_name} {column_type}')
+                        db.session.execute(text(f'ALTER TABLE bookings ADD COLUMN {column_name} {column_type}'))
+                        db.session.commit()
                         print(f"✓ {column_name} column added")
                     except Exception as e:
                         print(f"⚠ Could not add {column_name}: {e}")
                 else:
                     print(f"{column_name} column already exists in bookings table")
             
+            # Add documents column to cars table if missing
+            car_columns = [col['name'] for col in inspector.get_columns('cars')]
+            if 'documents' not in car_columns:
+                print("Adding documents column to cars table...")
+                try:
+                    dialect = db.session.bind.dialect.name if db.session.bind else 'sqlite'
+                    json_type = 'JSON' if dialect in ['mysql', 'mariadb', 'postgresql'] else 'TEXT'
+                    db.session.execute(text(f'ALTER TABLE cars ADD COLUMN documents {json_type}'))
+                    db.session.commit()
+                    print("✓ documents column added to cars table")
+                except Exception as e:
+                    print(f"⚠ Could not add documents column: {e}")
+
             # Create upload directories
             upload_dirs = [
                 'uploads',
                 'uploads/booking_photos',
-                'uploads/contracts'
+                'uploads/contracts',
+                'uploads/licenses'
             ]
             
             for dir_path in upload_dirs:

@@ -1256,6 +1256,41 @@ def complete_handover(booking_id):
             booking.license_verified = True
             booking.license_verified_at = datetime.utcnow()
         
+        # 1b. Save license document (image or PDF as base64 Data URL)
+        license_doc = data.get('license_document')
+        # Enforce license document upload if not already stored
+        if booking.license_document_url is None and not license_doc:
+            return jsonify({'success': False, 'message': 'Driver license document is required for handover.'}), 400
+        if license_doc and 'data' in license_doc:
+            # Expect license_doc like { name, mime, data: 'data:...;base64,XXXXX' }
+            try:
+                header, encoded = license_doc['data'].split(',', 1)
+            except ValueError:
+                header = None
+                encoded = None
+            if encoded:
+                filename_root = f"license_{booking_id}_{uuid.uuid4().hex[:8]}"
+                # Choose extension from mime or filename
+                ext = 'bin'
+                if license_doc.get('mime'):
+                    if 'pdf' in license_doc['mime']:
+                        ext = 'pdf'
+                    elif 'jpeg' in license_doc['mime'] or 'jpg' in license_doc['mime']:
+                        ext = 'jpg'
+                    elif 'png' in license_doc['mime']:
+                        ext = 'png'
+                if license_doc.get('name') and '.' in license_doc['name']:
+                    # Prefer original extension when present
+                    ext = license_doc['name'].rsplit('.', 1)[1].lower()
+                filename = f"{filename_root}.{ext}"
+                base_dir = current_app.config.get('UPLOAD_FOLDER', 'uploads')
+                filepath = os.path.join(base_dir, 'licenses', filename)
+                os.makedirs(os.path.dirname(filepath), exist_ok=True)
+                import base64 as _b64
+                with open(filepath, 'wb') as f:
+                    f.write(_b64.b64decode(encoded))
+                booking.license_document_url = f"/uploads/licenses/{filename}"
+        
         # 2. Store odometer reading
         if data.get('odometer_reading'):
             booking.pickup_odometer = data['odometer_reading']

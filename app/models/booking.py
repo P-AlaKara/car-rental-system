@@ -70,6 +70,8 @@ class Booking(db.Model):
     license_verified_at = db.Column(db.DateTime)
     contract_signed_url = db.Column(db.Text)
     contract_signed_at = db.Column(db.DateTime)
+    # Driver license document captured at handover
+    license_document_url = db.Column(db.Text)
     pickup_odometer = db.Column(db.Integer)
     return_odometer = db.Column(db.Integer)
     handover_completed_at = db.Column(db.DateTime)
@@ -154,5 +156,6 @@ class Booking(db.Model):
             'total_amount': self.total_amount,
             'status': self.status.value,
             'with_driver': self.with_driver,
+            'license_document_url': self.license_document_url,
             'created_at': self.created_at.isoformat() if self.created_at else None
         }
