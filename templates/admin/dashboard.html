@@ -74,7 +74,15 @@
                 <h3>Booking Status Distribution</h3>
             </div>
             <div class="card-body">
+                {% if chart_data.booking_status.data and chart_data.booking_status.data|length > 0 %}
                 <canvas id="bookingStatusChart"></canvas>
+                {% else %}
+                <div style="display: flex; align-items: center; justify-content: center; height: 300px; flex-direction: column;">
+                    <i class="fas fa-chart-pie fa-3x text-muted mb-3"></i>
+                    <p class="text-muted">No booking data available yet</p>
+                    <small class="text-muted">Booking data will appear here once available</small>
+                </div>
+                {% endif %}
             </div>
         </div>
     </div>
@@ -86,7 +94,15 @@
                 <h3>Fleet Status</h3>
             </div>
             <div class="card-body">
+                {% if chart_data.fleet_status.data and chart_data.fleet_status.data|length > 0 %}
                 <canvas id="fleetStatusChart"></canvas>
+                {% else %}
+                <div style="display: flex; align-items: center; justify-content: center; height: 300px; flex-direction: column;">
+                    <i class="fas fa-car-side fa-3x text-muted mb-3"></i>
+                    <p class="text-muted">No fleet data available yet</p>
+                    <small class="text-muted">Fleet data will appear here once available</small>
+                </div>
+                {% endif %}
             </div>
         </div>
     </div>
@@ -177,6 +193,7 @@
     {% endif %}
     
     // Booking Status Chart
+    {% if chart_data.booking_status.data and chart_data.booking_status.data|length > 0 %}
     const bookingStatusCtx = document.getElementById('bookingStatusChart').getContext('2d');
     new Chart(bookingStatusCtx, {
         type: 'doughnut',
@@ -204,8 +221,10 @@
             }
         }
     });
+    {% endif %}
     
     // Fleet Status Chart
+    {% if chart_data.fleet_status.data and chart_data.fleet_status.data|length > 0 %}
     const fleetStatusCtx = document.getElementById('fleetStatusChart').getContext('2d');
     new Chart(fleetStatusCtx, {
         type: 'pie',
@@ -231,5 +250,6 @@
             }
         }
     });
+    {% endif %}
 </script>
 {% endblock %}
