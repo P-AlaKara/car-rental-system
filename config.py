@@ -13,8 +13,16 @@ class Config:
     SECRET_KEY = os.environ.get('SECRET_KEY') or 'dev-secret-key-change-in-production'
     
     # Database
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or \
-        'sqlite:///' + os.path.join(basedir, 'aurora_motors.db')
+    # Prefer DATABASE_URL; otherwise use instance database if present; fallback to project DB
+    _db_url_env = os.environ.get('DATABASE_URL')
+    _instance_db_path = os.path.join(basedir, 'instance', 'aurora_motors.db')
+    _project_db_path = os.path.join(basedir, 'aurora_motors.db')
+    if _db_url_env:
+        SQLALCHEMY_DATABASE_URI = _db_url_env
+    elif os.path.exists(_instance_db_path):
+        SQLALCHEMY_DATABASE_URI = 'sqlite:///' + _instance_db_path
+    else:
+        SQLALCHEMY_DATABASE_URI = 'sqlite:///' + _project_db_path
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     
     # JWT
@@ -78,10 +86,10 @@ class ProductionConfig(Config):
     DEBUG = False
     TESTING = False
     
-    # Use PostgreSQL in production
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL')
-    if SQLALCHEMY_DATABASE_URI and SQLALCHEMY_DATABASE_URI.startswith('postgres://'):
-        SQLALCHEMY_DATABASE_URI = SQLALCHEMY_DATABASE_URI.replace('postgres://', 'postgresql://', 1)
+    # Use DATABASE_URL if provided; otherwise inherit from base (instance SQLite if present)
+    _db_url_env = os.environ.get('DATABASE_URL')
+    if _db_url_env:
+        SQLALCHEMY_DATABASE_URI = _db_url_env.replace('postgres://', 'postgresql://', 1) if _db_url_env.startswith('postgres://') else _db_url_env
 
 
 config = {
