@@ -1,2 +1,20 @@
 __pycache__/
 *.pyc
+
+# Python build artifacts and caches
+*.pyo
+*.pyd
+.pytest_cache/
+.venv/
+
+# Logs
+*.log
+
+# Local databases
+*.sqlite
+*.sqlite3
+*.db
+instance/*.db
+
+# Uploaded/generated files
+uploads/
