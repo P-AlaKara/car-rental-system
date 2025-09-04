@@ -32,11 +32,11 @@
                                 <small>Total Bookings</small>
                             </div>
                             <div class="stat-item">
-                                <h5>{{ user.bookings.filter_by(status='completed').count() }}</h5>
+                                <h5>{{ user.bookings.filter_by(status=BookingStatus.COMPLETED).count() }}</h5>
                                 <small>Completed</small>
                             </div>
                             <div class="stat-item">
-                                <h5>{{ user.bookings.filter_by(status='in_progress').count() }}</h5>
+                                <h5>{{ user.bookings.filter_by(status=BookingStatus.IN_PROGRESS).count() }}</h5>
                                 <small>Active</small>
                             </div>
                         </div>

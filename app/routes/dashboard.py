@@ -120,7 +120,7 @@ def analytics():
         month_revenue = db.session.query(func.sum(Payment.amount)).filter(
             func.extract('year', Payment.created_at) == date.year,
             func.extract('month', Payment.created_at) == date.month,
-            Payment.status == 'completed'
+            Payment.status == PaymentStatus.COMPLETED
         ).scalar() or 0
         monthly_revenue.append({
             'month': date.strftime('%B %Y'),
