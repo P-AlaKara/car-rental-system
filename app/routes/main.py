@@ -43,6 +43,12 @@ def about():
     return render_template('pages/about.html')
 
 
+@bp.route('/buy-car')
+def buy_car():
+    """Buy Car page."""
+    return render_template('pages/buy_car.html')
+
+
 @bp.route('/contact', methods=['GET', 'POST'])
 def contact():
     """Contact page."""
