@@ -1261,17 +1261,21 @@ def complete_handover(booking_id):
         # 4. Set up direct debit if provided
         direct_debit = data.get('direct_debit')
         authorization_url = None
+        direct_debit_failed = False
+        direct_debit_error = None
         
         if direct_debit and (direct_debit.get('upfront_amount') or direct_debit.get('recurring_amount')):
+            # Require customer mobile number for electronic authorisation
+            if not (booking.customer and booking.customer.phone):
+                return jsonify({'success': False, 'message': 'Customer must have a mobile number to set up electronic direct debit authorisation.'})
             try:
                 # Initialize PayAdvantage service
                 pa_service = PayAdvantageService()
                 
-                # Get or create customer
+                # Get or create customer (also syncs mobile)
                 pa_customer = pa_service.get_or_create_customer(booking.customer)
                 
                 # Create direct debit schedule
-                
                 upfront_date = None
                 if direct_debit.get('upfront_date'):
                     upfront_date = datetime.strptime(direct_debit['upfront_date'], '%Y-%m-%d').date()
@@ -1297,8 +1301,12 @@ def complete_handover(booking_id):
                 authorization_url = result['authorization_url']
                 
             except Exception as e:
+                # Capture and return the error without marking handover complete
+                direct_debit_failed = True
+                direct_debit_error = str(e)
                 print(f"Error setting up direct debit: {e}")
-                # Continue with handover even if direct debit fails
+                db.session.rollback()
+                return jsonify({'success': False, 'message': f'Failed to set up direct debit: {direct_debit_error}'}), 400
         
         # 5. Update booking status and handover completion
         booking.status = BookingStatus.IN_PROGRESS

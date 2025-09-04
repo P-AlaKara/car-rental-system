@@ -1,4 +1,5 @@
 import os
+import re
 import requests
 from datetime import datetime, date
 from typing import Dict, Optional, Any
@@ -51,6 +52,40 @@ class PayAdvantageService:
                 last_error_text = response.text
         raise Exception(f"Failed to authenticate with PayAdvantage: {last_error_text or 'Unknown error'}")
     
+    def _normalize_mobile(self, phone: Optional[str]) -> Optional[str]:
+        """Normalize Australian mobile numbers to E.164 format where possible.
+
+        Examples:
+        - 0420 123 456 -> +61420123456
+        - +61 420 123 456 -> +61420123456
+        - 61420123456 -> +61420123456
+        """
+        if not phone:
+            return None
+        stripped = phone.strip()
+        # Already E.164 format
+        if stripped.startswith('+'):
+            # Remove spaces and non-digits except leading +
+            digits = re.sub(r"[^\d]", "", stripped)
+            return f"+{digits}"
+        # Remove all non-digits
+        digits = re.sub(r"\D", "", stripped)
+        if not digits:
+            return None
+        # Handle Australian numbers
+        if digits.startswith('04') and len(digits) == 10:
+            # Mobile starting with 04XXXXXXXX -> +61 4XXXXXXXX
+            return f"+61{digits[1:]}"
+        if digits.startswith('614'):
+            return f"+{digits}"
+        # If 10 digits and starts with 4, assume AU mobile missing leading 0
+        if len(digits) == 9 and digits.startswith('4'):
+            return f"+61{digits}"
+        if len(digits) == 10 and digits.startswith('4'):
+            return f"+61{digits}"
+        # Fallback: prefix with +
+        return f"+{digits}"
+    
     def _make_request(self, method: str, endpoint: str, data: Optional[Dict] = None) -> Dict:
         """Make authenticated request to PayAdvantage API."""
         token = self._get_token()
@@ -81,9 +116,25 @@ class PayAdvantageService:
         pa_customer = PayAdvantageCustomer.query.filter_by(user_id=user.id).first()
         
         if pa_customer:
-            # Verify customer still exists in PayAdvantage
+            # Verify customer still exists in PayAdvantage and update mobile if missing/outdated
             try:
-                self._make_request('GET', f'/v3/customers/{pa_customer.customer_code}')
+                remote = self._make_request('GET', f'/v3/customers/{pa_customer.customer_code}')
+                # Ensure mobile exists remotely if we have one locally
+                normalized_mobile = self._normalize_mobile(user.phone)
+                remote_mobile = (
+                    remote.get('Mobile')
+                    or remote.get('mobile')
+                    or remote.get('mobileNumber')
+                    or remote.get('MobileNumber')
+                )
+                if normalized_mobile and (not remote_mobile or self._normalize_mobile(remote_mobile) != normalized_mobile):
+                    try:
+                        self._make_request('PUT', f"/v3/customers/{pa_customer.customer_code}", {
+                            "Mobile": normalized_mobile
+                        })
+                    except Exception as update_err:
+                        # Non-fatal: log and continue
+                        print(f"PayAdvantage: failed to update customer mobile: {update_err}")
                 return pa_customer
             except:
                 # Customer doesn't exist in PayAdvantage, remove from our DB
@@ -91,11 +142,12 @@ class PayAdvantageService:
                 db.session.commit()
         
         # Create new customer in PayAdvantage (prefer API-conformant payload)
+        normalized_mobile = self._normalize_mobile(user.phone)
         customer_data = {
             "Name": f"{user.first_name} {user.last_name}".strip(),
             "Email": user.email,
             # Prefer E.164 mobile number if available
-            "Mobile": user.phone or ""
+            "Mobile": normalized_mobile or ""
         }
         
         response = self._make_request('POST', '/v3/customers', customer_data)
