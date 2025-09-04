@@ -53,8 +53,8 @@ def dashboard():
             total_users = 0
         
         try:
-            total_revenue = db.session.query(func.sum(Payment.amount)).filter_by(
-                status=PaymentStatus.COMPLETED
+            total_revenue = db.session.query(func.sum(Payment.amount)).filter(
+                Payment.status == PaymentStatus.COMPLETED
             ).scalar() or 0
         except Exception as e:
             current_app.logger.error(f"Error getting revenue: {str(e)}")
@@ -70,16 +70,42 @@ def dashboard():
         # Get monthly revenue for chart
         try:
             six_months_ago = datetime.utcnow() - timedelta(days=180)
-            monthly_revenue = db.session.query(
-                func.strftime('%Y-%m', Payment.created_at).label('month'),
-                func.sum(Payment.amount).label('revenue')
-            ).filter(
-                Payment.created_at >= six_months_ago,
-                Payment.status == PaymentStatus.COMPLETED
-            ).group_by('month').all()
+            dialect = db.session.bind.dialect.name if db.session.bind else 'sqlite'
+            if dialect == 'postgresql':
+                monthly_revenue = db.session.query(
+                    func.to_char(Payment.created_at, 'YYYY-MM').label('month'),
+                    func.sum(Payment.amount).label('revenue')
+                ).filter(
+                    Payment.created_at >= six_months_ago,
+                    Payment.status == PaymentStatus.COMPLETED
+                ).group_by('month').order_by('month').all()
+                monthly_labels = [row.month for row in monthly_revenue]
+                monthly_values = [float(row.revenue) for row in monthly_revenue]
+            elif dialect in ['mysql', 'mariadb']:
+                monthly_revenue = db.session.query(
+                    func.date_format(Payment.created_at, '%Y-%m').label('month'),
+                    func.sum(Payment.amount).label('revenue')
+                ).filter(
+                    Payment.created_at >= six_months_ago,
+                    Payment.status == PaymentStatus.COMPLETED
+                ).group_by('month').order_by('month').all()
+                monthly_labels = [row.month for row in monthly_revenue]
+                monthly_values = [float(row.revenue) for row in monthly_revenue]
+            else:
+                # SQLite
+                monthly_revenue = db.session.query(
+                    func.strftime('%Y-%m', Payment.created_at).label('month'),
+                    func.sum(Payment.amount).label('revenue')
+                ).filter(
+                    Payment.created_at >= six_months_ago,
+                    Payment.status == PaymentStatus.COMPLETED
+                ).group_by('month').order_by('month').all()
+                monthly_labels = [row.month for row in monthly_revenue]
+                monthly_values = [float(row.revenue) for row in monthly_revenue]
         except Exception as e:
             current_app.logger.error(f"Error getting monthly revenue: {str(e)}")
-            monthly_revenue = []
+            monthly_labels = []
+            monthly_values = []
         
         # Get booking status distribution
         try:
@@ -140,15 +166,15 @@ def dashboard():
         # Format data for charts
         chart_data = {
             'monthly_revenue': {
-                'labels': [item.month for item in monthly_revenue] if monthly_revenue else [],
-                'data': [float(item.revenue) for item in monthly_revenue] if monthly_revenue else []
+                'labels': monthly_labels,
+                'data': monthly_values
             },
             'booking_status': {
-                'labels': [status.value for status, _ in booking_status_dist] if booking_status_dist else [],
+                'labels': [(status.value if hasattr(status, 'value') else str(status)) for status, _ in booking_status_dist] if booking_status_dist else [],
                 'data': [count for _, count in booking_status_dist] if booking_status_dist else []
             },
             'fleet_status': {
-                'labels': [status.value for status, _ in fleet_status_dist] if fleet_status_dist else [],
+                'labels': [(status.value if hasattr(status, 'value') else str(status)) for status, _ in fleet_status_dist] if fleet_status_dist else [],
                 'data': [count for _, count in fleet_status_dist] if fleet_status_dist else []
             }
         }
@@ -179,6 +205,12 @@ def dashboard():
                                  'booking_status': {'labels': [], 'data': []},
                                  'fleet_status': {'labels': [], 'data': []}
                              })
+
+@admin_bp.route('/dashboard')
+@admin_required
+def dashboard_alias():
+    """Alias route to support /admin/dashboard path."""
+    return redirect(url_for('admin.dashboard'))
 
 @admin_bp.route('/bookings')
 @admin_required
