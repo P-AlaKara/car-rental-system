@@ -195,6 +195,8 @@ class PayAdvantageService:
             or response.get('ScheduleId')
             or response.get('id')
             or response.get('Id')
+            or response.get('code')
+            or response.get('Code')
         )
         # Authorisation link may be 'authorizationUrl' or in 'AuthorisationLinks'
         authorization_url = (
