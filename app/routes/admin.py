@@ -428,7 +428,8 @@ def add_car():
             uploaded_images = []
             
             # Create upload directory if it doesn't exist
-            upload_dir = os.path.join('static', 'uploads', 'cars')
+            upload_base = current_app.config.get('UPLOAD_FOLDER', 'uploads')
+            upload_dir = os.path.join(upload_base, 'cars')
             os.makedirs(upload_dir, exist_ok=True)
             
             for file in files:
@@ -444,7 +445,7 @@ def add_car():
                     file.save(filepath)
                     
                     # Store the relative path for web access
-                    web_path = f"/static/uploads/cars/{filename}"
+                    web_path = f"/uploads/cars/{filename}"
                     uploaded_images.append(web_path)
             
             if uploaded_images:
@@ -538,7 +539,8 @@ def upload_car_images(car_id):
     uploaded_images = []
     
     # Create upload directory if it doesn't exist
-    upload_dir = os.path.join('static', 'uploads', 'cars')
+    upload_base = current_app.config.get('UPLOAD_FOLDER', 'uploads')
+    upload_dir = os.path.join(upload_base, 'cars')
     os.makedirs(upload_dir, exist_ok=True)
     
     for file in files:
@@ -554,7 +556,7 @@ def upload_car_images(car_id):
             file.save(filepath)
             
             # Store the relative path for web access
-            web_path = f"/static/uploads/cars/{filename}"
+            web_path = f"/uploads/cars/{filename}"
             uploaded_images.append(web_path)
     
     # Update car images
@@ -586,10 +588,16 @@ def delete_car_image(car_id):
         # Try to delete the physical file
         try:
             # Convert web path to file path
-            if image_url.startswith('/static/'):
-                file_path = image_url[1:]  # Remove leading slash
-                if os.path.exists(file_path):
-                    os.remove(file_path)
+            # Support both legacy /static/uploads and new /uploads paths
+            base_dir = current_app.config.get('UPLOAD_FOLDER', 'uploads')
+            file_path = None
+            if image_url.startswith('/uploads/'):
+                file_path = os.path.join(base_dir, image_url[len('/uploads/'):])
+            elif image_url.startswith('/static/uploads/'):
+                # Legacy path stored; map to new base dir if exists
+                file_path = os.path.join(base_dir, image_url[len('/static/uploads/'):])
+            if file_path and os.path.exists(file_path):
+                os.remove(file_path)
         except Exception as e:
             # Log error but don't fail the operation
             print(f"Error deleting file: {e}")

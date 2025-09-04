@@ -136,10 +136,12 @@ def create():
             file = request.files['main_image']
             if file and file.filename:
                 filename = secure_filename(file.filename)
-                upload_path = os.path.join('static', 'uploads', 'cars')
+                # Save under UPLOAD_FOLDER/cars and expose via /uploads
+                upload_base = current_app.config.get('UPLOAD_FOLDER', 'uploads')
+                upload_path = os.path.join(upload_base, 'cars')
                 os.makedirs(upload_path, exist_ok=True)
                 file.save(os.path.join(upload_path, filename))
-                car.main_image = f'/static/uploads/cars/{filename}'
+                car.main_image = f'/uploads/cars/{filename}'
         
         db.session.add(car)
         db.session.commit()
@@ -191,10 +193,11 @@ def edit(id):
             file = request.files['main_image']
             if file and file.filename:
                 filename = secure_filename(file.filename)
-                upload_path = os.path.join('static', 'uploads', 'cars')
+                upload_base = current_app.config.get('UPLOAD_FOLDER', 'uploads')
+                upload_path = os.path.join(upload_base, 'cars')
                 os.makedirs(upload_path, exist_ok=True)
                 file.save(os.path.join(upload_path, filename))
-                car.main_image = f'/static/uploads/cars/{filename}'
+                car.main_image = f'/uploads/cars/{filename}'
         
         db.session.commit()
         flash('Car updated successfully!', 'success')
