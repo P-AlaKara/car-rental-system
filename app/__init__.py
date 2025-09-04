@@ -116,6 +116,21 @@ def create_app(config_name='default'):
                 except Exception as e:
                     # Log and continue; app should still start
                     app.logger.warning(f"Enum sync warning (CarCategory): {e}")
+
+                # Ensure idempotency unique index exists for PayAdvantage payments
+                try:
+                    with db.engine.begin() as conn:
+                        conn.execute(
+                            text(
+                                """
+                                CREATE UNIQUE INDEX IF NOT EXISTS uq_payments_gateway_txn_payadvantage
+                                ON payments (booking_id, gateway, gateway_transaction_id)
+                                WHERE gateway = 'payadvantage' AND gateway_transaction_id IS NOT NULL
+                                """
+                            )
+                        )
+                except Exception as e:
+                    app.logger.warning(f"Idempotency index creation skipped: {e}")
         except Exception as e:
             app.logger.warning(f"Enum sync skipped: {e}")
     
