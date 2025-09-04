@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template, redirect, url_for, flash, request
 from flask_login import login_required
 from app import db
-from app.models import Driver, User, Role, DriverStatus, Booking
+from app.models import Driver, User, Role, DriverStatus, Booking, BookingStatus
 from app.utils.decorators import manager_required
 from datetime import datetime
 
@@ -53,9 +53,9 @@ def view(id):
         'total_hours': driver.total_hours,
         'rating': driver.rating,
         'active_bookings': Booking.query.filter_by(
-            driver_id=driver.id, status='in_progress').count(),
+            driver_id=driver.id, status=BookingStatus.IN_PROGRESS).count(),
         'completed_bookings': Booking.query.filter_by(
-            driver_id=driver.id, status='completed').count()
+            driver_id=driver.id, status=BookingStatus.COMPLETED).count()
     }
     
     # Get recent bookings

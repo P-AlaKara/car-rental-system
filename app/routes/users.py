@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template, redirect, url_for, flash, request
 from flask_login import login_required
 from app import db
-from app.models import User, Role, Booking
+from app.models import User, Role, Booking, BookingStatus, PaymentStatus
 from app.utils.decorators import admin_required
 from werkzeug.security import generate_password_hash
 
@@ -51,12 +51,12 @@ def view(id):
     stats = {
         'total_bookings': Booking.query.filter_by(customer_id=user.id).count(),
         'active_bookings': Booking.query.filter_by(
-            customer_id=user.id, status='in_progress').count(),
+            customer_id=user.id, status=BookingStatus.IN_PROGRESS).count(),
         'completed_bookings': Booking.query.filter_by(
-            customer_id=user.id, status='completed').count(),
+            customer_id=user.id, status=BookingStatus.COMPLETED).count(),
         'total_spent': db.session.query(
             db.func.sum(Booking.total_amount)
-        ).filter_by(customer_id=user.id, status='completed').scalar() or 0
+        ).filter_by(customer_id=user.id, status=BookingStatus.COMPLETED).scalar() or 0
     }
     
     # Get recent bookings
@@ -202,7 +202,7 @@ def delete(id):
     
     # Check for active bookings
     active_bookings = Booking.query.filter_by(customer_id=user.id).filter(
-        Booking.status.in_(['pending', 'confirmed', 'in_progress'])
+        Booking.status.in_([BookingStatus.PENDING, BookingStatus.CONFIRMED, BookingStatus.IN_PROGRESS])
     ).count()
     
     if active_bookings > 0:

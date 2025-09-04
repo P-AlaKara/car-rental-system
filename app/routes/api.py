@@ -1,6 +1,6 @@
 from flask import Blueprint, jsonify, request
 from app import db
-from app.models import User, Car, Booking, Payment, Driver
+from app.models import User, Car, Booking, Payment, Driver, BookingStatus
 from sqlalchemy import func
 from app.routes.auth import verify_token
 from functools import wraps
@@ -134,7 +134,7 @@ def check_car_availability(id):
     # Check for overlapping bookings
     overlapping = Booking.query.filter(
         Booking.car_id == car.id,
-        Booking.status.in_(['confirmed', 'in_progress']),
+        Booking.status.in_([BookingStatus.CONFIRMED, BookingStatus.IN_PROGRESS]),
         db.or_(
             db.and_(
                 Booking.pickup_date <= start_date,

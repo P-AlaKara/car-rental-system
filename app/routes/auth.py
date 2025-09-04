@@ -2,7 +2,7 @@ from flask import Blueprint, render_template, redirect, url_for, flash, request,
 from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash
 from app import db
-from app.models import User, Role
+from app.models import User, Role, BookingStatus
 from app.utils.decorators import anonymous_required
 import jwt
 from datetime import datetime, timedelta
@@ -142,7 +142,7 @@ def logout():
 @login_required
 def profile():
     """View user profile."""
-    return render_template('pages/profile.html', user=current_user)
+    return render_template('pages/profile.html', user=current_user, BookingStatus=BookingStatus)
 
 
 @bp.route('/profile/edit', methods=['GET', 'POST'])

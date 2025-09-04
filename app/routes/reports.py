@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template, request, send_file, jsonify, current_app
 from flask_login import login_required
 from app import db
-from app.models import Booking, Payment, Car, User, Driver, Role
+from app.models import Booking, Payment, Car, User, Driver, Role, BookingStatus, PaymentStatus
 from app.utils.decorators import manager_required
 from datetime import datetime, timedelta
 from sqlalchemy import func
@@ -44,7 +44,7 @@ def revenue():
         func.sum(Payment.amount).label('revenue'),
         func.count(Payment.id).label('transaction_count')
     ).filter(
-        Payment.status == 'completed',
+        Payment.status == PaymentStatus.COMPLETED,
         func.date(Payment.created_at) >= start_date,
         func.date(Payment.created_at) <= end_date
     ).group_by(func.date(Payment.created_at)).all()
@@ -60,7 +60,7 @@ def revenue():
         func.sum(Payment.amount).label('amount'),
         func.count(Payment.id).label('count')
     ).filter(
-        Payment.status == 'completed',
+        Payment.status == PaymentStatus.COMPLETED,
         func.date(Payment.created_at) >= start_date,
         func.date(Payment.created_at) <= end_date
     ).group_by(Payment.payment_method).all()
@@ -92,7 +92,11 @@ def bookings():
     if end_date:
         query = query.filter(Booking.created_at <= datetime.strptime(end_date, '%Y-%m-%d'))
     if status:
-        query = query.filter_by(status=status)
+        try:
+            enum_status = BookingStatus[status.upper()] if status.upper() in BookingStatus.__members__ else BookingStatus(status)
+            query = query.filter_by(status=enum_status)
+        except Exception:
+            pass
     
     bookings_data = query.all()
     
@@ -135,12 +139,12 @@ def fleet_utilization():
         bookings = Booking.query.filter(
             Booking.car_id == car.id,
             Booking.created_at >= thirty_days_ago,
-            Booking.status.in_(['completed', 'in_progress'])
+            Booking.status.in_([BookingStatus.COMPLETED, BookingStatus.IN_PROGRESS])
         ).all()
         
         total_days_booked = sum(b.total_days for b in bookings)
         utilization_rate = (total_days_booked / 30) * 100
-        revenue = sum(b.total_amount for b in bookings if b.status.value == 'completed')
+        revenue = sum(b.total_amount for b in bookings if b.status == BookingStatus.COMPLETED)
         
         cars_data.append({
             'car': car,
@@ -180,7 +184,7 @@ def customers():
             func.sum(Booking.total_amount).label('total_spent'),
             func.avg(Booking.total_amount).label('avg_booking_value')
         ).join(Booking, User.id == Booking.customer_id).filter(
-            Booking.status == 'completed'
+            Booking.status == BookingStatus.COMPLETED
         ).group_by(User.id).order_by(
             func.sum(Booking.total_amount).desc()
         ).limit(20).all()

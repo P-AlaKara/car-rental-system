@@ -26,7 +26,7 @@ def payadvantage_webhook():
             installment = pa_service.upsert_installment_from_webhook(event)
 
             # If completed, ensure a Payment record exists
-            if installment and installment.status == 'completed':
+            if installment and str(getattr(installment, 'status', '')).lower() == 'completed':
                 existing = None
                 if installment.external_payment_id:
                     existing = Payment.query.filter_by(
