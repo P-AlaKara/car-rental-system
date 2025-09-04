@@ -3,7 +3,7 @@ import requests
 from datetime import datetime, date
 from typing import Dict, Optional, Any
 from app import db
-from app.models import PayAdvantageCustomer, DirectDebitSchedule, User
+from app.models import PayAdvantageCustomer, DirectDebitSchedule, DirectDebitInstallment, User
 
 
 class PayAdvantageService:
@@ -238,6 +238,86 @@ class PayAdvantageService:
         """Get the status of a direct debit schedule."""
         response = self._make_request('GET', f'/v3/directdebits/schedules/{schedule_id}')
         return response
+
+    def upsert_installment_from_webhook(self, payload: Dict[str, Any]) -> DirectDebitInstallment:
+        """Create or update an installment based on webhook payload from Pay Advantage.
+
+        Expected payload fields (best-effort across possible variants):
+        - scheduleId / ScheduleId
+        - bookingId (we embed this during authorization via metadata or description)
+        - paymentId / id
+        - dueDate / DueDate
+        - dueAmount / amount
+        - paidDate / PaidDate
+        - paidAmount / PaidAmount
+        - status
+        """
+        schedule_id = (
+            payload.get('scheduleId') or payload.get('ScheduleId') or payload.get('schedule_id')
+        )
+        external_payment_id = (
+            payload.get('paymentId') or payload.get('id') or payload.get('PaymentId')
+        )
+        # We attempt to carry booking_id either explicitly or by schedule lookup
+        booking_id = payload.get('bookingId') or payload.get('booking_id')
+
+        # Resolve schedule and booking if needed
+        schedule = None
+        if schedule_id:
+            schedule = DirectDebitSchedule.query.filter_by(schedule_id=schedule_id).first()
+            if schedule and not booking_id:
+                booking_id = schedule.booking_id
+
+        # Parse dates and amounts
+        def _parse_date(value: Optional[str]):
+            try:
+                from datetime import date
+                if not value:
+                    return None
+                return date.fromisoformat(value[:10])
+            except Exception:
+                return None
+
+        due_date = _parse_date(payload.get('dueDate') or payload.get('DueDate') or payload.get('date'))
+        paid_date = _parse_date(payload.get('paidDate') or payload.get('PaidDate'))
+
+        def _parse_amount(v: Any):
+            try:
+                return float(v) if v is not None else None
+            except Exception:
+                return None
+
+        due_amount = _parse_amount(payload.get('dueAmount') or payload.get('amount') or payload.get('DueAmount'))
+        paid_amount = _parse_amount(payload.get('paidAmount') or payload.get('PaidAmount'))
+
+        status = (payload.get('status') or payload.get('Status') or '').lower() or 'pending'
+        if paid_date and (paid_amount or 0) > 0:
+            status = 'completed'
+
+        # Upsert installment by external_payment_id when available, otherwise schedule+due_date
+        installment: Optional[DirectDebitInstallment] = None
+        if external_payment_id:
+            installment = DirectDebitInstallment.query.filter_by(external_payment_id=external_payment_id).first()
+        if not installment and schedule_id and due_date:
+            installment = DirectDebitInstallment.query.filter_by(schedule_id=schedule_id, booking_id=booking_id, due_date=due_date).first()
+
+        if not installment:
+            installment = DirectDebitInstallment(
+                schedule_id=schedule_id or (schedule.schedule_id if schedule else None),
+                booking_id=booking_id or (schedule.booking_id if schedule else None),
+            )
+            db.session.add(installment)
+
+        installment.external_payment_id = external_payment_id or installment.external_payment_id
+        installment.due_date = due_date or installment.due_date
+        installment.due_amount = due_amount if due_amount is not None else (installment.due_amount or 0)
+        installment.paid_date = paid_date
+        installment.paid_amount = paid_amount
+        installment.status = status
+        installment.raw_payload = payload
+
+        db.session.commit()
+        return installment
     
     def cancel_schedule(self, schedule_id: str) -> bool:
         """Cancel a direct debit schedule."""

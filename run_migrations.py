@@ -8,7 +8,7 @@ import os
 import sys
 from app import create_app, db
 from sqlalchemy import text
-from app.models import Booking, BookingPhoto, PayAdvantageCustomer, DirectDebitSchedule
+from app.models import Booking, BookingPhoto, PayAdvantageCustomer, DirectDebitSchedule, DirectDebitInstallment
 
 def run_migrations():
     """Run database migrations to add handover fields."""
@@ -51,6 +51,13 @@ def run_migrations():
                         print("✓ customer_code column added")
                     except Exception as e:
                         print(f"⚠ Could not add customer_code: {e}")
+            
+            if 'direct_debit_installments' not in existing_tables:
+                print("Creating direct_debit_installments table...")
+                DirectDebitInstallment.__table__.create(db.engine)
+                print("✓ direct_debit_installments table created")
+            else:
+                print("direct_debit_installments table already exists")
             
             # Add new columns to bookings table if they don't exist
             booking_columns = [col['name'] for col in inspector.get_columns('bookings')]

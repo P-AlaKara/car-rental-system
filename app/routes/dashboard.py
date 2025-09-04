@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, redirect, url_for, flash, jsonify
+from flask import Blueprint, render_template, redirect, url_for, flash, jsonify, request
 from flask_login import login_required, current_user
 from app.models import User, Car, Booking, Payment, Driver
 from app.utils.decorators import admin_required, manager_required
@@ -60,6 +60,16 @@ def index():
                          recent_bookings=recent_bookings,
                          revenue_data=revenue_data,
                          booking_data=booking_data)
+
+
+@bp.route('/payments')
+@login_required
+@manager_required
+def payments_history():
+    """Record of all payments received."""
+    page = request.args.get('page', 1, type=int)
+    payments = Payment.query.order_by(Payment.created_at.desc()).paginate(page=page, per_page=20, error_out=False)
+    return render_template('pages/dashboard/payments.html', payments=payments)
 
 
 @bp.route('/analytics')

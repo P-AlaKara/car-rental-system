@@ -58,6 +58,10 @@ def create_app(config_name='default'):
     from app.routes.xero import xero_bp
     app.register_blueprint(xero_bp)
     
+    # Register webhooks
+    from app.routes.webhooks import webhooks_bp
+    app.register_blueprint(webhooks_bp)
+    
     # Add route to serve uploaded files
     @app.route('/uploads/<path:filename>')
     def uploaded_file(filename):

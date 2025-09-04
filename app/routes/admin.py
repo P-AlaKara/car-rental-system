@@ -1107,15 +1107,57 @@ def send_invoice(booking_id):
 @admin_bp.route('/api/booking/<int:booking_id>/payment-history')
 @admin_required
 def payment_history(booking_id):
-    """Get payment history for a booking (placeholder)."""
-    booking = Booking.query.get_or_404(booking_id)
-    payments = Payment.query.filter_by(booking_id=booking_id).all()
-    # TODO: Implement full payment history logic
-    return jsonify({
-        'success': True,
-        'payments': [p.to_dict() for p in payments] if payments else [],
-        'message': 'Payment history functionality will be implemented'
-    })
+    """Get payment schedule and payments for a booking."""
+    try:
+        booking = Booking.query.get_or_404(booking_id)
+        # Fetch installments from direct debit schedule if present
+        installments = []
+        from app.models import DirectDebitInstallment, DirectDebitSchedule
+        dds = None
+        if booking.direct_debit_schedule_id:
+            dds = DirectDebitSchedule.query.filter_by(schedule_id=booking.direct_debit_schedule_id).first()
+            if dds:
+                installments = DirectDebitInstallment.query.filter_by(booking_id=booking.id).order_by(DirectDebitInstallment.due_date.asc()).all()
+
+        # Also include any Payment records tied to the booking
+        payments = Payment.query.filter_by(booking_id=booking_id).order_by(Payment.created_at.desc()).all()
+
+        # Build table rows with status logic: pending (future, unpaid), completed (paid), overdue (past due, unpaid)
+        rows = []
+        from datetime import date
+        today = date.today()
+        for inst in installments:
+            status = inst.status
+            if inst.paid_date and (inst.paid_amount or 0) > 0:
+                status = 'completed'
+            elif inst.due_date and inst.due_date < today:
+                # Only overdue if not completed
+                status = 'overdue' if status != 'completed' else 'completed'
+            else:
+                status = 'pending' if status not in ['completed', 'overdue'] else status
+
+            rows.append({
+                'due_date': inst.due_date.isoformat() if inst.due_date else None,
+                'due_amount': inst.due_amount,
+                'paid_date': inst.paid_date.isoformat() if inst.paid_date else None,
+                'paid_amount': inst.paid_amount,
+                'status': status
+            })
+
+        return jsonify({
+            'success': True,
+            'schedule': {
+                'exists': bool(dds),
+                'schedule_id': dds.schedule_id if dds else None,
+                'description': dds.description if dds else None
+            },
+            'rows': rows,
+            'payments': [p.to_dict() for p in payments],
+            'message': 'No scheduled payments found' if not rows else ''
+        })
+    except Exception as e:
+        current_app.logger.error(f"Error fetching payment history: {e}")
+        return jsonify({'success': False, 'message': 'Failed to load payment history'}), 500
 
 @admin_bp.route('/api/booking/<int:booking_id>/handover-details', methods=['GET'])
 @admin_required
