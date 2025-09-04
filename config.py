@@ -41,6 +41,9 @@ class Config:
     APP_NAME = os.environ.get('APP_NAME') or 'Aurora Motors'
     APP_URL = os.environ.get('APP_URL') or 'http://localhost:5000'
     
+    # Webhooks
+    PAY_ADVANTAGE_WEBHOOK_SECRET = os.environ.get('PAY_ADVANTAGE_WEBHOOK_SECRET')
+    
     # Xero Configuration
     XERO_CLIENT_ID = os.environ.get('XERO_CLIENT_ID')
     XERO_CLIENT_SECRET = os.environ.get('XERO_CLIENT_SECRET')
