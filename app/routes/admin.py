@@ -8,6 +8,7 @@ from app.models import User, Role, Car, Booking, Payment, Maintenance, CarStatus
 import json
 import os
 from werkzeug.utils import secure_filename
+import uuid
 
 admin_bp = Blueprint('admin', __name__, url_prefix='/admin')
 
@@ -996,12 +997,11 @@ def send_invoice(booking_id):
     logger = logging.getLogger(__name__)
     booking = Booking.query.get_or_404(booking_id)
     
-    # Get custom invoice amount and due date from request
-    data = request.get_json() or {}
-    custom_invoice_amount = data.get('invoice_amount')
-    custom_due_date = data.get('due_date')
-    
     try:
+        # Get custom invoice amount and due date from request (be tolerant of empty body)
+        data = request.get_json(silent=True) or {}
+        custom_invoice_amount = data.get('invoice_amount')
+        custom_due_date = data.get('due_date')
         # Check if we have a Xero token (refresh token)
         xero_token = XeroToken.query.order_by(XeroToken.created_at.desc()).first()
         
@@ -1220,7 +1220,6 @@ def complete_handover(booking_id):
                 pa_customer = pa_service.get_or_create_customer(booking.customer)
                 
                 # Create direct debit schedule
-                from datetime import datetime, date
                 
                 upfront_date = None
                 if direct_debit.get('upfront_date'):
