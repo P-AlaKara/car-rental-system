@@ -85,5 +85,38 @@ def create_app(config_name='default'):
     # Create database tables
     with app.app_context():
         db.create_all()
+        # Sync PostgreSQL enums to include all Python Enum values
+        try:
+            if db.engine.dialect.name == 'postgresql':
+                from sqlalchemy import text
+                # Sync CarCategory enum
+                try:
+                    from app.models.car import CarCategory
+                    with db.engine.begin() as conn:
+                        existing_values = set(
+                            row[0]
+                            for row in conn.execute(
+                                text(
+                                    """
+                                    SELECT e.enumlabel
+                                    FROM pg_type t
+                                    JOIN pg_enum e ON t.oid = e.enumtypid
+                                    WHERE t.typname = :type_name
+                                    """
+                                ),
+                                {"type_name": "carcategory"},
+                            )
+                        )
+                        for member in CarCategory:
+                            if member.value not in existing_values:
+                                conn.execute(
+                                    text("ALTER TYPE carcategory ADD VALUE IF NOT EXISTS :val"),
+                                    {"val": member.value},
+                                )
+                except Exception as e:
+                    # Log and continue; app should still start
+                    app.logger.warning(f"Enum sync warning (CarCategory): {e}")
+        except Exception as e:
+            app.logger.warning(f"Enum sync skipped: {e}")
     
     return app
