@@ -480,10 +480,13 @@ function completeHandover() {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
+            console.log('Handover completed successfully', data);
             alert('Handover completed successfully!');
             if (data.authorization_url) {
-                if (confirm('Direct debit authorization required. Open authorization page?')) {
-                    window.open(data.authorization_url, '_blank');
+                const proceed = confirm('Direct debit authorization required. Continue to authorization page?');
+                if (proceed) {
+                    window.location.assign(data.authorization_url);
+                    return;
                 }
             }
             $('#handoverModal').modal('hide');
