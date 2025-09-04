@@ -22,23 +22,34 @@ class PayAdvantageService:
             return self.token
         
         # Exchange username/password for token
-        response = requests.post(
+        # Try /v3/authenticate then fall back to /v3/token, accept 'token' or 'access_token'
+        endpoints_to_try = [
             f"{self.base_url}/v3/authenticate",
-            json={
-                "username": self.username,
-                "password": self.password
-            }
-        )
-        
-        if response.status_code == 200:
-            data = response.json()
-            self.token = data.get('token')
-            # Assume token expires in 1 hour (adjust based on actual API)
-            from datetime import timedelta
-            self.token_expiry = datetime.utcnow() + timedelta(hours=1)
-            return self.token
-        else:
-            raise Exception(f"Failed to authenticate with PayAdvantage: {response.text}")
+            f"{self.base_url}/v3/token"
+        ]
+        last_error_text = None
+        for auth_url in endpoints_to_try:
+            response = requests.post(
+                auth_url,
+                json={
+                    "username": self.username,
+                    "password": self.password
+                }
+            )
+            if response.status_code == 200:
+                data = response.json() or {}
+                token_value = data.get('token') or data.get('access_token') or data.get('accessToken')
+                if token_value:
+                    self.token = token_value
+                    # Assume token expires in 1 hour (adjust based on actual API)
+                    from datetime import timedelta
+                    self.token_expiry = datetime.utcnow() + timedelta(hours=1)
+                    return self.token
+                else:
+                    last_error_text = f"Auth OK but token missing in response keys: {list(data.keys())}"
+            else:
+                last_error_text = response.text
+        raise Exception(f"Failed to authenticate with PayAdvantage: {last_error_text or 'Unknown error'}")
     
     def _make_request(self, method: str, endpoint: str, data: Optional[Dict] = None) -> Dict:
         """Make authenticated request to PayAdvantage API."""
@@ -79,23 +90,21 @@ class PayAdvantageService:
                 db.session.delete(pa_customer)
                 db.session.commit()
         
-        # Create new customer in PayAdvantage
+        # Create new customer in PayAdvantage (prefer API-conformant payload)
         customer_data = {
-            "firstName": user.first_name,
-            "lastName": user.last_name,
-            "email": user.email,
-            "phone": user.phone or "",
-            "address": {
-                "line1": user.address or "",
-                "city": user.city or "",
-                "state": user.state or "",
-                "postcode": user.zip_code or "",
-                "country": user.country or "Australia"
-            }
+            "Name": f"{user.first_name} {user.last_name}".strip(),
+            "Email": user.email,
+            # Prefer E.164 mobile number if available
+            "Mobile": user.phone or ""
         }
         
         response = self._make_request('POST', '/v3/customers', customer_data)
-        customer_code = response.get('customerCode')
+        customer_code = (
+            response.get('customerCode')
+            or response.get('customer_code')
+            or response.get('code')
+            or response.get('Code')
+        )
         
         # Save customer code to database
         pa_customer = PayAdvantageCustomer(
@@ -127,12 +136,10 @@ class PayAdvantageService:
             "customer": {
                 "customerCode": customer_code
             },
-            "description": description,
-            "reminderDays": reminder_days,
-            "onChargedFees": {
-                "feeType": "percentage",  # or "fixed"
-                "feeAmount": 0  # Default to no fees, can be configured
-            }
+            # API requires max length 50 for description
+            "description": (description or "")[0:50],
+            "reminderDays": reminder_days
+            # Do not send onChargedFees to avoid validation errors; defaults apply
         }
         
         # Add upfront payment if provided
@@ -157,16 +164,57 @@ class PayAdvantageService:
                     "value": end_condition_amount
                 }
         
-        # Create the schedule
-        response = self._make_request('POST', '/v3/directdebits/schedules', schedule_data)
+        # Create the schedule (try schedules endpoint first; API may also accept /v3/direct_debits)
+        try:
+            response = self._make_request('POST', '/v3/directdebits/schedules', schedule_data)
+        except Exception:
+            # Fallback to alternative endpoint naming
+            response = self._make_request('POST', '/v3/direct_debits', {
+                "Customer": {"Code": customer_code},
+                # Truncate to 50 chars per API requirement
+                "Description": (description or "")[0:50],
+                "ReminderDays": reminder_days,
+                # Explicitly set no on-charged fees to satisfy API validation
+                "OnchargedFees": [],
+                # Required by API to indicate how to handle failures
+                "FailureOption": "3days",
+                **({
+                    "UpfrontAmount": upfront_amount,
+                    "UpfrontDate": upfront_date.isoformat()
+                } if upfront_amount and upfront_date else {}),
+                **({
+                    "RecurringAmount": recurring_amount,
+                    "RecurringDateStart": recurring_start_date.isoformat(),
+                    "Frequency": frequency
+                } if recurring_amount and recurring_start_date and frequency else {}),
+                # Do not include OnchargedFees to satisfy API constraints
+            })
         
-        schedule_id = response.get('scheduleId')
-        authorization_url = response.get('authorizationUrl')
+        schedule_id = (
+            response.get('scheduleId')
+            or response.get('ScheduleId')
+            or response.get('id')
+            or response.get('Id')
+            or response.get('code')
+            or response.get('Code')
+        )
+        # Authorisation link may be 'authorizationUrl' or in 'AuthorisationLinks'
+        authorization_url = (
+            response.get('authorizationUrl')
+            or response.get('authorisationUrl')
+        )
+        if not authorization_url:
+            links = response.get('AuthorisationLinks') or response.get('AuthorizationLinks') or []
+            if isinstance(links, list) and links:
+                # Each item may have 'Link' or 'Url'
+                first_link = links[0]
+                authorization_url = first_link.get('Link') or first_link.get('Url')
         
         # Save schedule to database
         schedule = DirectDebitSchedule(
             booking_id=booking_id,
             schedule_id=schedule_id,
+            customer_code=customer_code,
             description=description,
             upfront_amount=upfront_amount,
             upfront_date=upfront_date,

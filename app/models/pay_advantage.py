@@ -37,6 +37,7 @@ class DirectDebitSchedule(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     booking_id = db.Column(db.Integer, db.ForeignKey('bookings.id'), nullable=False)
     schedule_id = db.Column(db.String(100), nullable=False, unique=True)
+    customer_code = db.Column(db.String(100))
     description = db.Column(db.Text)
     upfront_amount = db.Column(db.Float)
     upfront_date = db.Column(db.Date)
@@ -60,6 +61,7 @@ class DirectDebitSchedule(db.Model):
             'id': self.id,
             'booking_id': self.booking_id,
             'schedule_id': self.schedule_id,
+            'customer_code': self.customer_code,
             'description': self.description,
             'upfront_amount': self.upfront_amount,
             'upfront_date': self.upfront_date.isoformat() if self.upfront_date else None,
