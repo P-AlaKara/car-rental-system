@@ -94,6 +94,25 @@ python run.py
 
 The application will be available at `http://localhost:5000`
 
+### Webhooks
+
+Pay Advantage webhook endpoint:
+
+- URI: `/webhooks/payadvantage`
+- Full URL: `${APP_URL}/webhooks/payadvantage`
+- Healthcheck: `${APP_URL}/webhooks/payadvantage/health`
+
+Configure environment variables:
+
+- `PAY_ADVANTAGE_API_URL` (optional)
+- `PAY_ADVANTAGE_USERNAME`
+- `PAY_ADVANTAGE_PASSWORD`
+- `PAY_ADVANTAGE_WEBHOOK_SECRET` (used for HMAC verification)
+
+Signature verification:
+
+- The app validates `X-PayAdvantage-Signature` (or `X-PayAdvantage-Signature-SHA256`) header containing an HMAC-SHA256 of the raw body using `PAY_ADVANTAGE_WEBHOOK_SECRET`. Accepts either `<hex>` or `sha256=<hex>` format.
+
 ## Default Credentials
 
 ### Admin Account

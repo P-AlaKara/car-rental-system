@@ -332,6 +332,9 @@ class PayAdvantageService:
 
         due_date = _parse_date(payload.get('dueDate') or payload.get('DueDate') or payload.get('date'))
         paid_date = _parse_date(payload.get('paidDate') or payload.get('PaidDate'))
+        # Fallback: if due_date missing but paid_date present, use paid_date to satisfy NOT NULL
+        if not due_date and paid_date:
+            due_date = paid_date
 
         def _parse_amount(v: Any):
             try:
