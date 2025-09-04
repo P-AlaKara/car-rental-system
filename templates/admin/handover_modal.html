@@ -221,6 +221,7 @@
 <script>
 let currentBookingId = null;
 let uploadedPhotos = [];
+let licenseDocument = null;
 
 function loadHandoverModal(bookingId) {
     currentBookingId = bookingId;
@@ -297,6 +298,13 @@ function renderHandoverForm(data) {
                 <label class="form-check-label" for="licenseVerified">
                     I have verified that the driver license details match the physical license presented
                 </label>
+            </div>
+
+            <div class="form-group mt-3">
+                <label for="licenseFile"><i class="fas fa-upload"></i> Upload Driver License (image or PDF)</label>
+                <input type="file" id="licenseFile" class="form-control" accept="image/*,.pdf" onchange="handleLicenseUpload(event)">
+                <small class="form-text text-muted">Required: capture a clear photo/scan of the driver's license.</small>
+                <div id="licenseFileStatus" class="mt-2 text-muted"></div>
             </div>
         </div>
 
@@ -424,6 +432,26 @@ function handlePhotoUpload(event) {
     }
 }
 
+function handleLicenseUpload(event) {
+    const file = event.target.files && event.target.files[0];
+    const status = document.getElementById('licenseFileStatus');
+    licenseDocument = null;
+    status.textContent = '';
+    if (!file) {
+        return;
+    }
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        licenseDocument = {
+            name: file.name,
+            mime: file.type || 'application/octet-stream',
+            data: e.target.result
+        };
+        status.textContent = `Selected: ${file.name}`;
+    };
+    reader.readAsDataURL(file);
+}
+
 function generateContract() {
     // Placeholder for contract generation
     $('#contractStatus').html('<div class="alert alert-warning">Contract generation will be implemented soon</div>');
@@ -440,6 +468,10 @@ function completeHandover() {
     
     if (!licenseVerified) {
         alert('Please verify the driver license first');
+        return;
+    }
+    if (!licenseDocument) {
+        alert('Please upload the driver license document (image or PDF)');
         return;
     }
     
@@ -461,7 +493,8 @@ function completeHandover() {
             recurring_start_date: document.getElementById('ddRecurringStart').value || null,
             frequency: document.getElementById('ddFrequency').value,
             end_condition_amount: parseFloat(document.getElementById('ddEndAmount').value) || null
-        }
+        },
+        license_document: licenseDocument
     };
     
     // Show loading

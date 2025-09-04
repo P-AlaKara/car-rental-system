@@ -58,6 +58,8 @@ class Car(db.Model):
     # Images
     main_image = db.Column(db.String(255))
     images = db.Column(db.JSON)  # Store multiple image URLs as JSON array
+    # Documents (images or PDFs) related to the car
+    documents = db.Column(db.JSON)  # [{"type":"registration","url":"/uploads/...","name":"...","mime":"..."}]
     
     # Vehicle details
     color = db.Column(db.String(30))
@@ -151,6 +153,8 @@ class Car(db.Model):
             'is_available': self.is_available,
             'features': self.features or [],
             'main_image': self.main_image,
+            'images': self.images or [],
+            'documents': self.documents or [],
             'color': self.color,
             'mileage': self.mileage,
             'current_location': self.current_location

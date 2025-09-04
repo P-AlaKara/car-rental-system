@@ -192,6 +192,18 @@
                                 <label class="text-muted">License Number</label>
                                 <p class="font-weight-bold">{{ booking.customer.license_number or 'Not provided' }}</p>
                             </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="text-muted">License Document</label>
+                                {% if booking.license_document_url %}
+                                <p>
+                                    <a href="{{ booking.license_document_url }}" target="_blank" class="btn btn-outline-info btn-sm">
+                                        <i class="fas fa-file"></i> View Document
+                                    </a>
+                                </p>
+                                {% else %}
+                                <p class="text-muted">Not uploaded</p>
+                                {% endif %}
+                            </div>
                         </div>
                     </div>
                 </div>
