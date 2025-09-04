@@ -132,7 +132,7 @@ class User(UserMixin, db.Model):
         if not self.city:
             missing.append("City")
         if not self.state:
-            missing.append("State")
+            missing.append("Address state/territory")
         if not self.zip_code:
             missing.append("ZIP code")
         
