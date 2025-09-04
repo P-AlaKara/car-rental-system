@@ -3,7 +3,10 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
 from flask_migrate import Migrate
 from flask_cors import CORS
-from flask_mail import Mail
+try:
+    from flask_mail import Mail
+except Exception:
+    Mail = None
 from config import config
 from datetime import datetime
 
@@ -12,7 +15,7 @@ db = SQLAlchemy()
 login_manager = LoginManager()
 migrate = Migrate()
 cors = CORS()
-mail = Mail()
+mail = Mail() if Mail else None
 
 
 def create_app(config_name='default'):
@@ -29,7 +32,8 @@ def create_app(config_name='default'):
     login_manager.init_app(app)
     migrate.init_app(app, db)
     cors.init_app(app)
-    mail.init_app(app)
+    if mail:
+        mail.init_app(app)
     
     # Configure login manager
     login_manager.login_view = 'auth.login'
@@ -68,6 +72,15 @@ def create_app(config_name='default'):
         import os
         upload_folder = app.config.get('UPLOAD_FOLDER', 'uploads')
         return send_from_directory(os.path.join(app.root_path, '..', upload_folder), filename)
+
+    # Ensure upload base directory exists
+    try:
+        import os
+        base_upload = app.config.get('UPLOAD_FOLDER', 'uploads')
+        abs_base = os.path.join(app.root_path, '..', base_upload)
+        os.makedirs(abs_base, exist_ok=True)
+    except Exception as e:
+        app.logger.warning(f"Could not ensure upload directory exists: {e}")
     
     # Add context processor to make datetime and models available in templates
     @app.context_processor
