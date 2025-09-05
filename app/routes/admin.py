@@ -9,6 +9,7 @@ import json
 import os
 from werkzeug.utils import secure_filename
 import uuid
+import mimetypes
 
 admin_bp = Blueprint('admin', __name__, url_prefix='/admin')
 
@@ -584,8 +585,64 @@ def view_car_images(car_id):
 def view_car_documents(car_id):
     """View car documents (PDFs and images)."""
     car = Car.query.get_or_404(car_id)
-    docs = car.documents or []
-    return render_template('admin/view_car_documents.html', car=car, documents=docs)
+
+    # Normalize document items to ensure each has a resolvable absolute URL
+    # and helpful metadata so the template renders properly.
+    try:
+        from app.services.storage import get_storage
+        storage = get_storage()
+    except Exception:
+        storage = None
+
+    normalized_docs = []
+
+    def _resolve_url(value):
+        if not value:
+            return None
+        if isinstance(value, str):
+            url = value
+        else:
+            url = value.get('url') or value.get('key')
+        if not url:
+            return None
+        if url.startswith('http') or url.startswith('/'):
+            return url
+        if storage:
+            return storage.url_for(url)
+        return url
+
+    raw_docs = car.documents or []
+    for item in raw_docs:
+        doc_dict = {}
+        if isinstance(item, dict):
+            doc_dict['name'] = item.get('name') or item.get('filename')
+            doc_dict['mime'] = item.get('mime')
+            url_candidate = item.get('url') or item.get('key')
+        else:
+            # Legacy: item is a string (could be a full URL or storage key)
+            doc_dict['name'] = None
+            doc_dict['mime'] = None
+            url_candidate = item
+
+        resolved = _resolve_url(url_candidate)
+        if not resolved:
+            # Skip unusable entries (would otherwise link to current page)
+            continue
+        doc_dict['url'] = resolved
+
+        # Fill missing metadata
+        if not doc_dict.get('mime'):
+            guessed, _ = mimetypes.guess_type(resolved)
+            doc_dict['mime'] = guessed or 'application/octet-stream'
+        if not doc_dict.get('name'):
+            try:
+                doc_dict['name'] = resolved.split('/')[-1]
+            except Exception:
+                doc_dict['name'] = 'Document'
+
+        normalized_docs.append(doc_dict)
+
+    return render_template('admin/view_car_documents.html', car=car, documents=normalized_docs)
 
 @admin_bp.route('/fleet/<int:car_id>/upload-images', methods=['POST'])
 @admin_required
