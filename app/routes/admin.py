@@ -361,8 +361,8 @@ def fleet():
     category = request.args.get('category')
     search = request.args.get('search')
     
-    # Build query
-    query = Car.query
+    # Build query (default to active cars)
+    query = Car.query.filter_by(is_active=True)
     
     if status:
         try:
@@ -445,24 +445,23 @@ def add_car():
             if uploaded_images:
                 car.images = uploaded_images
         
-        # Handle document uploads (PDFs and images)
+        # Handle document uploads (PDFs and images) via unified storage
         if 'documents' in request.files:
             doc_files = request.files.getlist('documents')
             uploaded_documents = []
-            doc_upload_dir = os.path.join('static', 'uploads', 'car-documents')
-            os.makedirs(doc_upload_dir, exist_ok=True)
+            from app.services.storage import get_storage
+            storage = get_storage()
             for file in doc_files:
                 if file and file.filename:
                     filename = secure_filename(file.filename)
                     timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
                     filename = f"{car.id}_{timestamp}_{filename}"
-                    filepath = os.path.join(doc_upload_dir, filename)
-                    file.save(filepath)
-                    web_path = f"/static/uploads/car-documents/{filename}"
+                    key = storage.generate_key('car-documents', filename)
+                    url = storage.upload_fileobj(file, key, content_type=file.mimetype)
                     mime_type = file.mimetype or 'application/octet-stream'
                     uploaded_documents.append({
                         'name': file.filename,
-                        'url': web_path,
+                        'url': url,
                         'mime': mime_type,
                         'type': 'document'
                     })
@@ -519,21 +518,26 @@ def edit_car(car_id):
 @admin_bp.route('/fleet/<int:car_id>/delete', methods=['POST'])
 @admin_required
 def delete_car(car_id):
-    """Delete a car from the fleet."""
+    """Soft delete a car from the fleet to preserve booking history."""
     car = Car.query.get_or_404(car_id)
     
-    # Check if car has active bookings
+    # If there are active bookings, block deletion
     active_bookings = Booking.query.filter_by(car_id=car_id).filter(
         Booking.status.in_([BookingStatus.CONFIRMED, BookingStatus.IN_PROGRESS])
     ).count()
     
     if active_bookings > 0:
         flash('Cannot delete car with active bookings!', 'danger')
-    else:
-        db.session.delete(car)
-        db.session.commit()
-        flash('Car deleted successfully!', 'success')
+        return redirect(url_for('admin.fleet'))
     
+    # Soft delete instead of hard delete to avoid breaking NOT NULL FKs
+    car.is_active = False
+    try:
+        car.status = CarStatus.OUT_OF_SERVICE
+    except Exception:
+        pass
+    db.session.commit()
+    flash('Car removed from fleet.', 'success')
     return redirect(url_for('admin.fleet'))
 
 @admin_bp.route('/fleet/<int:car_id>/images')
@@ -541,7 +545,39 @@ def delete_car(car_id):
 def view_car_images(car_id):
     """View car images."""
     car = Car.query.get_or_404(car_id)
-    return render_template('admin/view_car_images.html', car=car)
+    # Resolve image URLs (support legacy stored keys or dicts with url)
+    resolved_main = None
+    try:
+        from app.services.storage import get_storage
+        storage = get_storage()
+    except Exception:
+        storage = None
+
+    def _resolve_url(value):
+        url = None
+        if isinstance(value, dict):
+            url = value.get('url')
+        elif isinstance(value, str):
+            url = value
+        if not url:
+            return None
+        if url.startswith('http') or url.startswith('/'):
+            return url
+        if storage:
+            return storage.url_for(url)
+        return url
+
+    if car.main_image:
+        resolved_main = _resolve_url(car.main_image)
+
+    gallery = car.images or []
+    resolved_images = []
+    for item in gallery:
+        url = _resolve_url(item)
+        if url:
+            resolved_images.append(url)
+
+    return render_template('admin/view_car_images.html', car=car, main_image=resolved_main, images=resolved_images)
 
 @admin_bp.route('/fleet/<int:car_id>/documents')
 @admin_required

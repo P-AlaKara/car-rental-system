@@ -52,9 +52,14 @@ class StorageService:
         if self.provider == 'spaces' and self.bucket:
             if self.cdn_base_url:
                 return f"{self.cdn_base_url}/{key}"
-            # Prefer path-style based on endpoint URL to avoid assumptions
+            # Build region-specific URL if endpoint is provided, else fallback to standard pattern
             base = self.endpoint_url.rstrip('/') if self.endpoint_url else ''
-            return f"{base}/{self.bucket}/{key}"
+            # If endpoint is something like https://nyc3.digitaloceanspaces.com, use path-style
+            if base:
+                return f"{base}/{self.bucket}/{key}"
+            # Fallback: https://{bucket}.{region}.digitaloceanspaces.com/{key}
+            region = self.region or 'nyc3'
+            return f"https://{self.bucket}.{region}.digitaloceanspaces.com/{key}"
         # Local provider -> serve via /uploads route
         return f"/uploads/{key}"
 
@@ -69,6 +74,11 @@ class StorageService:
             prefix = f"{self.endpoint_url.rstrip('/')}/{self.bucket}/"
             if url.startswith(prefix):
                 return url[len(prefix):]
+        # Spaces URL without endpoint configured but using standard bucket.region style
+        if self.bucket and self.region:
+            alt_prefix = f"https://{self.bucket}.{self.region}.digitaloceanspaces.com/"
+            if url.startswith(alt_prefix):
+                return url[len(alt_prefix):]
         # Local URLs
         if url.startswith('/uploads/'):
             return url[len('/uploads/'):]

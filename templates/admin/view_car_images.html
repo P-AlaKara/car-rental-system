@@ -34,12 +34,12 @@
     </div>
     
     <!-- Main Image -->
-    {% if car.main_image %}
+    {% if main_image or car.main_image %}
     <div class="images-section">
         <h4>Main Image</h4>
         <div class="images-grid">
             <div class="image-card">
-                <img src="{{ car.main_image }}" alt="Main car image" class="car-image" onclick="showImageModal('{{ car.main_image }}')">
+                <img src="{{ (main_image or car.main_image) }}" alt="Main car image" class="car-image" onclick="showImageModal('{{ (main_image or car.main_image) }}')">
             </div>
         </div>
     </div>
@@ -48,14 +48,14 @@
     <!-- Images Grid -->
     <div class="images-section">
         <h4>Current Images</h4>
-        {% set gallery = car.images or [] %}
-        {% if gallery|length > 0 %}
+        {% set gallery = images or car.images or [] %}
+        {% if gallery and gallery|length > 0 %}
         <div class="images-grid">
             {% for image in gallery %}
             <div class="image-card">
-                <img src="{{ image }}" alt="Car image" class="car-image" onclick="showImageModal('{{ image }}')">
+                <img src="{{ image if image is string else image.url }}" alt="Car image" class="car-image" onclick="showImageModal('{{ image if image is string else image.url }}')">
                 <div class="image-actions">
-                    <button class="btn btn-sm btn-danger" onclick="deleteImage({{ car.id }}, '{{ image }}')">
+                    <button class="btn btn-sm btn-danger" onclick="deleteImage({{ car.id }}, '{{ image if image is string else image.url }}')">
                         <i class="fas fa-trash"></i> Delete
                     </button>
                 </div>
