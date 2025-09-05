@@ -87,10 +87,23 @@ def dashboard():
     # Monthly revenue (dialect-safe grouping)
     try:
         six_months_ago = datetime.utcnow() - timedelta(days=180)
-        dialect = db.session.bind.dialect.name if db.session.bind else 'sqlite'
-        if dialect == 'postgresql':
+        # Robust dialect detection (session bind -> engine -> default)
+        dialect_name = None
+        try:
+            bind = db.session.get_bind()
+            if bind is not None:
+                dialect_name = bind.dialect.name
+        except Exception:
+            dialect_name = None
+        if not dialect_name:
+            try:
+                dialect_name = db.engine.dialect.name
+            except Exception:
+                dialect_name = 'sqlite'
+
+        if dialect_name in ('postgresql', 'postgres'):
             month_expr = func.to_char(Payment.created_at, 'YYYY-MM')
-        elif dialect in ['mysql', 'mariadb']:
+        elif dialect_name in ('mysql', 'mariadb'):
             month_expr = func.date_format(Payment.created_at, '%Y-%m')
         else:
             month_expr = func.strftime('%Y-%m', Payment.created_at)
