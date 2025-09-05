@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify
 from flask_login import login_required, current_user
 from app import db
-from app.models import Booking, Car, User, Payment, BookingStatus, PaymentStatus, Role, VehicleReturn, VehiclePhoto, PhotoType
+from app.models import Booking, Car, User, Payment, BookingStatus, PaymentStatus, Role, VehicleReturn, VehiclePhoto, PhotoType, BookingPhoto
 from app.utils.decorators import manager_required
 from datetime import datetime
 import os
@@ -436,10 +436,10 @@ def process_return(id):
         days_late = (datetime.utcnow() - booking.return_date).days
         late_fees = days_late * booking.daily_rate * 1.5  # 150% of daily rate for late fees
     
-    # Get pickup photos for comparison
-    pickup_photos = VehiclePhoto.query.filter_by(
+    # Get pickup photos for comparison (use handover photos stored in Spaces)
+    pickup_photos = BookingPhoto.query.filter_by(
         booking_id=booking.id,
-        photo_type=PhotoType.PICKUP
+        photo_type='pickup'
     ).all()
     
     return render_template('pages/bookings/return.html', 
