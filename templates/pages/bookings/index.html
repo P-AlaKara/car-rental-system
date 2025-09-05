@@ -19,7 +19,7 @@
         <div class="row mb-4">
             <div class="col-md-8">
                 <div class="booking-filters">
-                    <form method="GET" action="{{ url_for('bookings.index') }}" class="d-flex gap-3 align-items-center">
+                    <form method="GET" action="{{ url_for('bookings.index') }}" class="d-flex gap-3 align-items-center booking-filters-form">
                         <select name="status" class="form-control" onchange="this.form.submit()" style="max-width: 200px;">
                             <option value="">All Bookings</option>
                             <option value="pending" {% if request.args.get('status') == 'pending' %}selected{% endif %}>Pending</option>
@@ -28,10 +28,10 @@
                             <option value="completed" {% if request.args.get('status') == 'completed' %}selected{% endif %}>Completed</option>
                             <option value="cancelled" {% if request.args.get('status') == 'cancelled' %}selected{% endif %}>Cancelled</option>
                         </select>
-                        <input type="text" name="search" class="form-control" placeholder="Search by booking number..." value="{{ request.args.get('search', '') }}" style="max-width: 300px;">
-                        <button type="submit" class="btn btn-primary" style="white-space: nowrap; padding: 0.375rem 1.5rem; display: inline-flex; align-items: center; gap: 0.5rem;">
+                        <input type="text" name="search" class="form-control booking-search-input" placeholder="Search by booking number..." value="{{ request.args.get('search', '') }}" style="max-width: 300px;">
+                        <button type="submit" class="btn btn-primary booking-search-btn" style="white-space: nowrap; padding: 0.75rem 1.5rem; display: inline-flex; align-items: center; gap: 0.5rem;">
                             <i class="fas fa-search"></i>
-                            <span>Search</span>
+                            <span class="btn-text">Search</span>
                         </button>
                     </form>
                 </div>
@@ -92,6 +92,12 @@
                                             <i class="fas fa-clock text-primary"></i>
                                             <span><strong>Duration:</strong> {{ booking.total_days }} day(s)</span>
                                         </div>
+                                        {% if booking.status.value in ['pending', 'confirmed', 'in_progress'] %}
+                                        <div class="detail-item available-again">
+                                            <i class="fas fa-calendar-day text-primary"></i>
+                                            <span><strong>Available again:</strong> {{ booking.return_date.strftime('%b %d, %Y at %I:%M %p') }}</span>
+                                        </div>
+                                        {% endif %}
                                     </div>
                                 </div>
                                 
@@ -282,6 +288,7 @@
     border-radius: 5px;
     font-size: 0.85rem;
     font-weight: 500;
+    white-space: nowrap;
 }
 
 .badge-pending {
@@ -323,6 +330,29 @@
 
 .text-end {
     text-align: right;
+}
+
+/* Responsive adjustments for filters and buttons */
+@media (max-width: 768px) {
+    .booking-filters-form {
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+    .booking-search-input {
+        flex: 1 1 100%;
+        max-width: 100% !important;
+    }
+    .booking-search-btn .btn-text {
+        display: none;
+    }
+    .booking-search-btn {
+        padding: 0.5rem 0.75rem !important;
+    }
+    .booking-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
 }
 </style>
 

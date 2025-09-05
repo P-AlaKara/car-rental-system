@@ -57,6 +57,12 @@ class Config:
     APP_NAME = os.environ.get('APP_NAME') or 'Aurora Motors'
     APP_URL = os.environ.get('APP_URL') or 'http://localhost:5000'
     
+    # Flask-Login remember me cookie settings
+    REMEMBER_COOKIE_DURATION = timedelta(days=30)
+    REMEMBER_COOKIE_SECURE = os.environ.get('REMEMBER_COOKIE_SECURE', 'false').lower() in ['true', 'on', '1']
+    REMEMBER_COOKIE_HTTPONLY = True
+    REMEMBER_COOKIE_SAMESITE = os.environ.get('REMEMBER_COOKIE_SAMESITE', 'Lax')
+    
     # Webhooks
     PAY_ADVANTAGE_WEBHOOK_SECRET = os.environ.get('PAY_ADVANTAGE_WEBHOOK_SECRET')
     
