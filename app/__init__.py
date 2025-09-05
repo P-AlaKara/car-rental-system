@@ -8,6 +8,7 @@ try:
 except Exception:
     Mail = None
 from config import config
+import os
 from datetime import datetime
 
 # Initialize extensions
@@ -20,6 +21,14 @@ mail = Mail() if Mail else None
 
 def create_app(config_name='default'):
     """Application factory pattern."""
+    # Auto-select testing config when running under pytest unless explicitly overridden
+    try:
+        import os as _os
+        if config_name == 'default' and _os.environ.get('PYTEST_CURRENT_TEST'):
+            config_name = 'testing'
+    except Exception:
+        pass
+
     app = Flask(__name__, 
                 template_folder='../templates',
                 static_folder='../static')
