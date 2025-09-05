@@ -19,7 +19,7 @@ def index():
     status = request.args.get('status')
     search = request.args.get('search')
     
-    query = Car.query
+    query = Car.query.filter_by(is_active=True)
     
     # Apply filters
     if category:
@@ -93,6 +93,9 @@ def index():
 def view(id):
     """View car details."""
     car = Car.query.get_or_404(id)
+    if not car.is_active:
+        from flask import abort
+        abort(404)
     
     # Get recent bookings for this car
     recent_bookings = Booking.query.filter_by(car_id=car.id).order_by(
@@ -179,6 +182,8 @@ def create():
 def edit(id):
     """Edit car details."""
     car = Car.query.get_or_404(id)
+    if not car.is_active:
+        return jsonify({'error': 'Car not found'}), 404
     
     if request.method == 'POST':
         data = request.form.to_dict()
