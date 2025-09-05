@@ -155,6 +155,50 @@ def create_app(config_name='default'):
                         )
                 except Exception as e:
                     app.logger.warning(f"Idempotency index creation skipped: {e}")
+                
+                # Ensure VIN and license plate are unique only for active cars (partial unique indexes)
+                try:
+                    with db.engine.begin() as conn:
+                        # Best-effort drop of pre-existing full unique constraints/indexes
+                        try:
+                            conn.execute(text("ALTER TABLE cars DROP CONSTRAINT IF EXISTS cars_vin_key"))
+                        except Exception as e:
+                            app.logger.debug(f"Drop cars_vin_key constraint skipped: {e}")
+                        try:
+                            conn.execute(text("ALTER TABLE cars DROP CONSTRAINT IF EXISTS cars_license_plate_key"))
+                        except Exception as e:
+                            app.logger.debug(f"Drop cars_license_plate_key constraint skipped: {e}")
+                        # Also try dropping as indexes in case they were created as such
+                        try:
+                            conn.execute(text("DROP INDEX IF EXISTS cars_vin_key"))
+                        except Exception as e:
+                            app.logger.debug(f"Drop cars_vin_key index skipped: {e}")
+                        try:
+                            conn.execute(text("DROP INDEX IF EXISTS cars_license_plate_key"))
+                        except Exception as e:
+                            app.logger.debug(f"Drop cars_license_plate_key index skipped: {e}")
+
+                        # Create partial unique indexes enforcing uniqueness only when is_active = true
+                        conn.execute(
+                            text(
+                                """
+                                CREATE UNIQUE INDEX IF NOT EXISTS uq_cars_vin_active
+                                ON cars (vin)
+                                WHERE is_active = true
+                                """
+                            )
+                        )
+                        conn.execute(
+                            text(
+                                """
+                                CREATE UNIQUE INDEX IF NOT EXISTS uq_cars_license_plate_active
+                                ON cars (license_plate)
+                                WHERE is_active = true
+                                """
+                            )
+                        )
+                except Exception as e:
+                    app.logger.warning(f"Partial unique index setup for cars skipped: {e}")
         except Exception as e:
             app.logger.warning(f"Enum sync skipped: {e}")
     
