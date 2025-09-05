@@ -88,45 +88,35 @@
         </div>
         
         <div class="col-4">
-            {% if selected_car %}
             <div class="card mb-3">
                 <div class="card-header bg-primary text-white">
                     <h4>Selected Vehicle</h4>
                 </div>
                 <div class="card-body">
-                    {% if selected_car.main_image %}
-                    <img src="{{ selected_car.main_image }}" 
-                         class="img-fluid mb-3" alt="{{ selected_car.full_name }}"
+                    <img id="selectedCarImage"
+                         src="https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?w=400&h=300&fit=crop"
+                         class="img-fluid mb-3" alt="Select a vehicle to preview"
                          onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?w=400&h=300&fit=crop';">
-                    {% elif selected_car.images and selected_car.images|length > 0 %}
-                    <img src="{{ selected_car.images[0] }}" 
-                         class="img-fluid mb-3" alt="{{ selected_car.full_name }}"
-                         onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?w=400&h=300&fit=crop';">
-                    {% else %}
-                    <img src="https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?w=400&h=300&fit=crop" 
-                         class="img-fluid mb-3" alt="{{ selected_car.full_name }}">
-                    {% endif %}
-                    <h5>{{ selected_car.full_name }}</h5>
-                    <p class="text-muted">{{ selected_car.category.value }} • {{ selected_car.year }}</p>
+                    <h5 id="selectedCarName">Select a vehicle to preview</h5>
+                    <p class="text-muted" id="selectedCarMeta">&nbsp;</p>
                     <div class="car-details">
                         <div class="detail-item">
-                            <i class="fas fa-users"></i> {{ selected_car.seats }} seats
+                            <i class="fas fa-users"></i> <span id="selectedCarSeats">-</span> seats
                         </div>
                         <div class="detail-item">
-                            <i class="fas fa-cog"></i> {{ selected_car.transmission }}
+                            <i class="fas fa-cog"></i> <span id="selectedCarTransmission">-</span>
                         </div>
                         <div class="detail-item">
-                            <i class="fas fa-gas-pump"></i> {{ selected_car.fuel_type }}
+                            <i class="fas fa-gas-pump"></i> <span id="selectedCarFuel">-</span>
                         </div>
                     </div>
                     <hr>
                     <div class="price-highlight">
                         <strong>Daily Rate:</strong>
-                        <span class="text-primary">${{ selected_car.daily_rate }}</span>
+                        <span class="text-primary" id="selectedCarRate">$0</span>
                     </div>
                 </div>
             </div>
-            {% endif %}
             
             <div class="card">
                 <div class="card-header">
@@ -165,10 +155,49 @@ document.addEventListener('DOMContentLoaded', function() {
     const returnDate = document.getElementById('return_date');
     const dailyRateInput = document.getElementById('daily_rate');
     const priceDisplay = document.getElementById('price_display');
+    const fallbackImg = 'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?w=400&h=300&fit=crop';
+
+    // Build a lookup of car data for quick preview updates
+    const carData = {
+        {% for car in cars %}
+        {{ car.id }}: {
+            name: "{{ car.full_name|e }}",
+            category: "{{ car.category.value if car.category else '' }}",
+            year: "{{ car.year }}",
+            seats: "{{ car.seats }}",
+            transmission: "{{ car.transmission }}",
+            fuel: "{{ car.fuel_type }}",
+            rate: {{ '%.2f'|format(car.daily_rate)|replace(',', '') }},
+            image: "{{ car.main_image or (car.images[0] if car.images and car.images|length > 0 else 'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?w=400&h=300&fit=crop') }}"
+        }{% if not loop.last %},{% endif %}
+        {% endfor %}
+    };
+
+    // Elements for the selected vehicle preview
+    const imgEl = document.getElementById('selectedCarImage');
+    const nameEl = document.getElementById('selectedCarName');
+    const metaEl = document.getElementById('selectedCarMeta');
+    const seatsEl = document.getElementById('selectedCarSeats');
+    const transEl = document.getElementById('selectedCarTransmission');
+    const fuelEl = document.getElementById('selectedCarFuel');
+    const rateEl = document.getElementById('selectedCarRate');
     
-    // If a car is pre-selected, set its daily rate
+    // If a car is pre-selected, set its daily rate and preview
     {% if selected_car %}
     dailyRateInput.value = {{ selected_car.daily_rate }};
+    (function(){
+        const data = carData[{{ selected_car.id }}];
+        if (data) {
+            imgEl.src = data.image || fallbackImg;
+            imgEl.alt = data.name;
+            nameEl.textContent = data.name;
+            metaEl.textContent = `${data.category} • ${data.year}`;
+            seatsEl.textContent = data.seats;
+            transEl.textContent = data.transmission;
+            fuelEl.textContent = data.fuel;
+            rateEl.textContent = `$${Number(data.rate).toFixed(2)}`;
+        }
+    })();
     {% endif %}
     
     // Set minimum date to today
@@ -186,6 +215,27 @@ document.addEventListener('DOMContentLoaded', function() {
     carSelect.addEventListener('change', function() {
         const selectedOption = this.options[this.selectedIndex];
         dailyRateInput.value = selectedOption.dataset.rate || 0;
+        const id = this.value;
+        const data = carData[id];
+        if (data) {
+            imgEl.src = data.image || fallbackImg;
+            imgEl.alt = data.name;
+            nameEl.textContent = data.name;
+            metaEl.textContent = `${data.category} • ${data.year}`;
+            seatsEl.textContent = data.seats;
+            transEl.textContent = data.transmission;
+            fuelEl.textContent = data.fuel;
+            rateEl.textContent = `$${Number(data.rate).toFixed(2)}`;
+        } else {
+            imgEl.src = fallbackImg;
+            imgEl.alt = 'Select a vehicle to preview';
+            nameEl.textContent = 'Select a vehicle to preview';
+            metaEl.textContent = '';
+            seatsEl.textContent = '-';
+            transEl.textContent = '-';
+            fuelEl.textContent = '-';
+            rateEl.textContent = `$0`;
+        }
         calculatePrice();
     });
     

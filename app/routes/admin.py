@@ -543,6 +543,14 @@ def view_car_images(car_id):
     car = Car.query.get_or_404(car_id)
     return render_template('admin/view_car_images.html', car=car)
 
+@admin_bp.route('/fleet/<int:car_id>/documents')
+@admin_required
+def view_car_documents(car_id):
+    """View car documents (PDFs and images)."""
+    car = Car.query.get_or_404(car_id)
+    docs = car.documents or []
+    return render_template('admin/view_car_documents.html', car=car, documents=docs)
+
 @admin_bp.route('/fleet/<int:car_id>/upload-images', methods=['POST'])
 @admin_required
 def upload_car_images(car_id):

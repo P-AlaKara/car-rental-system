@@ -1,0 +1,103 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Car Documents - {{ car.full_name }} - Admin{% endblock %}
+{% block page_title %}{{ car.full_name }} - Documents{% endblock %}
+
+{% block content %}
+<div class="car-images-container">
+    <div class="actions-bar">
+        <div class="actions-left">
+            <a href="{{ url_for('admin.fleet') }}" class="btn btn-outline">
+                <i class="fas fa-arrow-left"></i> Back to Fleet
+            </a>
+        </div>
+        <div class="actions-right">
+            <h3>{{ car.full_name }} - {{ car.license_plate }}</h3>
+        </div>
+    </div>
+
+    <div class="images-section">
+        <h4>Documents</h4>
+        {% if documents and documents|length > 0 %}
+        <div class="images-grid">
+            {% for doc in documents %}
+            <div class="image-card">
+                {% if doc.mime and 'pdf' in doc.mime %}
+                <div class="p-3 text-center">
+                    <i class="fas fa-file-pdf fa-3x text-danger"></i>
+                    <div class="mt-2">{{ doc.name or 'PDF Document' }}</div>
+                    <a href="{{ doc.url }}" target="_blank" class="btn btn-sm btn-primary mt-2">
+                        <i class="fas fa-eye"></i> View PDF
+                    </a>
+                </div>
+                {% else %}
+                <img src="{{ doc.url }}" alt="{{ doc.name or 'Document' }}" class="car-image" onclick="showImageModal('{{ doc.url }}')">
+                <div class="image-actions">
+                    <a href="{{ doc.url }}" target="_blank" class="btn btn-sm btn-outline">
+                        <i class="fas fa-external-link-alt"></i> Open
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <i class="fas fa-file fa-4x text-muted mb-3"></i>
+            <p>No documents uploaded for this vehicle</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Image Modal for image-type documents -->
+<div class="modal" id="imageModal">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Document Preview</h5>
+                <button type="button" class="close" onclick="closeModal('imageModal')">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <div class="modal-body text-center">
+                <img id="modalImage" src="" alt="Document image" style="max-width: 100%; height: auto;">
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.car-images-container { padding: 1.5rem; }
+.images-section { background: white; border-radius: 0.75rem; padding: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+.images-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 1.5rem; margin-top: 1rem; }
+.image-card { border: 1px solid #e5e7eb; border-radius: 0.5rem; overflow: hidden; transition: transform 0.2s; background: #fff; }
+.image-card:hover { transform: translateY(-2px); box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+.car-image { width: 100%; height: 200px; object-fit: cover; cursor: pointer; }
+.image-actions { padding: 0.75rem; background: #f9fafb; text-align: center; }
+.p-3 { padding: 1rem; }
+.mt-2 { margin-top: .5rem; }
+</style>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function showImageModal(imageSrc) {
+    document.getElementById('modalImage').src = imageSrc;
+    document.getElementById('imageModal').style.display = 'block';
+}
+
+function closeModal(modalId) {
+    document.getElementById(modalId).style.display = 'none';
+}
+
+// Close modal when clicking outside
+window.onclick = function(event) {
+    if (event.target.classList.contains('modal')) {
+        event.target.style.display = 'none';
+    }
+}
+</script>
+{% endblock %}
+
