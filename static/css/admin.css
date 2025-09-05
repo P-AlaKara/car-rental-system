@@ -6,7 +6,7 @@
     --admin-success: #10b981;
     --admin-danger: #ef4444;
     --admin-warning: #f59e0b;
-    --admin-info: #3b82f6;
+    --admin-info: #8a6b1f;
     --admin-dark: #1f2937;
     --admin-light: #f9fafb;
     --admin-sidebar-bg: #111827;
@@ -16,6 +16,10 @@
     --admin-gradient-success: linear-gradient(135deg, #10b981 0%, #059669 100%);
     --admin-gradient-warning: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
     --admin-gradient-danger: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    /* Gold accents */
+    --admin-gold-500: #d4af37;
+    --admin-gold-600: #b3861d;
+    --admin-gold-700: #8a6b1f;
 }
 
 * {
@@ -93,7 +97,7 @@ body.admin-body {
 .sidebar-nav a:hover {
     background: linear-gradient(to right, var(--admin-sidebar-hover) 0%, rgba(31, 41, 55, 0.5) 100%);
     color: white;
-    border-left-color: var(--admin-primary);
+    border-left-color: var(--admin-gold-600);
     transform: translateX(2px);
 }
 
@@ -212,9 +216,9 @@ body.admin-body {
 }
 
 .alert-info {
-    background: #dbeafe;
-    color: #1e40af;
-    border: 1px solid #3b82f6;
+    background: #fff6db;
+    color: #6b5319;
+    border: 1px solid #d4af37;
 }
 
 .alert .close {
@@ -254,7 +258,7 @@ body.admin-body {
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
-.stat-card:nth-child(1) { border-left-color: var(--admin-primary); }
+.stat-card:nth-child(1) { border-left-color: var(--admin-gold-600); }
 .stat-card:nth-child(2) { border-left-color: var(--admin-success); }
 .stat-card:nth-child(3) { border-left-color: var(--admin-warning); }
 .stat-card:nth-child(4) { border-left-color: var(--admin-info); }
@@ -310,7 +314,7 @@ body.admin-body {
     background: white;
     border-radius: 0.75rem;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-    border-top: 3px solid var(--admin-primary);
+    border-top: 3px solid var(--admin-gold-600);
     transition: all 0.3s ease;
 }
 
@@ -359,7 +363,7 @@ body.admin-body {
 }
 
 .table th {
-    background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+    background: linear-gradient(135deg, #8a6b1f 0%, #d4af37 100%);
     padding: 0.75rem 1rem;
     text-align: left;
     font-weight: 600;
@@ -466,15 +470,15 @@ body.admin-body {
 }
 
 .badge-role-staff {
-    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+    background: linear-gradient(135deg, #8a6b1f 0%, #d4af37 100%);
     color: white;
-    border: 1px solid #2563eb;
+    border: 1px solid #d4af37;
 }
 
 .badge-role-driver {
-    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+    background: linear-gradient(135deg, #8a6b1f 0%, #d4af37 100%);
     color: white;
-    border: 1px solid #2563eb;
+    border: 1px solid #d4af37;
 } */
 
 .badge-role-customer {
@@ -524,15 +528,15 @@ body.admin-body {
 }
 
 .btn-primary {
-    background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+    background: linear-gradient(135deg, #8a6b1f 0%, #d4af37 100%);
     color: white;
-    box-shadow: 0 2px 4px rgba(79, 70, 229, 0.3);
+    box-shadow: 0 2px 4px rgba(139, 108, 31, 0.3);
 }
 
 .btn-primary:hover {
-    background: linear-gradient(135deg, #818cf8 0%, #6366f1 100%);
+    background: linear-gradient(135deg, #b3861d 0%, #d4af37 100%);
     transform: translateY(-1px);
-    box-shadow: 0 4px 8px rgba(79, 70, 229, 0.4);
+    box-shadow: 0 4px 8px rgba(139, 108, 31, 0.4);
 }
 
 .btn-secondary {
@@ -595,8 +599,8 @@ body.admin-body {
 
 .form-control:focus {
     outline: none;
-    border-color: var(--admin-primary);
-    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+    border-color: var(--admin-gold-600);
+    box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.15);
     background: linear-gradient(to bottom, #ffffff 0%, #f9fafb 100%);
 }
 
@@ -637,7 +641,7 @@ body.admin-body {
     padding: 1.5rem;
     margin-bottom: 1.5rem;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-    border-top: 3px solid var(--admin-info);
+    border-top: 3px solid var(--admin-gold-600);
 }
 
 .filters-form {
@@ -686,9 +690,9 @@ body.admin-body {
 }
 
 .action-icon:hover {
-    background: var(--admin-primary);
+    background: var(--admin-gold-600);
     color: white;
-    border-color: var(--admin-primary);
+    border-color: var(--admin-gold-600);
 }
 
 .action-icon:disabled {
@@ -917,7 +921,7 @@ body.admin-body {
     padding: 1.25rem;
     border-radius: 0.75rem;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-    border-top: 3px solid var(--admin-primary);
+    border-top: 3px solid var(--admin-gold-600);
 }
 
 .actions-left, .actions-right {
@@ -963,16 +967,16 @@ body.admin-body {
 
 .page-item .page-link:hover {
     background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
-    border-color: var(--admin-primary);
+    border-color: var(--admin-gold-600);
     transform: translateY(-1px);
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .page-item.active .page-link {
-    background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+    background: linear-gradient(135deg, #8a6b1f 0%, #d4af37 100%);
     color: white;
-    border-color: var(--admin-primary);
-    box-shadow: 0 2px 6px rgba(79, 70, 229, 0.3);
+    border-color: var(--admin-gold-600);
+    box-shadow: 0 2px 6px rgba(139, 108, 31, 0.3);
     font-weight: 600;
 }
 

@@ -216,7 +216,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 badge.style.backgroundColor = '#ef4444';
                 break;
             case 'completed':
-                badge.style.backgroundColor = '#3b82f6';
+                badge.style.backgroundColor = '#d4af37';
                 break;
             case 'pending':
                 badge.style.backgroundColor = '#6b7280';
