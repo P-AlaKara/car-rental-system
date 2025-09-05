@@ -611,7 +611,16 @@ def view_car_documents(car_id):
             return storage.url_for(url)
         return url
 
-    raw_docs = car.documents or []
+    # Coerce documents into a list to avoid iterating over characters when a
+    # single string URL is stored (legacy data). Also wrap single dicts.
+    docs_value = car.documents or []
+    if isinstance(docs_value, list):
+        raw_docs = docs_value
+    elif isinstance(docs_value, (str, dict)):
+        raw_docs = [docs_value]
+    else:
+        raw_docs = []
+
     for item in raw_docs:
         doc_dict = {}
         if isinstance(item, dict):
