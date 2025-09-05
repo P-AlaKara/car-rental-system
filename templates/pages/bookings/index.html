@@ -62,13 +62,13 @@
                                 <div class="col-md-3">
                                     <div class="car-image">
                                         {% if booking.car.main_image %}
-                                            <img src="{{ booking.car.main_image }}" alt="{{ booking.car.make }} {{ booking.car.model }}" class="img-fluid rounded"
-                                                 onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?w=300&h=200&fit=crop';">
+                                            <img src="{{ booking.car.main_image }}" alt="{{ booking.car.make }} {{ booking.car.model }}" class="img-fluid rounded">
                                         {% elif booking.car.images and booking.car.images|length > 0 %}
-                                            <img src="{{ booking.car.images[0] }}" alt="{{ booking.car.make }} {{ booking.car.model }}" class="img-fluid rounded"
-                                                 onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?w=300&h=200&fit=crop';">
+                                            <img src="{{ booking.car.images[0] }}" alt="{{ booking.car.make }} {{ booking.car.model }}" class="img-fluid rounded">
                                         {% else %}
-                                            <img src="https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?w=300&h=200&fit=crop" alt="{{ booking.car.make }} {{ booking.car.model }}" class="img-fluid rounded">
+                                            <div class="d-flex align-items-center justify-content-center" style="height: 200px; background: #f3f4f6; color: #9ca3af; border-radius: .25rem;">
+                                                Image unavailable
+                                            </div>
                                         {% endif %}
                                     </div>
                                 </div>

@@ -93,10 +93,9 @@
                     <h4>Selected Vehicle</h4>
                 </div>
                 <div class="card-body">
-                    <img id="selectedCarImage"
-                         src="https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?w=400&h=300&fit=crop"
-                         class="img-fluid mb-3" alt="Select a vehicle to preview"
-                         onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?w=400&h=300&fit=crop';">
+                    <div id="selectedCarImageWrapper" class="img-fluid mb-3" style="height: 200px; background: #f3f4f6; display: flex; align-items: center; justify-content: center; color: #9ca3af;">
+                        Image unavailable
+                    </div>
                     <h5 id="selectedCarName">Select a vehicle to preview</h5>
                     <p class="text-muted" id="selectedCarMeta">&nbsp;</p>
                     <div class="car-details">
@@ -155,7 +154,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const returnDate = document.getElementById('return_date');
     const dailyRateInput = document.getElementById('daily_rate');
     const priceDisplay = document.getElementById('price_display');
-    const fallbackImg = 'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?w=400&h=300&fit=crop';
+    const imageWrapper = document.getElementById('selectedCarImageWrapper');
 
     // Build a lookup of car data for quick preview updates
     const carData = {
@@ -174,7 +173,6 @@ document.addEventListener('DOMContentLoaded', function() {
     };
 
     // Elements for the selected vehicle preview
-    const imgEl = document.getElementById('selectedCarImage');
     const nameEl = document.getElementById('selectedCarName');
     const metaEl = document.getElementById('selectedCarMeta');
     const seatsEl = document.getElementById('selectedCarSeats');
@@ -188,8 +186,11 @@ document.addEventListener('DOMContentLoaded', function() {
     (function(){
         const data = carData[{{ selected_car.id }}];
         if (data) {
-            imgEl.src = data.image || fallbackImg;
-            imgEl.alt = data.name;
+            if (data.image) {
+                imageWrapper.innerHTML = `<img src="${data.image}" alt="${data.name}" style="max-width: 100%; max-height: 100%; object-fit: cover; border-radius: .25rem;" />`;
+            } else {
+                imageWrapper.textContent = 'Image unavailable';
+            }
             nameEl.textContent = data.name;
             metaEl.textContent = `${data.category} • ${data.year}`;
             seatsEl.textContent = data.seats;
@@ -218,8 +219,11 @@ document.addEventListener('DOMContentLoaded', function() {
         const id = this.value;
         const data = carData[id];
         if (data) {
-            imgEl.src = data.image || fallbackImg;
-            imgEl.alt = data.name;
+            if (data.image) {
+                imageWrapper.innerHTML = `<img src="${data.image}" alt="${data.name}" style="max-width: 100%; max-height: 100%; object-fit: cover; border-radius: .25rem;" />`;
+            } else {
+                imageWrapper.textContent = 'Image unavailable';
+            }
             nameEl.textContent = data.name;
             metaEl.textContent = `${data.category} • ${data.year}`;
             seatsEl.textContent = data.seats;
@@ -227,8 +231,7 @@ document.addEventListener('DOMContentLoaded', function() {
             fuelEl.textContent = data.fuel;
             rateEl.textContent = `$${Number(data.rate).toFixed(2)}`;
         } else {
-            imgEl.src = fallbackImg;
-            imgEl.alt = 'Select a vehicle to preview';
+            imageWrapper.textContent = 'Image unavailable';
             nameEl.textContent = 'Select a vehicle to preview';
             metaEl.textContent = '';
             seatsEl.textContent = '-';
