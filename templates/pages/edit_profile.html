@@ -84,14 +84,14 @@
                                             <small class="text-muted">Email cannot be changed</small>
                                         </div>
                                         <div class="col-md-6 mb-3">
-                                            <label for="phone" class="form-label">Phone Number</label>
+                                            <label for="phone" class="form-label">Phone Number *</label>
                                             <input type="tel" class="form-control" id="phone" name="phone" 
-                                                   value="{{ user.phone or '' }}" placeholder="+61 4XX XXX XXX">
+                                                   value="{{ user.phone or '' }}" placeholder="+61 4XX XXX XXX" required>
                                         </div>
                                         <div class="col-md-6 mb-3">
-                                            <label for="date_of_birth" class="form-label">Date of Birth</label>
+                                            <label for="date_of_birth" class="form-label">Date of Birth *</label>
                                             <input type="date" class="form-control" id="date_of_birth" name="date_of_birth" 
-                                                   value="{{ user.date_of_birth.strftime('%Y-%m-%d') if user.date_of_birth else '' }}">
+                                                   value="{{ user.date_of_birth.strftime('%Y-%m-%d') if user.date_of_birth else '' }}" required>
                                         </div>
                                         <div class="col-md-6 mb-3">
                                             <label for="gender" class="form-label">Gender</label>
@@ -175,6 +175,13 @@
                                                    value="{{ user.license_number or '' }}" placeholder="Enter license number">
                                         </div>
                                         <div class="col-md-6 mb-3">
+                                            <label for="license_type" class="form-label">License Type</label>
+                                            <select class="form-control" id="license_type" name="license_type">
+                                                <option value="australian" {% if (user.license_type or 'australian') == 'australian' %}selected{% endif %}>Australian</option>
+                                                <option value="international" {% if user.license_type == 'international' %}selected{% endif %}>International</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-6 mb-3" id="license_state_wrapper">
                                             <label for="license_state" class="form-label">License State/Territory</label>
                                             <select class="form-control" id="license_state" name="license_state">
                                                 <option value="">Select State</option>
@@ -187,6 +194,33 @@
                                                 <option value="ACT" {% if user.license_state == 'ACT' %}selected{% endif %}>Australian Capital Territory</option>
                                                 <option value="NT" {% if user.license_state == 'NT' %}selected{% endif %}>Northern Territory</option>
                                             </select>
+                                        </div>
+                                        <div class="col-md-6 mb-3 d-none" id="license_country_wrapper">
+                                            <label for="license_country" class="form-label">License Country</label>
+                                            <input type="text" class="form-control" list="countries" id="license_country" name="license_country" value="{{ user.license_country or '' }}" placeholder="Start typing a country...">
+                                            <datalist id="countries">
+                                                <option value="Australia"></option>
+                                                <option value="New Zealand"></option>
+                                                <option value="United States"></option>
+                                                <option value="United Kingdom"></option>
+                                                <option value="Canada"></option>
+                                                <option value="India"></option>
+                                                <option value="China"></option>
+                                                <option value="Japan"></option>
+                                                <option value="Germany"></option>
+                                                <option value="France"></option>
+                                                <option value="Italy"></option>
+                                                <option value="Singapore"></option>
+                                                <option value="Malaysia"></option>
+                                                <option value="Indonesia"></option>
+                                                <option value="Philippines"></option>
+                                                <option value="Thailand"></option>
+                                                <option value="Vietnam"></option>
+                                                <option value="Brazil"></option>
+                                                <option value="South Africa"></option>
+                                                <option value="United Arab Emirates"></option>
+                                                <!-- Add more common countries as needed -->
+                                            </datalist>
                                         </div>
                                         <div class="col-md-6 mb-3">
                                             <label for="license_expiry" class="form-label">License Expiry Date</label>
@@ -648,6 +682,56 @@ document.addEventListener('DOMContentLoaded', function() {
             helpText.innerHTML = '<i class="fas fa-info-circle"></i> Tip: Your license state is typically the same as your address state.';
             licenseStateContainer.appendChild(helpText);
         }
+    }
+
+    // License type conditional fields
+    const licenseTypeSelect = document.getElementById('license_type');
+    const licenseStateWrapper = document.getElementById('license_state_wrapper');
+    const licenseCountryWrapper = document.getElementById('license_country_wrapper');
+    const licenseCountryInput = document.getElementById('license_country');
+    function toggleLicenseOriginFields() {
+        const type = (licenseTypeSelect?.value || 'australian').toLowerCase();
+        if (type === 'international') {
+            licenseStateWrapper.classList.add('d-none');
+            licenseCountryWrapper.classList.remove('d-none');
+            if (licenseCountryInput) licenseCountryInput.setAttribute('required', 'required');
+            const licenseState = document.getElementById('license_state');
+            if (licenseState) licenseState.removeAttribute('required');
+        } else {
+            licenseStateWrapper.classList.remove('d-none');
+            licenseCountryWrapper.classList.add('d-none');
+            if (licenseCountryInput) licenseCountryInput.removeAttribute('required');
+            const licenseState = document.getElementById('license_state');
+            if (licenseState) licenseState.setAttribute('required', 'required');
+        }
+    }
+    if (licenseTypeSelect) {
+        licenseTypeSelect.addEventListener('change', toggleLicenseOriginFields);
+        toggleLicenseOriginFields();
+    }
+
+    // Populate countries datalist dynamically
+    const countriesDatalist = document.getElementById('countries');
+    if (countriesDatalist) {
+        fetch('https://restcountries.com/v3.1/all')
+            .then(r => r.json())
+            .then(list => {
+                try {
+                    countriesDatalist.innerHTML = '';
+                    list
+                        .map(c => c?.name?.common)
+                        .filter(Boolean)
+                        .sort((a, b) => a.localeCompare(b))
+                        .forEach(name => {
+                            const opt = document.createElement('option');
+                            opt.value = name;
+                            countriesDatalist.appendChild(opt);
+                        });
+                } catch (e) {
+                    // Ignore population errors; fallback options remain
+                }
+            })
+            .catch(() => { /* ignore network errors */ });
     }
 });
 </script>

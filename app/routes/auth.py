@@ -157,7 +157,7 @@ def edit_profile():
         # Update user fields
         updateable_fields = ['first_name', 'last_name', 'phone', 'address', 
                            'city', 'state', 'zip_code', 'country', 'license_number',
-                           'license_state', 'license_class']
+                           'license_state', 'license_class', 'license_type', 'license_country']
         
         for field in updateable_fields:
             if field in data:  # Update even if empty to allow clearing fields
