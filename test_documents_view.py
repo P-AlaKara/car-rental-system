@@ -8,6 +8,7 @@ rendered and the URL appears intact for both string and dict document inputs.
 """
 
 import os
+import json
 import unittest
 
 from app import create_app, db
@@ -100,6 +101,29 @@ class DocumentsViewTestCase(unittest.TestCase):
         self.assertEqual(html.count('class="image-card"'), 1)
         self.assertIn('/uploads/car-documents/image1.png', html)
         self.assertGreaterEqual(html.count('/uploads/car-documents/image1.png'), 1)
+
+    def test_passat_pdf_url_is_rendered_correctly_from_json_string(self):
+        car = self._create_car('PASSAT2018')
+        # JSON string representing an array with a PDF document object (as seen in production)
+        expected_url = 'https://cdn.auroramotor.com.au/aurora-uploads/car-documents/d530f883_35_20250905_192332_thinkpython2.pdf'
+        doc_obj = {
+            'name': 'thinkpython2.pdf',
+            'url': expected_url,
+            'mime': 'application/pdf',
+            'type': 'document'
+        }
+        car.documents = json.dumps([doc_obj])
+        db.session.commit()
+
+        resp = self.client.get(f'/admin/fleet/{car.id}/documents')
+        self.assertEqual(resp.status_code, 200)
+
+        html = resp.data.decode('utf-8')
+        # Exactly one card should render
+        self.assertEqual(html.count('class="image-card"'), 1)
+        # The absolute CDN URL must be present intact (no JSON-encoded path)
+        self.assertIn(expected_url, html)
+        self.assertGreaterEqual(html.count(expected_url), 1)
 
 
 if __name__ == '__main__':
