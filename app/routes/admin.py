@@ -613,10 +613,26 @@ def view_car_documents(car_id):
 
     # Coerce documents into a list to avoid iterating over characters when a
     # single string URL is stored (legacy data). Also wrap single dicts.
+    # Additionally, handle cases where JSON has been stored as a STRING
+    # (either a JSON array or object) by parsing it first.
     docs_value = car.documents or []
+    parsed_docs = None
+    if isinstance(docs_value, str):
+        # Attempt to parse JSON strings that represent a list or dict
+        try:
+            stripped = docs_value.strip()
+            if (stripped.startswith('[') and stripped.endswith(']')) or (stripped.startswith('{') and stripped.endswith('}')):
+                parsed_docs = json.loads(docs_value)
+        except Exception:
+            parsed_docs = None
+    if parsed_docs is not None:
+        docs_value = parsed_docs
     if isinstance(docs_value, list):
         raw_docs = docs_value
-    elif isinstance(docs_value, (str, dict)):
+    elif isinstance(docs_value, dict):
+        raw_docs = [docs_value]
+    elif isinstance(docs_value, str):
+        # A plain string that is not JSON: could be a single URL or storage key
         raw_docs = [docs_value]
     else:
         raw_docs = []
