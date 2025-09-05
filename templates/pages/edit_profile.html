@@ -427,7 +427,7 @@
 
 <style>
 .page-header {
-    background: linear-gradient(135deg, #0284c7 0%, #0ea5e9 50%, #38bdf8 100%);
+    background: var(--gradient-primary);
     color: white;
     padding: 60px 0;
     margin-bottom: 0;
@@ -477,7 +477,7 @@
 }
 
 .nav-pills .nav-link.active {
-    background: linear-gradient(135deg, #0284c7 0%, #0ea5e9 50%, #38bdf8 100%);
+    background: var(--gradient-primary);
     color: white;
 }
 
@@ -502,7 +502,7 @@
 
 .card-header i {
     margin-right: 10px;
-    color: #0ea5e9;
+    color: var(--gold-700);
 }
 
 .card-body {
@@ -564,13 +564,13 @@
 }
 
 .custom-control-input:checked ~ .custom-control-label::before {
-    background-color: #0ea5e9;
-    border-color: #0ea5e9;
+    background-color: var(--gold-700);
+    border-color: var(--gold-700);
 }
 
 .form-control:focus {
-    border-color: #0ea5e9;
-    box-shadow: 0 0 0 0.2rem rgba(14, 165, 233, 0.25);
+    border-color: var(--gold-700);
+    box-shadow: 0 0 0 0.2rem rgba(212, 175, 55, 0.25);
 }
 </style>
 
@@ -669,7 +669,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (!licenseStateSelect.value && this.value) {
                 licenseStateSelect.value = this.value;
                 // Add a visual indicator that it was auto-filled
-                licenseStateSelect.style.borderColor = '#0ea5e9';
+                licenseStateSelect.style.borderColor = 'var(--gold-700)';
                 setTimeout(() => {
                     licenseStateSelect.style.borderColor = '';
                 }, 2000);

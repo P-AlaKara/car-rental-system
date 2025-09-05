@@ -6,10 +6,10 @@
 }
 
 :root {
-    /* Ethereal Blue Color Palette - Modern and Sophisticated */
-    --primary-color: #1e40af;   /* Deep blue - darker shade */
-    --secondary-color: #1e3a8a;  /* Navy blue - darker shade */
-    --accent-color: #2563eb;     /* Blue - darker shade */
+    /* Ethereal Gold Color Palette - Modern and Sophisticated */
+    --primary-color: #6b5319;   /* Deep gold - darker shade */
+    --secondary-color: #8a6b1f;  /* Rich gold */
+    --accent-color: #d4af37;     /* Metallic gold */
     --deep-blue: #172554;        /* Very deep blue */
     --light-blue: #dbeafe;       /* Light blue */
     --pale-blue: #eff6ff;        /* Pale blue */
@@ -20,20 +20,23 @@
     --dark-color: #0f172a;
     --light-color: #f8fafc;
     --white: #ffffff;
-    --border-color: #e0f2fe;
+    --border-color: #e9ddaf;
     --text-muted: #64748b;
-    --gradient-primary: linear-gradient(135deg, #1e3a8a 0%, #1e40af 50%, #2563eb 100%);
-    --gradient-secondary: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%);
+    --gradient-primary: linear-gradient(135deg, var(--gold-800) 0%, var(--gold-700) 50%, var(--gold-600) 100%);
+    --gradient-secondary: linear-gradient(135deg, #c19122 0%, #d4af37 100%);
     /* Gold accent palette */
     --gold-300: #e6c368;
     --gold-400: #d4af37;  /* Metallic gold */
     --gold-500: #c9a227;  /* Muted gold for accessibility */
-    --gradient-gold: linear-gradient(135deg, var(--gold-300) 0%, var(--gold-400) 100%);
-    --gradient-ethereal: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 25%, #93c5fd 50%, #60a5fa 75%, #3b82f6 100%);
+    --gold-600: #b3861d;  /* Deeper gold */
+    --gold-700: #8a6b1f;  /* Rich deep gold */
+    --gold-800: #6b5319;  /* Dark gold for contrast */
+    --gradient-gold: linear-gradient(135deg, var(--gold-600) 0%, var(--gold-400) 100%);
+    --gradient-ethereal: linear-gradient(135deg, #fdf5d4 0%, #f6e7b0 25%, #eed27f 50%, #e0bf57 75%, #d4af37 100%);
     --gradient-soft: linear-gradient(180deg, #eff6ff 0%, #dbeafe 50%, #bfdbfe 100%);
-    --shadow: 0 4px 6px -1px rgba(14, 165, 233, 0.1), 0 2px 4px -1px rgba(14, 165, 233, 0.06);
-    --shadow-lg: 0 20px 25px -5px rgba(14, 165, 233, 0.1), 0 10px 10px -5px rgba(14, 165, 233, 0.04);
-    --shadow-xl: 0 25px 50px -12px rgba(14, 165, 233, 0.15);
+    --shadow: 0 4px 6px -1px rgba(201, 162, 39, 0.1), 0 2px 4px -1px rgba(201, 162, 39, 0.06);
+    --shadow-lg: 0 20px 25px -5px rgba(201, 162, 39, 0.1), 0 10px 10px -5px rgba(201, 162, 39, 0.04);
+    --shadow-xl: 0 25px 50px -12px rgba(201, 162, 39, 0.15);
     --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
@@ -224,13 +227,13 @@ h6 { font-size: 1.125rem; }
 .btn-primary {
     background: var(--gradient-primary);
     color: var(--white) !important;
-    box-shadow: 0 4px 15px rgba(30, 64, 175, 0.3);
+    box-shadow: 0 4px 15px rgba(139, 108, 31, 0.3);
 }
 
 .btn-primary:hover {
     transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(30, 64, 175, 0.4);
-    background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%);
+    box-shadow: 0 6px 20px rgba(139, 108, 31, 0.4);
+    background: linear-gradient(135deg, var(--gold-700) 0%, var(--gold-400) 100%);
     color: var(--white) !important;
 }
 
@@ -250,14 +253,14 @@ h6 { font-size: 1.125rem; }
     color: var(--primary-color);
     border: 2px solid var(--white);
     font-weight: 700;
-    box-shadow: 0 4px 15px rgba(14, 165, 233, 0.1);
+    box-shadow: 0 4px 15px rgba(201, 162, 39, 0.1);
 }
 
 .btn-outline:hover {
     background: var(--white);
     color: var(--primary-color);
     transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(30, 64, 175, 0.15);
+    box-shadow: 0 6px 20px rgba(139, 108, 31, 0.15);
 }
 
 .btn-outline-primary {
@@ -376,7 +379,7 @@ h6 { font-size: 1.125rem; }
 .form-control:focus {
     outline: none;
     border-color: var(--primary-color);
-    box-shadow: 0 0 0 3px rgba(107, 70, 193, 0.1);
+    box-shadow: 0 0 0 3px rgba(201, 162, 39, 0.15);
 }
 
 .form-control::placeholder {
@@ -578,7 +581,7 @@ select.form-control {
 
 /* Footer - Enhanced */
 .footer {
-    background: linear-gradient(135deg, #1a1f3a 0%, #0f172a 100%);
+    background: linear-gradient(135deg, #131722 0%, #0b0f18 100%);
     color: var(--white);
     padding: 3rem 0 1rem;
     margin-top: 4rem;
@@ -1062,7 +1065,8 @@ select.form-control {
 .bg-primary * { 
     color: var(--white) !important;
 }
-.bg-secondary { background: var(--secondary-color); }
+.bg-secondary { background: var(--secondary-color); color: var(--white) !important; }
+.bg-secondary * { color: var(--white) !important; }
 .bg-light { background: var(--light-color); }
 .bg-white { background: var(--white); }
 
