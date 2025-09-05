@@ -26,186 +26,149 @@ def admin_required(f):
 @admin_bp.route('/')
 @admin_required
 def dashboard():
-    """Admin dashboard with statistics and charts."""
+    """Admin dashboard with statistics and charts.
+
+    Previously this endpoint wrapped the entire handler in a single try/except
+    and returned zeros for everything if any one sub-query failed. That masked
+    valid stats (e.g., bookings and fleet) whenever an unrelated query (like
+    revenue aggregation) raised an exception. The logic below isolates error
+    handling per section so partial data still renders.
+    """
+    # Default values so the page always renders
+    total_bookings = 0
+    active_bookings = 0
+    total_cars = 0
+    available_cars = 0
+    total_users = 0
+    total_revenue = 0
+    recent_bookings = []
+    monthly_labels = []
+    monthly_values = []
+    booking_status_dist = []
+    fleet_status_dist = []
+    cars_healthy = 0
+    cars_in_service = 0
+    cars_due_soon = 0
+    cars_overdue = 0
+
+    # Stats
     try:
-        # Get statistics with error handling
-        try:
-            total_bookings = Booking.query.count()
-            active_bookings = Booking.query.filter(
-                Booking.status.in_([BookingStatus.CONFIRMED, BookingStatus.IN_PROGRESS])
-            ).count()
-        except Exception as e:
-            current_app.logger.error(f"Error getting booking stats: {str(e)}")
-            total_bookings = 0
-            active_bookings = 0
-        
-        try:
-            total_cars = Car.query.count()
-            available_cars = Car.query.filter_by(status=CarStatus.AVAILABLE).count()
-        except Exception as e:
-            current_app.logger.error(f"Error getting car stats: {str(e)}")
-            total_cars = 0
-            available_cars = 0
-        
-        try:
-            total_users = User.query.count()
-        except Exception as e:
-            current_app.logger.error(f"Error getting user count: {str(e)}")
-            total_users = 0
-        
-        try:
-            total_revenue = db.session.query(func.sum(Payment.amount)).filter(
-                Payment.status == PaymentStatus.COMPLETED
-            ).scalar() or 0
-        except Exception as e:
-            current_app.logger.error(f"Error getting revenue: {str(e)}")
-            total_revenue = 0
-        
-        # Get recent bookings
-        try:
-            recent_bookings = Booking.query.order_by(Booking.created_at.desc()).limit(5).all()
-        except Exception as e:
-            current_app.logger.error(f"Error getting recent bookings: {str(e)}")
-            recent_bookings = []
-        
-        # Get monthly revenue for chart
-        try:
-            six_months_ago = datetime.utcnow() - timedelta(days=180)
-            dialect = db.session.bind.dialect.name if db.session.bind else 'sqlite'
-            if dialect == 'postgresql':
-                monthly_revenue = db.session.query(
-                    func.to_char(Payment.created_at, 'YYYY-MM').label('month'),
-                    func.sum(Payment.amount).label('revenue')
-                ).filter(
-                    Payment.created_at >= six_months_ago,
-                    Payment.status == PaymentStatus.COMPLETED
-                ).group_by('month').order_by('month').all()
-                monthly_labels = [row.month for row in monthly_revenue]
-                monthly_values = [float(row.revenue) for row in monthly_revenue]
-            elif dialect in ['mysql', 'mariadb']:
-                monthly_revenue = db.session.query(
-                    func.date_format(Payment.created_at, '%Y-%m').label('month'),
-                    func.sum(Payment.amount).label('revenue')
-                ).filter(
-                    Payment.created_at >= six_months_ago,
-                    Payment.status == PaymentStatus.COMPLETED
-                ).group_by('month').order_by('month').all()
-                monthly_labels = [row.month for row in monthly_revenue]
-                monthly_values = [float(row.revenue) for row in monthly_revenue]
-            else:
-                # SQLite
-                monthly_revenue = db.session.query(
-                    func.strftime('%Y-%m', Payment.created_at).label('month'),
-                    func.sum(Payment.amount).label('revenue')
-                ).filter(
-                    Payment.created_at >= six_months_ago,
-                    Payment.status == PaymentStatus.COMPLETED
-                ).group_by('month').order_by('month').all()
-                monthly_labels = [row.month for row in monthly_revenue]
-                monthly_values = [float(row.revenue) for row in monthly_revenue]
-        except Exception as e:
-            current_app.logger.error(f"Error getting monthly revenue: {str(e)}")
-            monthly_labels = []
-            monthly_values = []
-        
-        # Get booking status distribution
-        try:
-            booking_status_dist = db.session.query(
-                Booking.status,
-                func.count(Booking.id).label('count')
-            ).group_by(Booking.status).all()
-        except Exception as e:
-            current_app.logger.error(f"Error getting booking distribution: {str(e)}")
-            booking_status_dist = []
-        
-        # Get fleet status distribution
-        try:
-            fleet_status_dist = db.session.query(
-                Car.status,
-                func.count(Car.id).label('count')
-            ).group_by(Car.status).all()
-        except Exception as e:
-            current_app.logger.error(f"Error getting fleet distribution: {str(e)}")
-            fleet_status_dist = []
-        
-        # Get maintenance statistics
-        cars_healthy = 0
-        cars_in_service = 0
-        cars_due_soon = 0
-        cars_overdue = 0
-        
-        try:
-            cars_healthy = Car.query.filter(
-                ~Car.status.in_([CarStatus.MAINTENANCE, CarStatus.OUT_OF_SERVICE])
-            ).count()
-            
-            cars_in_service = Car.query.filter_by(status=CarStatus.MAINTENANCE).count()
-            
-            # Calculate cars due for service
-            for car in Car.query.all():
-                if hasattr(car, 'service_status'):
-                    if car.service_status == 'due_soon':
-                        cars_due_soon += 1
-                    elif car.service_status == 'overdue':
-                        cars_overdue += 1
-        except Exception as e:
-            current_app.logger.error(f"Error getting maintenance stats: {str(e)}")
-        
-        stats = {
-            'total_bookings': total_bookings,
-            'active_bookings': active_bookings,
-            'total_cars': total_cars,
-            'available_cars': available_cars,
-            'total_users': total_users,
-            'total_revenue': total_revenue,
-            'cars_healthy': cars_healthy,
-            'cars_due_soon': cars_due_soon,
-            'cars_overdue': cars_overdue,
-            'cars_in_service': cars_in_service
-        }
-        
-        # Format data for charts
-        chart_data = {
-            'monthly_revenue': {
-                'labels': monthly_labels,
-                'data': monthly_values
-            },
-            'booking_status': {
-                'labels': [(status.value if hasattr(status, 'value') else str(status)) for status, _ in booking_status_dist] if booking_status_dist else [],
-                'data': [count for _, count in booking_status_dist] if booking_status_dist else []
-            },
-            'fleet_status': {
-                'labels': [(status.value if hasattr(status, 'value') else str(status)) for status, _ in fleet_status_dist] if fleet_status_dist else [],
-                'data': [count for _, count in fleet_status_dist] if fleet_status_dist else []
-            }
-        }
-        
-        return render_template('admin/dashboard.html', 
-                             stats=stats, 
-                             recent_bookings=recent_bookings,
-                             chart_data=chart_data)
+        total_bookings = Booking.query.count()
+        active_bookings = Booking.query.filter(
+            Booking.status.in_([BookingStatus.CONFIRMED, BookingStatus.IN_PROGRESS])
+        ).count()
     except Exception as e:
-        current_app.logger.error(f"Critical error in admin dashboard: {str(e)}")
-        # Return with all default values
-        return render_template('admin/dashboard.html', 
-                             stats={
-                                 'total_bookings': 0,
-                                 'active_bookings': 0,
-                                 'total_cars': 0,
-                                 'available_cars': 0,
-                                 'total_users': 0,
-                                 'total_revenue': 0,
-                                 'cars_healthy': 0,
-                                 'cars_due_soon': 0,
-                                 'cars_overdue': 0,
-                                 'cars_in_service': 0
-                             }, 
-                             recent_bookings=[],
-                             chart_data={
-                                 'monthly_revenue': {'labels': [], 'data': []},
-                                 'booking_status': {'labels': [], 'data': []},
-                                 'fleet_status': {'labels': [], 'data': []}
-                             })
+        current_app.logger.error(f"Error getting booking stats: {str(e)}")
+
+    try:
+        total_cars = Car.query.count()
+        available_cars = Car.query.filter_by(status=CarStatus.AVAILABLE).count()
+    except Exception as e:
+        current_app.logger.error(f"Error getting car stats: {str(e)}")
+
+    try:
+        total_users = User.query.count()
+    except Exception as e:
+        current_app.logger.error(f"Error getting user count: {str(e)}")
+
+    try:
+        total_revenue = db.session.query(func.sum(Payment.amount)).filter(
+            Payment.status == PaymentStatus.COMPLETED
+        ).scalar() or 0
+    except Exception as e:
+        current_app.logger.error(f"Error getting revenue: {str(e)}")
+
+    # Recent bookings
+    try:
+        recent_bookings = Booking.query.order_by(Booking.created_at.desc()).limit(5).all()
+    except Exception as e:
+        current_app.logger.error(f"Error getting recent bookings: {str(e)}")
+
+    # Monthly revenue (dialect-safe grouping)
+    try:
+        six_months_ago = datetime.utcnow() - timedelta(days=180)
+        dialect = db.session.bind.dialect.name if db.session.bind else 'sqlite'
+        if dialect == 'postgresql':
+            month_expr = func.to_char(Payment.created_at, 'YYYY-MM')
+        elif dialect in ['mysql', 'mariadb']:
+            month_expr = func.date_format(Payment.created_at, '%Y-%m')
+        else:
+            month_expr = func.strftime('%Y-%m', Payment.created_at)
+
+        month_label = month_expr.label('month')
+        rows = (
+            db.session.query(month_label, func.sum(Payment.amount).label('revenue'))
+            .filter(Payment.created_at >= six_months_ago, Payment.status == PaymentStatus.COMPLETED)
+            .group_by(month_label)
+            .order_by(month_label)
+            .all()
+        )
+        monthly_labels = [r.month for r in rows]
+        monthly_values = [float(r.revenue) for r in rows]
+    except Exception as e:
+        current_app.logger.error(f"Error getting monthly revenue: {str(e)}")
+
+    # Booking status distribution
+    try:
+        booking_status_dist = db.session.query(
+            Booking.status, func.count(Booking.id).label('count')
+        ).group_by(Booking.status).all()
+    except Exception as e:
+        current_app.logger.error(f"Error getting booking distribution: {str(e)}")
+
+    # Fleet status distribution
+    try:
+        fleet_status_dist = db.session.query(
+            Car.status, func.count(Car.id).label('count')
+        ).group_by(Car.status).all()
+    except Exception as e:
+        current_app.logger.error(f"Error getting fleet distribution: {str(e)}")
+
+    # Maintenance stats
+    try:
+        cars_healthy = Car.query.filter(
+            ~Car.status.in_([CarStatus.MAINTENANCE, CarStatus.OUT_OF_SERVICE])
+        ).count()
+        cars_in_service = Car.query.filter_by(status=CarStatus.MAINTENANCE).count()
+        for car in Car.query.all():
+            # Uses computed property; robust even if None
+            status = getattr(car, 'service_status', None)
+            if status == 'due_soon':
+                cars_due_soon += 1
+            elif status == 'overdue':
+                cars_overdue += 1
+    except Exception as e:
+        current_app.logger.error(f"Error getting maintenance stats: {str(e)}")
+
+    stats = {
+        'total_bookings': total_bookings,
+        'active_bookings': active_bookings,
+        'total_cars': total_cars,
+        'available_cars': available_cars,
+        'total_users': total_users,
+        'total_revenue': total_revenue,
+        'cars_healthy': cars_healthy,
+        'cars_due_soon': cars_due_soon,
+        'cars_overdue': cars_overdue,
+        'cars_in_service': cars_in_service,
+    }
+
+    chart_data = {
+        'monthly_revenue': {
+            'labels': monthly_labels,
+            'data': monthly_values,
+        },
+        'booking_status': {
+            'labels': [(s.value if hasattr(s, 'value') else str(s)) for s, _ in booking_status_dist] if booking_status_dist else [],
+            'data': [c for _, c in booking_status_dist] if booking_status_dist else [],
+        },
+        'fleet_status': {
+            'labels': [(s.value if hasattr(s, 'value') else str(s)) for s, _ in fleet_status_dist] if fleet_status_dist else [],
+            'data': [c for _, c in fleet_status_dist] if fleet_status_dist else [],
+        },
+    }
+
+    return render_template('admin/dashboard.html', stats=stats, recent_bookings=recent_bookings, chart_data=chart_data)
 
 @admin_bp.route('/dashboard')
 @admin_required
