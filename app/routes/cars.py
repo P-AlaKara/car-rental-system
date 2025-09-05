@@ -5,6 +5,7 @@ from app.models import Car, CarCategory, CarStatus, Booking
 from app.models.booking import BookingStatus
 from app.utils.decorators import manager_required
 from werkzeug.utils import secure_filename
+from datetime import datetime
 import os
 
 bp = Blueprint('cars', __name__, url_prefix='/cars')
@@ -50,6 +51,26 @@ def index():
     
     cars = query.order_by(Car.created_at.desc()).paginate(
         page=page, per_page=12, error_out=False)
+
+    # Compute next availability date for booked cars on this page
+    car_ids = [car.id for car in cars.items]
+    next_available_map = {}
+    if car_ids:
+        active_statuses = [BookingStatus.CONFIRMED, BookingStatus.IN_PROGRESS]
+        active_bookings = (
+            Booking.query
+            .filter(
+                Booking.car_id.in_(car_ids),
+                Booking.status.in_(active_statuses),
+                Booking.return_date >= datetime.utcnow()
+            )
+            .order_by(Booking.return_date.asc())
+            .all()
+        )
+        for booking in active_bookings:
+            # Keep the earliest return_date per car
+            if booking.car_id not in next_available_map:
+                next_available_map[booking.car_id] = booking.return_date
     
     # Check if user has complete profile (for booking eligibility)
     has_complete_profile = False
@@ -64,7 +85,8 @@ def index():
                          categories=CarCategory,
                          statuses=CarStatus,
                          has_complete_profile=has_complete_profile,
-                         missing_details=missing_details)
+                         missing_details=missing_details,
+                         next_available_map=next_available_map)
 
 
 @bp.route('/<int:id>')
