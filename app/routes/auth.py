@@ -25,7 +25,9 @@ def login():
             # Form login
             email = request.form.get('email')
             password = request.form.get('password')
-            remember = request.form.get('remember', False)
+            remember_value = request.form.get('remember', '')
+            # Coerce remember checkbox to boolean (on/true/1)
+            remember = str(remember_value).lower() in ['on', 'true', '1', 'yes']
         
         user = User.query.filter_by(email=email).first()
         

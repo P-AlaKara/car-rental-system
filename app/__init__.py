@@ -30,6 +30,8 @@ def create_app(config_name='default'):
     # Initialize extensions with app
     db.init_app(app)
     login_manager.init_app(app)
+    # Ensure remember cookie uses configured duration
+    login_manager.remember_cookie_duration = app.config.get('REMEMBER_COOKIE_DURATION')
     migrate.init_app(app, db)
     cors.init_app(app)
     if mail:
