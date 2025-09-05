@@ -545,7 +545,39 @@ def delete_car(car_id):
 def view_car_images(car_id):
     """View car images."""
     car = Car.query.get_or_404(car_id)
-    return render_template('admin/view_car_images.html', car=car)
+    # Resolve image URLs (support legacy stored keys or dicts with url)
+    resolved_main = None
+    try:
+        from app.services.storage import get_storage
+        storage = get_storage()
+    except Exception:
+        storage = None
+
+    def _resolve_url(value):
+        url = None
+        if isinstance(value, dict):
+            url = value.get('url')
+        elif isinstance(value, str):
+            url = value
+        if not url:
+            return None
+        if url.startswith('http') or url.startswith('/'):
+            return url
+        if storage:
+            return storage.url_for(url)
+        return url
+
+    if car.main_image:
+        resolved_main = _resolve_url(car.main_image)
+
+    gallery = car.images or []
+    resolved_images = []
+    for item in gallery:
+        url = _resolve_url(item)
+        if url:
+            resolved_images.append(url)
+
+    return render_template('admin/view_car_images.html', car=car, main_image=resolved_main, images=resolved_images)
 
 @admin_bp.route('/fleet/<int:car_id>/documents')
 @admin_required
