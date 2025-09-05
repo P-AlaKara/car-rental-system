@@ -481,32 +481,30 @@ def upload_photos(id):
         photo_type = request.form.get('photo_type', 'pickup')
         photos = request.files.getlist('photos')
         
-        # Create upload directory if it doesn't exist
-        upload_dir = os.path.join('static', 'uploads', 'vehicle_photos', str(booking.id))
-        os.makedirs(upload_dir, exist_ok=True)
+        # Upload via unified storage service to Spaces (or local /uploads fallback)
+        from app.services.storage import get_storage
+        storage = get_storage()
         
         uploaded_count = 0
         for photo in photos:
             if photo and photo.filename:
                 # Secure the filename
-                filename = secure_filename(photo.filename)
+                original = secure_filename(photo.filename)
                 timestamp = datetime.utcnow().strftime('%Y%m%d_%H%M%S')
-                filename = f"{timestamp}_{filename}"
-                filepath = os.path.join(upload_dir, filename)
+                filename = f"{booking.id}_{timestamp}_{original}"
+                key = storage.generate_key('booking_photos', filename)
+                url = storage.upload_fileobj(photo, key, content_type=photo.mimetype)
                 
-                # Save the file
-                photo.save(filepath)
-                
-                # Create database record
-                vehicle_photo = VehiclePhoto(
+                # Create BookingPhoto record
+                from app.models import BookingPhoto
+                booking_photo = BookingPhoto(
                     booking_id=booking.id,
-                    photo_url=f"/{filepath}",
-                    photo_type=PhotoType.PICKUP if photo_type == 'pickup' else PhotoType.RETURN,
-                    caption=request.form.get(f'caption_{uploaded_count}', ''),
-                    angle=request.form.get(f'angle_{uploaded_count}', ''),
+                    photo_type='pickup' if photo_type == 'pickup' else 'return',
+                    photo_url=url,
+                    description=request.form.get(f'caption_{uploaded_count}', ''),
                     uploaded_by=current_user.id
                 )
-                db.session.add(vehicle_photo)
+                db.session.add(booking_photo)
                 uploaded_count += 1
         
         if uploaded_count > 0:
@@ -531,14 +529,16 @@ def view_photos(id):
         flash('You do not have permission to view these photos.', 'error')
         return redirect(url_for('bookings.index'))
     
-    pickup_photos = VehiclePhoto.query.filter_by(
+    # Use BookingPhoto for pickup photos (Spaces-backed)
+    pickup_photos = BookingPhoto.query.filter_by(
         booking_id=booking.id,
-        photo_type=PhotoType.PICKUP
+        photo_type='pickup'
     ).all()
     
-    return_photos = VehiclePhoto.query.filter_by(
+    # Use BookingPhoto for return photos as well if present
+    return_photos = BookingPhoto.query.filter_by(
         booking_id=booking.id,
-        photo_type=PhotoType.RETURN
+        photo_type='return'
     ).all()
     
     return render_template('pages/bookings/view_photos.html', 
