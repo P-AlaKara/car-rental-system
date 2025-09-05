@@ -152,6 +152,13 @@
                         <span class="badge bg-{{ 'success' if car.is_available else 'danger' }}">
                             {{ car.status.value.title() }}
                         </span>
+                        {% if not car.is_available and car.status.value == 'booked' %}
+                        <br>
+                        {% set next_date = next_available_map.get(car.id) %}
+                        {% if next_date %}
+                        <small class="text-success">Available on {{ next_date.strftime('%B %d, %Y') }}</small>
+                        {% endif %}
+                        {% endif %}
                     </p>
                     
                     <div class="car-features">
