@@ -10,7 +10,7 @@ from app import create_app, db
 from sqlalchemy import text
 
 def run_migration():
-    """Add license_state and license_class columns to users table."""
+    """Add license-related columns to users table."""
     app = create_app()
     
     with app.app_context():
@@ -25,6 +25,18 @@ def run_migration():
             db.session.execute(text("""
                 ALTER TABLE users
                 ADD COLUMN license_class VARCHAR(20)
+            """))
+
+            # Add license_type column
+            db.session.execute(text("""
+                ALTER TABLE users
+                ADD COLUMN license_type VARCHAR(20)
+            """))
+
+            # Add license_country column
+            db.session.execute(text("""
+                ALTER TABLE users
+                ADD COLUMN license_country VARCHAR(100)
             """))
             
             db.session.commit()

@@ -47,6 +47,9 @@ class User(UserMixin, db.Model):
     license_expiry = db.Column(db.Date)
     license_state = db.Column(db.String(50))  # State/territory where license was issued
     license_class = db.Column(db.String(20))  # License class (C, LR, MR, etc.)
+    # License origin
+    license_type = db.Column(db.String(20))  # 'australian' or 'international'
+    license_country = db.Column(db.String(100))  # Required if international
     
     # Relationships
     bookings = db.relationship('Booking', backref='customer', lazy='dynamic', 
@@ -96,8 +99,20 @@ class User(UserMixin, db.Model):
     
     def has_complete_driver_details(self):
         """Check if user has complete driver license and address details."""
-        # Check driver license details
-        has_license = bool(self.license_number and self.license_expiry and self.license_state)
+        # Check phone and DOB
+        has_contact_requirements = bool(self.phone and self.date_of_birth)
+
+        # Check driver license details with origin rules
+        # Default to 'australian' if not explicitly set
+        license_type_value = (self.license_type or 'australian').lower()
+        has_license_core = bool(self.license_number and self.license_expiry)
+        has_origin_specifics = False
+        if license_type_value == 'international':
+            has_origin_specifics = bool(self.license_country)
+        else:
+            has_origin_specifics = bool(self.license_state)
+
+        has_license = has_license_core and has_origin_specifics
         
         # Check if license is not expired
         if has_license and self.license_expiry:
@@ -108,17 +123,28 @@ class User(UserMixin, db.Model):
         # Check address details
         has_address = bool(self.address and self.city and self.state and self.zip_code)
         
-        return has_license and has_address
+        return has_contact_requirements and has_license and has_address
     
     def get_missing_details(self):
         """Get list of missing driver and address details."""
         missing = []
         
+        # Contact requirements
+        if not self.phone:
+            missing.append("Mobile number")
+        if not self.date_of_birth:
+            missing.append("Date of birth")
+
         # Check driver license details
+        license_type_value = (self.license_type or 'australian').lower()
         if not self.license_number:
             missing.append("Driver's license number")
-        if not self.license_state:
-            missing.append("Driver's license state/territory")
+        if license_type_value == 'international':
+            if not self.license_country:
+                missing.append("Driver's license country")
+        else:
+            if not self.license_state:
+                missing.append("Driver's license state/territory")
         if not self.license_expiry:
             missing.append("Driver's license expiry date")
         elif self.license_expiry:
