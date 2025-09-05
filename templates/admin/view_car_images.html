@@ -33,12 +33,25 @@
         </form>
     </div>
     
+    <!-- Main Image -->
+    {% if car.main_image %}
+    <div class="images-section">
+        <h4>Main Image</h4>
+        <div class="images-grid">
+            <div class="image-card">
+                <img src="{{ car.main_image }}" alt="Main car image" class="car-image" onclick="showImageModal('{{ car.main_image }}')">
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
     <!-- Images Grid -->
     <div class="images-section">
         <h4>Current Images</h4>
-        {% if car.images and car.images|length > 0 %}
+        {% set gallery = car.images or [] %}
+        {% if gallery|length > 0 %}
         <div class="images-grid">
-            {% for image in car.images %}
+            {% for image in gallery %}
             <div class="image-card">
                 <img src="{{ image }}" alt="Car image" class="car-image" onclick="showImageModal('{{ image }}')">
                 <div class="image-actions">
@@ -50,10 +63,12 @@
             {% endfor %}
         </div>
         {% else %}
-        <div class="empty-state">
-            <i class="fas fa-image fa-4x text-muted mb-3"></i>
-            <p>No images uploaded for this vehicle</p>
-        </div>
+        {% if not car.main_image %}
+            <div class="empty-state">
+                <i class="fas fa-image fa-4x text-muted mb-3"></i>
+                <p>No images uploaded for this vehicle</p>
+            </div>
+        {% endif %}
         {% endif %}
     </div>
 </div>
