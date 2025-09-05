@@ -56,36 +56,13 @@
             <div class="col-4 mb-4">
                 <div class="card">
                     {% if car.main_image %}
-                    <img src="{{ car.main_image }}" alt="{{ car.full_name }}" class="card-img-top"
-                         onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?w=400&h=300&fit=crop';">
+                    <img src="{{ car.main_image }}" alt="{{ car.full_name }}" class="card-img-top">
                     {% elif car.images and car.images|length > 0 %}
-                    <img src="{{ car.images[0] }}" alt="{{ car.full_name }}" class="card-img-top"
-                         onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?w=400&h=300&fit=crop';">
+                    <img src="{{ car.images[0] }}" alt="{{ car.full_name }}" class="card-img-top">
                     {% else %}
-                    <!-- Using specific images for each model -->
-                    {% if 'Wrangler' in car.model %}
-                    <img src="https://images.unsplash.com/photo-1581650107963-3e8c1f48241b?w=400&h=300&fit=crop" alt="{{ car.full_name }}" class="card-img-top">
-                    {% elif 'Tahoe' in car.model %}
-                    <img src="https://images.unsplash.com/photo-1519641766812-1c2d06ff8684?w=400&h=300&fit=crop" alt="{{ car.full_name }}" class="card-img-top">
-                    {% elif 'BMW' in car.make or '5 Series' in car.model %}
-                    <img src="https://images.unsplash.com/photo-1555215858-71bdb9fa6f10?w=400&h=300&fit=crop" alt="{{ car.full_name }}" class="card-img-top">
-                    {% elif 'Camry' in car.model %}
-                    <img src="https://images.unsplash.com/photo-1621007947382-bb3c3994e3fb?w=400&h=300&fit=crop" alt="{{ car.full_name }}" class="card-img-top">
-                    {% elif 'Civic' in car.model %}
-                    <img src="https://images.unsplash.com/photo-1609521263047-f8f205293f24?w=400&h=300&fit=crop" alt="{{ car.full_name }}" class="card-img-top">
-                    {% elif 'Mustang' in car.model %}
-                    <img src="https://images.unsplash.com/photo-1544636331-e26879cd4d9b?w=400&h=300&fit=crop" alt="{{ car.full_name }}" class="card-img-top">
-                    {% elif 'Model 3' in car.model or 'Tesla' in car.make %}
-                    <img src="https://images.unsplash.com/photo-1560958089-b8a1929cea89?w=400&h=300&fit=crop" alt="{{ car.full_name }}" class="card-img-top">
-                    {% elif 'Mercedes' in car.make or 'E-Class' in car.model %}
-                    <img src="https://images.unsplash.com/photo-1553440569-bcc63803a83d?w=400&h=300&fit=crop" alt="{{ car.full_name }}" class="card-img-top">
-                    {% elif 'Altima' in car.model %}
-                    <img src="https://images.unsplash.com/photo-1550355291-bbee04a92027?w=400&h=300&fit=crop" alt="{{ car.full_name }}" class="card-img-top">
-                    {% elif 'Elantra' in car.model %}
-                    <img src="https://images.unsplash.com/photo-1609521263047-f8f205293f24?w=400&h=300&fit=crop" alt="{{ car.full_name }}" class="card-img-top">
-                    {% else %}
-                    <img src="https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?w=400&h=300&fit=crop" alt="{{ car.full_name }}" class="card-img-top">
-                    {% endif %}
+                    <div class="car-placeholder" style="height: 200px; background: #f3f4f6; display: flex; align-items: center; justify-content: center; color: #9ca3af;">
+                        Image unavailable
+                    </div>
                     {% endif %}
                     <div class="card-body">
                         <h5 class="card-title">{{ car.full_name }}</h5>

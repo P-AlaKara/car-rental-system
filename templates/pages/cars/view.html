@@ -29,44 +29,15 @@
                 {% if car.main_image %}
                 <img src="{{ car.main_image }}" 
                      class="card-img-top" alt="{{ car.full_name }}"
-                     style="height: 400px; object-fit: cover;"
-                     onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?w=800&h=400&fit=crop';">
+                     style="height: 400px; object-fit: cover;">
                 {% elif car.images and car.images|length > 0 %}
                 <img src="{{ car.images[0] }}" 
                      class="card-img-top" alt="{{ car.full_name }}"
-                     style="height: 400px; object-fit: cover;"
-                     onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?w=800&h=400&fit=crop';">
-                {% else %}
-                <!-- Model-specific images first, then category fallback -->
-                {% if 'Wrangler' in car.model %}
-                <img src="https://images.unsplash.com/photo-1581650107963-3e8c1f48241b?w=800&h=400&fit=crop" 
-                     class="card-img-top" alt="{{ car.full_name }}"
-                     style="height: 400px; object-fit: cover;">
-                {% elif 'Tahoe' in car.model %}
-                <img src="https://images.unsplash.com/photo-1519641766812-1c2d06ff8684?w=800&h=400&fit=crop" 
-                     class="card-img-top" alt="{{ car.full_name }}"
-                     style="height: 400px; object-fit: cover;">
-                {% elif '5 Series' in car.model or 'BMW' in car.make %}
-                <img src="https://images.unsplash.com/photo-1555215858-71bdb9fa6f10?w=800&h=400&fit=crop" 
-                     class="card-img-top" alt="{{ car.full_name }}"
                      style="height: 400px; object-fit: cover;">
                 {% else %}
-                {% set category_images = {
-                    'economy': 'https://images.unsplash.com/photo-1552519507-da3b142c6e3d?w=800&h=400&fit=crop',
-                    'compact': 'https://images.unsplash.com/photo-1609521263047-f8f205293f24?w=800&h=400&fit=crop',
-                    'midsize': 'https://images.unsplash.com/photo-1550355291-bbee04a92027?w=800&h=400&fit=crop',
-                    'fullsize': 'https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?w=800&h=400&fit=crop',
-                    'luxury': 'https://images.unsplash.com/photo-1563720223185-11003d516935?w=800&h=400&fit=crop',
-                    'suv': 'https://images.unsplash.com/photo-1519641766812-1c2d06ff8684?w=800&h=400&fit=crop',
-                    'minivan': 'https://images.unsplash.com/photo-1569240651611-302c9897bde5?w=800&h=400&fit=crop',
-                    'convertible': 'https://images.unsplash.com/photo-1544636331-e26879cd4d9b?w=800&h=400&fit=crop',
-                    'sports': 'https://images.unsplash.com/photo-1525609004556-c46c7d6cf023?w=800&h=400&fit=crop',
-                    'electric': 'https://images.unsplash.com/photo-1560958089-b8a1929cea89?w=800&h=400&fit=crop'
-                } %}
-                <img src="{{ category_images.get(car.category.value, 'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?w=800&h=400&fit=crop') }}" 
-                     class="card-img-top" alt="{{ car.full_name }}"
-                     style="height: 400px; object-fit: cover;">
-                {% endif %}
+                <div class="car-placeholder" style="height: 400px; display: flex; align-items: center; justify-content: center; background: #f3f4f6; color: #9ca3af;">
+                    Image unavailable
+                </div>
                 {% endif %}
             </div>
             
