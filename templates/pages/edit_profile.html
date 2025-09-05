@@ -18,6 +18,11 @@
 
 <section class="settings-section py-5">
     <div class="container">
+        <div class="sticky-back mb-3">
+            <a href="#" class="back-icon" aria-label="Go back" onclick="window.history.back(); return false;">
+                <i class="fas fa-arrow-left"></i>
+            </a>
+        </div>
         <div class="row">
             <div class="col-lg-3">
                 <div class="settings-sidebar">
@@ -231,11 +236,9 @@
                                             <label for="license_class" class="form-label">License Class</label>
                                             <select class="form-control" id="license_class" name="license_class">
                                                 <option value="">Select Class</option>
-                                                <option value="C" {% if user.license_class == 'C' %}selected{% endif %}>C - Car</option>
-                                                <option value="LR" {% if user.license_class == 'LR' %}selected{% endif %}>LR - Light Rigid</option>
-                                                <option value="MR" {% if user.license_class == 'MR' %}selected{% endif %}>MR - Medium Rigid</option>
-                                                <option value="HR" {% if user.license_class == 'HR' %}selected{% endif %}>HR - Heavy Rigid</option>
-                                                <option value="HC" {% if user.license_class == 'HC' %}selected{% endif %}>HC - Heavy Combination</option>
+                                                <option value="red_p" {% if user.license_class == 'red_p' %}selected{% endif %}>Red P</option>
+                                                <option value="green_p" {% if user.license_class == 'green_p' %}selected{% endif %}>Green P</option>
+                                                <option value="full" {% if user.license_class == 'full' %}selected{% endif %}>Full License</option>
                                             </select>
                                         </div>
                                     </div>

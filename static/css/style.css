@@ -24,6 +24,11 @@
     --text-muted: #64748b;
     --gradient-primary: linear-gradient(135deg, #1e3a8a 0%, #1e40af 50%, #2563eb 100%);
     --gradient-secondary: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%);
+    /* Gold accent palette */
+    --gold-300: #e6c368;
+    --gold-400: #d4af37;  /* Metallic gold */
+    --gold-500: #c9a227;  /* Muted gold for accessibility */
+    --gradient-gold: linear-gradient(135deg, var(--gold-300) 0%, var(--gold-400) 100%);
     --gradient-ethereal: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 25%, #93c5fd 50%, #60a5fa 75%, #3b82f6 100%);
     --gradient-soft: linear-gradient(180deg, #eff6ff 0%, #dbeafe 50%, #bfdbfe 100%);
     --shadow: 0 4px 6px -1px rgba(14, 165, 233, 0.1), 0 2px 4px -1px rgba(14, 165, 233, 0.06);
@@ -230,14 +235,14 @@ h6 { font-size: 1.125rem; }
 }
 
 .btn-secondary {
-    background: var(--gradient-secondary);
+    background: var(--gradient-gold);
     color: var(--white);
-    box-shadow: 0 4px 15px rgba(212, 175, 55, 0.3);
+    box-shadow: 0 4px 15px rgba(201, 162, 39, 0.3);
 }
 
 .btn-secondary:hover {
     transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(212, 175, 55, 0.4);
+    box-shadow: 0 6px 20px rgba(201, 162, 39, 0.4);
 }
 
 .btn-outline {
@@ -723,7 +728,7 @@ select.form-control {
     position: absolute;
     top: 1rem;
     right: 1rem;
-    background: var(--gradient-secondary);
+    background: var(--gradient-gold);
     color: var(--white);
     padding: 0.25rem 0.75rem;
     border-radius: 20px;
@@ -1113,6 +1118,32 @@ select.form-control {
 .shadow-lg { box-shadow: var(--shadow-lg); }
 .shadow-xl { box-shadow: var(--shadow-xl); }
 .shadow-sm { box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); }
+
+/* Back icon (sticky, subtle) */
+.back-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 9999px;
+    background: rgba(255, 255, 255, 0.9);
+    color: var(--primary-color);
+    border: 1px solid var(--border-color);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    transition: var(--transition);
+}
+
+.back-icon:hover {
+    background: var(--primary-color);
+    color: var(--white);
+}
+
+.sticky-back {
+    position: sticky;
+    top: 16px;
+    z-index: 100;
+}
 
 /* Icon Box */
 .icon-box {
