@@ -18,10 +18,10 @@ from sqlalchemy import text
 
 
 SUPPORTED_CATEGORIES = (
-    'hatchback',
-    'sedan',
-    'suv',
-    'coupe',
+    'HATCHBACK',
+    'SEDAN',
+    'SUV',
+    'COUPE',
 )
 
 
@@ -49,7 +49,7 @@ def run_migration() -> None:
             sql_update = text(
                 f"""
                 UPDATE cars
-                SET category = 'sedan'
+                SET category = 'SEDAN'
                 WHERE category NOT IN ({supported_list})
                 """
             )
