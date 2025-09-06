@@ -58,7 +58,17 @@ class Car(db.Model):
     vin = db.Column(db.String(50), unique=True, nullable=False)
     
     # Category and type
-    category = db.Column(db.Enum(CarCategory), nullable=False)
+    # Persist enum VALUES (lowercase strings) to match PostgreSQL type labels
+    # and accept case-insensitive inputs via CarCategory.from_any
+    category = db.Column(
+        db.Enum(
+            CarCategory,
+            name='carcategory',
+            values_callable=lambda enum_cls: [member.value for member in enum_cls],
+            validate_strings=True,
+        ),
+        nullable=False,
+    )
     seats = db.Column(db.Integer, nullable=False)
     transmission = db.Column(db.String(20), default='Automatic')  # Automatic, Manual
     fuel_type = db.Column(db.String(20), default='Gasoline')  # Gasoline, Diesel, Electric, Hybrid
