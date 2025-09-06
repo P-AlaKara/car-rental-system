@@ -18,13 +18,21 @@
                     <h3>Booking Details</h3>
                 </div>
                 <div class="card-body">
-                    <form method="POST" action="{{ url_for('bookings.create') }}" data-validate>
+                    <form method="POST" action="{{ url_for('bookings.create') }}" data-validate enctype="multipart/form-data" id="bookingForm">
                         <div class="form-group">
                             <label for="car_id" class="form-label">Select Vehicle</label>
                             <select name="car_id" id="car_id" class="form-control" required>
                                 <option value="">Choose a car...</option>
                                 {% for car in cars %}
-                                <option value="{{ car.id }}" data-weekly-rate="{{ car.weekly_rate or 0 }}"
+                                <option value="{{ car.id }}"
+                                    data-weekly-rate="{{ car.weekly_rate or 0 }}"
+                                    data-name="{{ car.full_name|e }}"
+                                    data-category="{{ car.category.value if car.category else '' }}"
+                                    data-year="{{ car.year }}"
+                                    data-seats="{{ car.seats }}"
+                                    data-transmission="{{ car.transmission }}"
+                                    data-fuel="{{ car.fuel_type }}"
+                                    data-image="{{ car.main_image or (car.images[0] if car.images and car.images|length > 0 else 'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?w=400&h=300&fit=crop') }}"
                                     {% if selected_car and selected_car.id == car.id %}selected{% endif %}>
                                     {{ car.full_name }} - {% if car.weekly_rate %}${{ car.weekly_rate }}/week{% else %}Contact for rate{% endif %}
                                 </option>
@@ -83,7 +91,7 @@
                         <div class="mt-4">
                             <div class="button-group">
                                 {% if current_user.is_authenticated %}
-                                <button type="submit" class="btn btn-primary btn-lg">Confirm Booking</button>
+                                <button type="button" id="confirmBookingBtn" class="btn btn-primary btn-lg">Confirm Booking</button>
                                 {% else %}
                                 <a href="{{ url_for('auth.login', next=url_for('bookings.create', car_id=request.args.get('car_id'))) }}" class="btn btn-primary btn-lg">Login to Confirm Booking</a>
                                 {% endif %}
@@ -168,22 +176,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const imageWrapper = document.getElementById('selectedCarImageWrapper');
     const inlinePrice = document.getElementById('inline_price_display');
 
-    // Build a lookup of car data for quick preview updates
-    const carData = {
-        {% for car in cars %}
-        "{{ car.id }}": {
-            name: "{{ car.full_name|e }}",
-            category: "{{ car.category.value if car.category else '' }}",
-            year: "{{ car.year }}",
-            seats: "{{ car.seats }}",
-            transmission: "{{ car.transmission }}",
-            fuel: "{{ car.fuel_type }}",
-            rate: {{ '%.2f'|format(car.weekly_rate or 0)|replace(',', '') }},
-            image: "{{ car.main_image or (car.images[0] if car.images and car.images|length > 0 else 'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?w=400&h=300&fit=crop') }}"
-        }{% if not loop.last %},{% endif %}
-        {% endfor %}
-    };
-
     // Elements for the selected vehicle preview
     const nameEl = document.getElementById('selectedCarName');
     const metaEl = document.getElementById('selectedCarMeta');
@@ -191,27 +183,30 @@ document.addEventListener('DOMContentLoaded', function() {
     const transEl = document.getElementById('selectedCarTransmission');
     const fuelEl = document.getElementById('selectedCarFuel');
     const rateEl = document.getElementById('selectedCarRate');
-    
-    // If a car is pre-selected, set its weekly rate and preview
-    {% if selected_car %}
-    weeklyRateInput.value = {{ selected_car.weekly_rate or 0 }};
-    (function(){
-        const data = carData[{{ selected_car.id }}];
-        if (data) {
-            if (data.image) {
-                imageWrapper.innerHTML = `<img src="${data.image}" alt="${data.name}" style="max-width: 100%; max-height: 100%; object-fit: cover; border-radius: .25rem;" />`;
-            } else {
-                imageWrapper.textContent = 'Image unavailable';
-            }
-            nameEl.textContent = data.name;
-            metaEl.textContent = `${data.category} • ${data.year}`;
-            seatsEl.textContent = data.seats;
-            transEl.textContent = data.transmission;
-            fuelEl.textContent = data.fuel;
-            rateEl.textContent = `$${Number(data.rate).toFixed(2)}`;
+
+    function populatePreviewFromOption(opt) {
+        if (!opt) return;
+        const data = opt.dataset;
+        if (data.image) {
+            imageWrapper.innerHTML = `<img src="${data.image}" alt="${data.name || ''}" style="max-width: 100%; max-height: 100%; object-fit: cover; border-radius: .25rem;" />`;
+        } else {
+            imageWrapper.textContent = 'Image unavailable';
         }
-    })();
-    {% endif %}
+        nameEl.textContent = data.name || 'Select a vehicle to preview';
+        metaEl.textContent = `${data.category || ''} • ${data.year || ''}`.trim();
+        seatsEl.textContent = data.seats || '-';
+        transEl.textContent = data.transmission || '-';
+        fuelEl.textContent = data.fuel || '-';
+        const rate = parseFloat(data.weeklyRate || data.weeklyrate || '0');
+        rateEl.textContent = `$${(rate || 0).toFixed(2)}`;
+        weeklyRateInput.value = rate || 0;
+    }
+
+    // If a car is pre-selected, set its weekly rate and preview
+    const preSelected = carSelect.querySelector('option[selected]');
+    if (preSelected) {
+        populatePreviewFromOption(preSelected);
+    }
     
     // Set minimum date to today
     const now = new Date();
@@ -227,30 +222,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Update weekly rate when car is selected
     carSelect.addEventListener('change', function() {
         const selectedOption = this.options[this.selectedIndex];
-        weeklyRateInput.value = selectedOption.dataset.weeklyRate || 0;
-        const id = this.value;
-        const data = carData[id];
-        if (data) {
-            if (data.image) {
-                imageWrapper.innerHTML = `<img src="${data.image}" alt="${data.name}" style="max-width: 100%; max-height: 100%; object-fit: cover; border-radius: .25rem;" />`;
-            } else {
-                imageWrapper.textContent = 'Image unavailable';
-            }
-            nameEl.textContent = data.name;
-            metaEl.textContent = `${data.category} • ${data.year}`;
-            seatsEl.textContent = data.seats;
-            transEl.textContent = data.transmission;
-            fuelEl.textContent = data.fuel;
-            rateEl.textContent = `$${Number(data.rate).toFixed(2)}`;
-        } else {
-            imageWrapper.textContent = 'Image unavailable';
-            nameEl.textContent = 'Select a vehicle to preview';
-            metaEl.textContent = '';
-            seatsEl.textContent = '-';
-            transEl.textContent = '-';
-            fuelEl.textContent = '-';
-            rateEl.textContent = `$0`;
-        }
+        populatePreviewFromOption(selectedOption);
         calculatePrice();
     });
     
@@ -328,6 +300,46 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('pickup_location').addEventListener('change', function() {
         document.getElementById('return_location').value = this.value;
     });
+
+    // Minimum rental period enforcement (frontend)
+    function validateMinimumWeek() {
+        if (!pickupDate.value || !returnDate.value) return true;
+        const start = new Date(pickupDate.value);
+        const end = new Date(returnDate.value);
+        const ms = end - start;
+        const days = Math.ceil(ms / (1000 * 60 * 60 * 24));
+        if (days < 7) {
+            alert('Minimum rental period is 7 days. Please adjust your dates.');
+            return false;
+        }
+        return true;
+    }
+
+    // Booking confirmation -> show DL upload modal, then submit
+    const confirmBtn = document.getElementById('confirmBookingBtn');
+    if (confirmBtn) {
+        confirmBtn.addEventListener('click', function() {
+            if (!validateMinimumWeek()) return;
+            const modal = document.getElementById('dlUploadModal');
+            if (modal) {
+                modal.style.display = 'block';
+            }
+        });
+    }
+    const dlCancel = document.getElementById('dlCancelBtn');
+    if (dlCancel) {
+        dlCancel.addEventListener('click', function() {
+            document.getElementById('dlUploadModal').style.display = 'none';
+        });
+    }
+    const dlConfirm = document.getElementById('dlConfirmBtn');
+    if (dlConfirm) {
+        dlConfirm.addEventListener('click', function() {
+            // Allow empty upload; server will save if provided
+            document.getElementById('dlUploadModal').style.display = 'none';
+            document.getElementById('bookingForm').submit();
+        });
+    }
 });
 </script>
 
@@ -416,4 +428,23 @@ hr {
     vertical-align: middle;
 }
 </style>
+<!-- Simple DL Upload Modal -->
+<div id="dlUploadModal" style="display:none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 2000;">
+    <div style="max-width: 520px; margin: 10% auto; background: #fff; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); overflow: hidden;">
+        <div style="padding: 16px 20px; border-bottom: 1px solid #e5e7eb; display:flex; align-items:center; justify-content:space-between;">
+            <h4 style="margin:0;">Upload Driver's License</h4>
+            <button id="dlCancelBtn" class="btn" style="padding: .4rem .8rem;">Close</button>
+        </div>
+        <div style="padding: 20px;">
+            <p class="text-muted">Please upload a clear image or PDF of your driver's license to speed up verification. You can also skip and provide it at pickup.</p>
+            <div class="form-group">
+                <label for="license_document" class="form-label">Driver's License (image or PDF)</label>
+                <input type="file" name="license_document" id="license_document" class="form-control" accept="image/*,.pdf">
+            </div>
+        </div>
+        <div style="padding: 16px 20px; border-top: 1px solid #e5e7eb; display:flex; gap:12px; justify-content:flex-end;">
+            <button id="dlConfirmBtn" class="btn btn-primary">Confirm Booking</button>
+        </div>
+    </div>
+</div>
 {% endblock %}

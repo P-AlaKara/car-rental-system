@@ -883,6 +883,10 @@ select.form-control {
     list-style: none;
 }
 
+.dropdown.active .dropdown-menu {
+    display: block;
+}
+
 .dropdown:hover .dropdown-menu {
     display: block;
 }

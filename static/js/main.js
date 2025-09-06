@@ -23,11 +23,12 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // Handle dropdown menus on mobile
+    // Handle dropdown menus: open on hover for desktop, click for mobile
     const dropdowns = document.querySelectorAll('.dropdown');
     dropdowns.forEach(dropdown => {
         const toggle = dropdown.querySelector('.dropdown-toggle');
         if (toggle) {
+            // Mobile: toggle on click
             toggle.addEventListener('click', function(e) {
                 if (window.innerWidth <= 768) {
                     e.preventDefault();
@@ -35,6 +36,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             });
         }
+        // Desktop: open on hover and keep open until click-away
+        dropdown.addEventListener('mouseenter', function() {
+            if (window.innerWidth > 768) {
+                dropdown.classList.add('active');
+            }
+        });
     });
     
     // Close dropdowns when clicking outside

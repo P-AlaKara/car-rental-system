@@ -300,11 +300,14 @@ function renderHandoverForm(data) {
                 </label>
             </div>
 
-            <div class="form-group mt-3">
+            <div class="form-group mt-3" id="licenseUploadGroup">
                 <label for="licenseFile"><i class="fas fa-upload"></i> Upload Driver License (image or PDF)</label>
                 <input type="file" id="licenseFile" class="form-control" accept="image/*,.pdf" onchange="handleLicenseUpload(event)">
-                <small class="form-text text-muted">Required: capture a clear photo/scan of the driver's license.</small>
+                <small class="form-text text-muted">Required only if not uploaded during booking.</small>
                 <div id="licenseFileStatus" class="mt-2 text-muted"></div>
+                <div id="licenseViewBox" class="mt-2" style="display:none">
+                    <a id="licenseViewLink" href="#" target="_blank" class="btn btn-outline-info btn-sm"><i class="fas fa-file"></i> View License</a>
+                </div>
             </div>
         </div>
 
@@ -409,6 +412,22 @@ function renderHandoverForm(data) {
     `;
     
     $('#handoverContent').html(html);
+
+    // If license document already exists, hide upload and show view link
+    try {
+        const url = (data && data.booking && data.booking.license_document_url) ? data.booking.license_document_url : null;
+        if (url) {
+            const uploadGroup = document.getElementById('licenseUploadGroup');
+            const viewBox = document.getElementById('licenseViewBox');
+            const viewLink = document.getElementById('licenseViewLink');
+            if (viewLink) viewLink.href = url;
+            if (viewBox) viewBox.style.display = 'block';
+            if (uploadGroup) {
+                const input = document.getElementById('licenseFile');
+                if (input) input.style.display = 'none';
+            }
+        }
+    } catch (e) { /* no-op */ }
 }
 
 function handlePhotoUpload(event) {

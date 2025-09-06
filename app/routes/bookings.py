@@ -6,6 +6,7 @@ from app.utils.decorators import manager_required
 from datetime import datetime
 import os
 from werkzeug.utils import secure_filename
+from math import ceil
 
 bp = Blueprint('bookings', __name__, url_prefix='/bookings')
 
@@ -81,9 +82,10 @@ def create():
         return_date = datetime.strptime(return_date_str, '%Y-%m-%d %H:%M')
         
         # Calculate rental details
-        total_days = (return_date - pickup_date).days
-        if total_days < 1:
-            total_days = 1
+        total_days = ceil((return_date - pickup_date).total_seconds() / (60 * 60 * 24))
+        if total_days < 7:
+            flash('Minimum rental period is 7 days. Please adjust your dates.', 'danger')
+            return redirect(url_for('bookings.create', car_id=car.id))
         
         subtotal = car.calculate_rental_cost(total_days)
         tax_amount = subtotal * 0.1  # 10% GST
@@ -116,6 +118,24 @@ def create():
         from app.models.car import CarStatus
         car.status = CarStatus.BOOKED
         
+        # If a license document was uploaded at booking time, store it
+        try:
+            license_file = request.files.get('license_document')
+        except Exception:
+            license_file = None
+
+        if license_file and getattr(license_file, 'filename', None):
+            try:
+                from app.services.storage import get_storage
+                storage = get_storage()
+                filename = secure_filename(license_file.filename)
+                key = storage.generate_key('licenses', filename)
+                url = storage.upload_fileobj(license_file, key, content_type=license_file.mimetype)
+                booking.license_document_url = url
+            except Exception as e:
+                # Non-fatal: allow booking to proceed even if license upload fails
+                flash(f'License upload failed: {str(e)}', 'warning')
+
         db.session.add(booking)
         db.session.commit()
         
