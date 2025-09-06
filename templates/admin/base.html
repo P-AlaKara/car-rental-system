@@ -101,6 +101,9 @@
                 </div>
                 
                 <div class="header-right">
+                    <a href="#" class="btn btn-sm btn-outline" onclick="return handleAdminBack(event)">
+                        <i class="fas fa-arrow-left"></i> Back
+                    </a>
                     <a href="{{ url_for('main.index') }}" class="btn btn-sm btn-outline">
                         <i class="fas fa-external-link-alt"></i> View Site
                     </a>
@@ -168,6 +171,18 @@
                 element.title = element.dataset.tooltip;
             });
         });
+
+        function handleAdminBack(event) {
+            if (event) event.preventDefault();
+            try {
+                if (window.history && window.history.length > 1) {
+                    window.history.back();
+                    return false;
+                }
+            } catch (e) {}
+            window.location.href = "{{ url_for('admin.dashboard') }}";
+            return false;
+        }
     </script>
 
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>

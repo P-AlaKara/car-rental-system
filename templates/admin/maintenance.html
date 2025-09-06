@@ -5,6 +5,13 @@
 
 {% block content %}
 <div class="maintenance-container">
+    <div class="actions-bar">
+        <div class="actions-left">
+            <a href="{{ url_for('admin.dashboard') }}" class="btn btn-outline">
+                <i class="fas fa-arrow-left"></i> Back
+            </a>
+        </div>
+    </div>
     <!-- Maintenance Statistics -->
     <div class="maintenance-stats">
         <div class="stat-card healthy">

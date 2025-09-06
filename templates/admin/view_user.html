@@ -1,0 +1,81 @@
+{% extends "admin/base.html" %}
+
+{% block title %}View User - Admin{% endblock %}
+{% block page_title %}User Details{% endblock %}
+
+{% block content %}
+<div class="user-view-container">
+    <div class="actions-bar" style="margin-bottom: 1rem;">
+        <div class="actions-left">
+            <a href="{{ url_for('admin.users') }}" class="btn btn-outline">
+                <i class="fas fa-arrow-left"></i> Back to Users
+            </a>
+            <a href="{{ url_for('admin.edit_user', user_id=user.id) }}" class="btn btn-primary">
+                <i class="fas fa-edit"></i> Edit User
+            </a>
+        </div>
+    </div>
+
+    <div class="form-container">
+        <div class="form-card">
+            <div class="form-section">
+                <h3>Basic Information</h3>
+                <div class="form-row">
+                    <div class="filter-group" style="min-width: 250px;">
+                        <label>Full Name</label>
+                        <div>{{ user.full_name }}</div>
+                    </div>
+                    <div class="filter-group" style="min-width: 250px;">
+                        <label>Email</label>
+                        <div>{{ user.email }}</div>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="filter-group" style="min-width: 250px;">
+                        <label>Phone</label>
+                        <div>{{ user.phone or 'N/A' }}</div>
+                    </div>
+                    <div class="filter-group" style="min-width: 250px;">
+                        <label>Role</label>
+                        <div>
+                            <span class="badge badge-role-{{ user.role.value.lower() if user.role else 'customer' }}">
+                                {{ user.role.value.title() if user.role else 'Customer' }}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <h3>Account Details</h3>
+                <div class="form-row">
+                    <div class="filter-group" style="min-width: 250px;">
+                        <label>User ID</label>
+                        <div>{{ user.id }}</div>
+                    </div>
+                    <div class="filter-group" style="min-width: 250px;">
+                        <label>Joined Date</label>
+                        <div>{{ user.created_at.strftime('%Y-%m-%d') if user.created_at else '' }}</div>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="filter-group" style="min-width: 250px;">
+                        <label>Bookings</label>
+                        <div>{{ user.bookings.count() }}</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <a href="{{ url_for('admin.users') }}" class="btn btn-outline">
+                    <i class="fas fa-arrow-left"></i> Back to Users
+                </a>
+                <a href="{{ url_for('admin.edit_user', user_id=user.id) }}" class="btn btn-primary">
+                    <i class="fas fa-edit"></i> Edit User
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

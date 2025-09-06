@@ -733,6 +733,9 @@ body.admin-body {
     background: white;
     border-radius: 0.75rem;
     box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+    display: flex;
+    flex-direction: column;
+    max-height: 90vh; /* Ensure modal fits within viewport */
 }
 
 .modal-header {
@@ -751,6 +754,7 @@ body.admin-body {
 
 .modal-body {
     padding: 1.5rem;
+    overflow-y: auto; /* Allow scrolling when content is tall */
 }
 
 .modal-footer {
@@ -759,6 +763,11 @@ body.admin-body {
     display: flex;
     justify-content: flex-end;
     gap: 0.5rem;
+}
+
+/* Ensure dialog never exceeds viewport height */
+.modal-dialog {
+    max-height: 100vh;
 }
 
 .close {
