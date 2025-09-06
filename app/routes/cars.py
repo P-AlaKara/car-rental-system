@@ -56,7 +56,8 @@ def index():
     car_ids = [car.id for car in cars.items]
     next_available_map = {}
     if car_ids:
-        active_statuses = [BookingStatus.CONFIRMED, BookingStatus.IN_PROGRESS]
+        # Treat pending as blocking availability for display purposes
+        active_statuses = [BookingStatus.PENDING, BookingStatus.CONFIRMED, BookingStatus.IN_PROGRESS]
         active_bookings = (
             Booking.query
             .filter(
@@ -103,7 +104,8 @@ def view(id):
 
     # Compute next availability date for this car (earliest active booking return date)
     next_available_date = None
-    active_statuses = [BookingStatus.CONFIRMED, BookingStatus.IN_PROGRESS]
+    # Include pending so we show the earliest expected return
+    active_statuses = [BookingStatus.PENDING, BookingStatus.CONFIRMED, BookingStatus.IN_PROGRESS]
     upcoming = (
         Booking.query
         .filter(
