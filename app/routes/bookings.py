@@ -118,13 +118,16 @@ def create():
         from app.models.car import CarStatus
         car.status = CarStatus.BOOKED
         
-        # If a license document was uploaded at booking time, store it
+        # Driver's License upload is REQUIRED at booking time
         try:
             license_file = request.files.get('license_document')
         except Exception:
             license_file = None
 
-        if license_file and getattr(license_file, 'filename', None):
+        if not (license_file and getattr(license_file, 'filename', None)):
+            flash("Driver's license upload is required to create a booking.", 'danger')
+            return redirect(url_for('bookings.create', car_id=car.id))
+        else:
             try:
                 from app.services.storage import get_storage
                 storage = get_storage()
@@ -133,8 +136,9 @@ def create():
                 url = storage.upload_fileobj(license_file, key, content_type=license_file.mimetype)
                 booking.license_document_url = url
             except Exception as e:
-                # Non-fatal: allow booking to proceed even if license upload fails
-                flash(f'License upload failed: {str(e)}', 'warning')
+                db.session.rollback()
+                flash(f"License upload failed and is required: {str(e)}", 'danger')
+                return redirect(url_for('bookings.create', car_id=car.id))
 
         db.session.add(booking)
         db.session.commit()
@@ -459,7 +463,20 @@ def process_return(id):
     days_late = 0
     if booking.return_date < datetime.utcnow():
         days_late = (datetime.utcnow() - booking.return_date).days
-        late_fees = days_late * booking.daily_rate * 1.5  # 150% of daily rate for late fees
+        # Compute a safe daily rate even if booking.daily_rate is NULL
+        derived_daily_rate = None
+        try:
+            if booking.daily_rate is not None:
+                derived_daily_rate = booking.daily_rate
+            elif booking.car and booking.car.weekly_rate:
+                derived_daily_rate = (booking.car.weekly_rate or 0) / 7.0
+            elif booking.car and booking.car.daily_rate:
+                derived_daily_rate = booking.car.daily_rate
+        except Exception:
+            derived_daily_rate = None
+        if derived_daily_rate is None:
+            derived_daily_rate = 0
+        late_fees = days_late * derived_daily_rate * 1.5  # 150% of daily rate for late fees
     
     # Get pickup photos for comparison
     pickup_photos = VehiclePhoto.query.filter_by(

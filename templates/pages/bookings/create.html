@@ -53,6 +53,7 @@
                                     <label for="return_date" class="form-label">Return Date & Time</label>
                                     <input type="datetime-local" class="form-control" id="return_date" 
                                            name="return_date" required>
+                                    <div id="min_week_warning" class="mt-1" style="display:none; color: #dc3545; font-weight: 600;">Bookings of less than a week are not allowed.</div>
                                 </div>
                             </div>
                         </div>
@@ -239,6 +240,14 @@ document.addEventListener('DOMContentLoaded', function() {
             const start = new Date(pickupDate.value);
             const end = new Date(returnDate.value);
             const days = Math.ceil((end - start) / (1000 * 60 * 60 * 24));
+            const warningEl = document.getElementById('min_week_warning');
+            if (warningEl) {
+                if (days > 0 && days < 7) {
+                    warningEl.style.display = 'block';
+                } else {
+                    warningEl.style.display = 'none';
+                }
+            }
             
             if (days > 0) {
                 const weeklyRate = parseFloat(weeklyRateInput.value);
@@ -439,7 +448,7 @@ hr {
             <p class="text-muted">Please upload a clear image or PDF of your driver's license to speed up verification. You can also skip and provide it at pickup.</p>
             <div class="form-group">
                 <label for="license_document" class="form-label">Driver's License (image or PDF)</label>
-                <input type="file" name="license_document" id="license_document" class="form-control" accept="image/*,.pdf">
+                <input type="file" name="license_document" id="license_document" class="form-control" accept="image/*,.pdf" form="bookingForm" required>
             </div>
         </div>
         <div style="padding: 16px 20px; border-top: 1px solid #e5e7eb; display:flex; gap:12px; justify-content:flex-end;">

@@ -36,7 +36,7 @@ class Booking(db.Model):
     return_location = db.Column(db.String(255), nullable=False)
     
     # Pricing
-    daily_rate = db.Column(db.Float, nullable=False)
+    daily_rate = db.Column(db.Float, nullable=True)
     total_days = db.Column(db.Integer, nullable=False)
     subtotal = db.Column(db.Float, nullable=False)
     tax_amount = db.Column(db.Float, default=0)
@@ -71,7 +71,7 @@ class Booking(db.Model):
     contract_signed_url = db.Column(db.Text)
     contract_signed_at = db.Column(db.DateTime)
     # Driver license document captured at handover
-    license_document_url = db.Column(db.Text)
+    license_document_url = db.Column(db.Text, nullable=False)
     pickup_odometer = db.Column(db.Integer)
     return_odometer = db.Column(db.Integer)
     handover_completed_at = db.Column(db.DateTime)
@@ -127,7 +127,21 @@ class Booking(db.Model):
         if self.is_past_due and self.actual_return_date:
             days_late = (self.actual_return_date - self.return_date).days
             if days_late > 0:
-                return days_late * self.daily_rate * 1.5  # 150% of daily rate for late fees
+                # Determine a daily rate even if booking.daily_rate was not persisted
+                derived_daily_rate = None
+                if self.daily_rate is not None:
+                    derived_daily_rate = self.daily_rate
+                elif getattr(self, 'car', None) is not None:
+                    try:
+                        if self.car and self.car.weekly_rate:
+                            derived_daily_rate = (self.car.weekly_rate or 0) / 7.0
+                        elif self.car and self.car.daily_rate:
+                            derived_daily_rate = self.car.daily_rate
+                    except Exception:
+                        derived_daily_rate = None
+                if derived_daily_rate is None:
+                    derived_daily_rate = 0
+                return days_late * derived_daily_rate * 1.5  # 150% of daily rate for late fees
         return 0
     
     def generate_booking_number(self):
