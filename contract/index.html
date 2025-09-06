@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Car Rental Agreement</title>
+    <link rel="stylesheet" href="./styles.css">
+  </head>
+  <body>
+    <div class="toolbar no-print">
+      <button id="btn-load-example" type="button">Load Example Data</button>
+      <button id="btn-clear" type="button">Clear Form</button>
+      <button id="btn-print" type="button">Print / Save PDF</button>
+    </div>
+
+    <main id="document">
+      <section class="page">
+        <h1>Car Rental Agreement</h1>
+
+        <div class="grid two">
+          <div class="panel">
+            <h2>1. REGISTERED OPERATOR DETAILS</h2>
+            <table class="kv">
+              <tbody>
+                <tr>
+                  <th>Name</th>
+                  <td id="operatorName">&nbsp;</td>
+                </tr>
+                <tr>
+                  <th>Address</th>
+                  <td id="operatorAddress">&nbsp;</td>
+                </tr>
+                <tr>
+                  <th>Contact</th>
+                  <td id="operatorContact">&nbsp;</td>
+                </tr>
+                <tr>
+                  <th>Email</th>
+                  <td id="operatorEmail">&nbsp;</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="panel">
+            <h2>2. RENTEÉ DETAILS</h2>
+            <table class="kv">
+              <tbody>
+                <tr>
+                  <th>Name</th>
+                  <td id="renteeName">&nbsp;</td>
+                </tr>
+                <tr>
+                  <th>Address</th>
+                  <td id="renteeAddress">&nbsp;</td>
+                </tr>
+                <tr>
+                  <th>DOB</th>
+                  <td id="renteeDob">&nbsp;</td>
+                </tr>
+                <tr>
+                  <th>Licence</th>
+                  <td id="renteeLicence">&nbsp;</td>
+                </tr>
+                <tr>
+                  <th>State</th>
+                  <td id="renteeState">&nbsp;</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="panel">
+          <h2>3. VEHICLE DETAILS</h2>
+          <table class="kv">
+            <tbody>
+              <tr>
+                <th>Registration</th>
+                <td id="vehicleRegistration">&nbsp;</td>
+                <th>Make</th>
+                <td id="vehicleMake">&nbsp;</td>
+              </tr>
+              <tr>
+                <th>Model</th>
+                <td id="vehicleModel">&nbsp;</td>
+                <th>Year</th>
+                <td id="vehicleYear">&nbsp;</td>
+              </tr>
+              <tr>
+                <th>VIN</th>
+                <td id="vehicleVin" colspan="3">&nbsp;</td>
+              </tr>
+              <tr>
+                <th>Color</th>
+                <td id="vehicleColor" colspan="3">&nbsp;</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <p class="note">NOTE: The parties choose the above stated addresses as their physical addresses at which legal proceedings may be instituted.</p>
+
+        <div class="panel">
+          <h2>3. RENTAL FEE / COST</h2>
+          <table class="fees">
+            <thead>
+              <tr>
+                <th>Description</th>
+                <th class="num">Amount (AUD)</th>
+              </tr>
+            </thead>
+            <tbody id="feesBody">
+              <!-- dynamically populated -->
+            </tbody>
+          </table>
+          <p class="small">All prices are inclusive of GST. Insurance will only cover Victoria.</p>
+        </div>
+
+        <div class="panel">
+          <h2>RETURN OF VEHICLE</h2>
+          <p>The Rentee agrees to return the above-described vehicle to the pick-up location in no less than the agreed condition.</p>
+          <p><strong>NOTE:</strong> THE CAR MUST BE FULL OF FUEL ON RETURN. FAILURE TO DO SO WILL INCUR A FILLING CHARGE OF $20 + FUEL COST PER LITRE.</p>
+        </div>
+
+        <div class="sign-row">
+          <div>
+            <div class="signature-block">
+              <div class="sig-label">Rentee Signature</div>
+              <canvas id="signaturePad" width="600" height="160" class="sig-canvas no-print"></canvas>
+              <img id="signatureImage" alt="Rentee Signature" class="sig-image" />
+              <div class="sig-actions no-print">
+                <button id="sig-clear" type="button">Clear</button>
+                <button id="sig-apply" type="button">Apply Signature</button>
+              </div>
+            </div>
+          </div>
+          <div class="meta">
+            <div>Date: <span id="dateSigned">&nbsp;</span></div>
+            <div>Rentee: <span id="renteeNameInline">&nbsp;</span></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="page terms">
+        <h2>Terms and Conditions of Service</h2>
+        <div class="terms-body" id="termsBody">
+          <ol>
+            <li>
+              <strong>DEFINITIONS AND INTERPRETATION</strong>
+              <ol>
+                <li>In this Agreement:</li>
+                <li>Clause headings are for convenience only and do not affect interpretation.</li>
+                <li>References include the cognate expressions and annexures as applicable.</li>
+                <li>Words in the singular include the plural and vice versa; a natural person includes a juristic person and vice versa.</li>
+                <li>Time computations exclude the first day and include the last; if the last day is a Saturday, Sunday or public holiday in Victoria, performance is due on the next business day.</li>
+                <li>Where numbers and words conflict, words prevail; contra proferentem and eiusdem generis rules do not apply.</li>
+                <li>Amounts exclude VAT unless otherwise stated; expiration or termination does not affect provisions which by nature survive.</li>
+              </ol>
+            </li>
+            <li><strong>DURATION</strong> — This Agreement commences on the date of delivery of the Vehicle and remains in force until the agreed expiry date.</li>
+            <li>
+              <strong>OWNERSHIP</strong>
+              <ol>
+                <li>The Rentor remains the owner and may inspect the Vehicle at reasonable times. The Rentee must notify the Rentor of any change of address.</li>
+                <li>The Rentee shall comply with Road Traffic Laws and shall not use the Vehicle for unauthorised commercial purposes, abuse or modify the Vehicle, drive negligently, carry damaging materials, drive under the influence, enter unrest areas, permit unauthorised drivers, or take the Vehicle outside Victoria without prior written consent.</li>
+                <li>The Rentee must safeguard the Vehicle, pay for consumables, allow access on request, lock the Vehicle and retain the keys when unattended, and activate immobiliser/alarm systems.</li>
+              </ol>
+            </li>
+            <li>
+              <strong>VEHICLE MAINTENANCE</strong> — The Rentee must maintain the Vehicle in roadworthy condition, not tamper with tracking/immobiliser, service per manufacturer at approved dealers at Rentee’s cost, and pay $500 admin if failure to service causes plan termination.
+            </li>
+            <li>
+              <strong>LIMITATION ON TRAVEL</strong> — 3000 km per week maximum; $0.70 per km excess. Odometer is authoritative unless malfunction reported immediately; tracking may be used to verify. Excess is calculated on expiry or early termination and payable on return.
+            </li>
+            <li>
+              <strong>COLLISION DAMAGE, THEFT OR TOTAL LOSS</strong> — Rentee must notify Rentor and police within 24 hours, not admit liability, use authorised towing, and is liable for amounts beyond waivers. If repairs exceed value or fair value is reduced, Rentee pays the shortfall. Rentor may provide a replacement vehicle at its discretion or Rentee may elect early termination once Rentor is compensated.
+            </li>
+            <li>
+              <strong>FINES AND PENALTIES</strong> — Rentee pays fines and tolls plus $10 admin each. Accumulation of 12+ offenses in 12 months is a material breach allowing termination.
+            </li>
+            <li>
+              <strong>DAMAGE AND LOSS LIABILITY WAIVER</strong> — Liability limited by waivers; windscreens/tyres may be excluded and for Rentee’s account; repudiated claims due to Rentee’s breach remain Rentee’s liability.
+            </li>
+            <li>
+              <strong>RETURN OF THE VEHICLE</strong> — Rentee must return Vehicle with all keys, accessories and books; deposits returned after inspection; repairs/replacements may be set off; late return incurs additional rental plus 20% penalty; no transfer of ownership or obligation to sell.
+            </li>
+            <li>
+              <strong>AREA OF USE</strong> — Vehicle must remain within the state of registration; use on sealed bitumen roads only; breach voids waivers.
+            </li>
+            <li>
+              <strong>INDEMNITIES</strong> — Rentee indemnifies Rentor for fines and third-party claims not covered by insurance.
+            </li>
+            <li>
+              <strong>GENERAL</strong> — Entire agreement; variations only in signed writing; no estoppel from indulgences; no external representations bind the parties.
+            </li>
+            <li>
+              <strong>CONSENT TO JURISDICTION</strong> — Non-exclusive jurisdiction of Victoria applies.
+            </li>
+            <li>
+              <strong>ACKNOWLEDGEMENT</strong> — Rentee acknowledges having read, understood, and accepted these terms.
+            </li>
+          </ol>
+        </div>
+      </section>
+    </main>
+
+    <script src="./script.js"></script>
+  </body>
+  </html>
+
