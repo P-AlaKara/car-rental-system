@@ -18,8 +18,15 @@ const fields = {
   fees: []
 };
 
+const FIXED_OPERATOR = {
+  operatorName: 'Aurora Motors Pty Ltd',
+  operatorAddress: 'Unit 2/11 Burrows Avenue, Dandenong VIC 3175',
+  operatorContact: '0420 759 910',
+  operatorEmail: 'info@auroramotors.com.au'
+};
+
 function hydrate(data) {
-  const merged = { ...fields, ...data };
+  const merged = { ...fields, ...FIXED_OPERATOR, ...data };
   for (const [key, value] of Object.entries(merged)) {
     if (key === 'fees') continue;
     const el = document.getElementById(key);
@@ -128,6 +135,50 @@ function setupControls() {
   document.getElementById('btn-load-example')?.addEventListener('click', () => {
     hydrate(exampleData());
   });
+
+  document.getElementById('btn-submit')?.addEventListener('click', async () => {
+    const payload = collectPayload();
+    if (!payload.renteeName || !payload.vehicleRegistration) {
+      alert('Please ensure renter and vehicle details are present before submitting, and apply a signature.');
+      return;
+    }
+    try {
+      const res = await fetch('/api/contracts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      if (!res.ok) throw new Error(await res.text());
+      const result = await res.json().catch(() => ({}));
+      alert('Contract submitted successfully.');
+      if (result && result.redirectUrl) window.location.href = result.redirectUrl;
+    } catch (err) {
+      console.error(err);
+      alert('Failed to submit contract. Please try again.');
+    }
+  });
+}
+
+function collectPayload() {
+  const data = {};
+  for (const key of Object.keys(fields)) {
+    if (key === 'fees') continue;
+    const el = document.getElementById(key);
+    data[key] = el ? el.textContent.trim() : '';
+  }
+  const img = document.getElementById('signatureImage');
+  data.signatureDataUrl = img && img.src ? img.src : '';
+  data.dateSigned = document.getElementById('dateSigned')?.textContent.trim() || '';
+  data.operator = FIXED_OPERATOR;
+  // Include fees rows as submitted
+  const rows = Array.from(document.querySelectorAll('#feesBody tr'));
+  data.fees = rows.map(r => ({
+    description: r.children[0]?.textContent.trim() || '',
+    amount: r.children[1]?.textContent.trim() || ''
+  }));
+  // Optionally pull bookingId from query
+  data.bookingId = new URLSearchParams(window.location.search).get('bookingId') || '';
+  return data;
 }
 
 function exampleData() {
@@ -164,6 +215,27 @@ function exampleData() {
 document.addEventListener('DOMContentLoaded', () => {
   setupSignaturePad();
   setupControls();
-  hydrate({});
+  const params = new URLSearchParams(window.location.search);
+  const dataFromParams = paramsToData(params);
+  hydrate(dataFromParams);
 });
+
+function paramsToData(params) {
+  const get = k => params.get(k) || '';
+  const fees = []; // accept future paramization
+  return {
+    renteeName: get('renteeName'),
+    renteeAddress: get('renteeAddress'),
+    renteeDob: get('renteeDob'),
+    renteeLicence: get('renteeLicence'),
+    renteeState: get('renteeState'),
+    vehicleRegistration: get('vehicleRegistration'),
+    vehicleMake: get('vehicleMake'),
+    vehicleModel: get('vehicleModel'),
+    vehicleYear: get('vehicleYear'),
+    vehicleVin: get('vehicleVin'),
+    vehicleColor: get('vehicleColor'),
+    fees
+  };
+}
 
