@@ -175,6 +175,9 @@
         <div class="section-card">
             <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
                 <h3><i class="fas fa-history"></i> Recent Service History</h3>
+                <button class="btn btn-sm btn-primary" onclick="openAddServiceRecord()">
+                    <i class="fas fa-plus"></i> Add Service Record
+                </button>
                 <button class="btn btn-sm btn-secondary" onclick="toggleSection('service-history-body')">
                     <i class="fas fa-chevron-down" id="service-history-chevron"></i>
                 </button>
@@ -268,6 +271,55 @@
     </div>
 </div>
 
+<!-- Add Service Record Modal -->
+<div class="modal" id="addServiceRecordModal">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add Service Record</h5>
+                <button type="button" class="close" onclick="closeModal('addServiceRecordModal')">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <form method="POST" action="{{ url_for('admin.add_service_record') }}">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label>Vehicle</label>
+                        <select name="car_id" class="form-control" required>
+                            {% for car in cars %}
+                                <option value="{{ car.id }}">{{ car.full_name }} - {{ car.license_plate }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Date</label>
+                        <input type="date" name="service_date" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Type of Service</label>
+                        <input type="text" name="service_type" class="form-control" placeholder="e.g., Oil change" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Cost</label>
+                        <input type="number" name="cost" class="form-control" step="0.01" min="0">
+                    </div>
+                    <div class="form-group">
+                        <label>Provider</label>
+                        <input type="text" name="provider" class="form-control" placeholder="Service provider name">
+                    </div>
+                    <div class="form-group">
+                        <label>Notes</label>
+                        <textarea name="description" class="form-control" rows="3" placeholder="Optional notes"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('addServiceRecordModal')">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Add Record</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 <!-- Complete Maintenance Modal -->
 <div class="modal" id="completeMaintenanceModal">
     <div class="modal-dialog">
@@ -333,6 +385,10 @@ function toggleSection(sectionId) {
         section.style.display = 'none';
         chevron.className = 'fas fa-chevron-right';
     }
+}
+
+function openAddServiceRecord() {
+    document.getElementById('addServiceRecordModal').style.display = 'block';
 }
 
 // Close modal when clicking outside

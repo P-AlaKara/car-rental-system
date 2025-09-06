@@ -1093,7 +1093,8 @@ def maintenance():
                          upcoming_services=upcoming_services,
                          recent_services=recent_services,
                          scheduled_maintenance=scheduled_maintenance,
-                         MaintenanceType=MaintenanceType)
+                         MaintenanceType=MaintenanceType,
+                         cars=cars)
 
 @admin_bp.route('/maintenance/schedule', methods=['POST'])
 @admin_required
@@ -1351,7 +1352,8 @@ def get_handover_details(booking_id):
             'deposit_amount': booking.deposit_amount,
             'daily_rate': booking.daily_rate,
             'pickup_date': booking.pickup_date.isoformat() if booking.pickup_date else None,
-            'return_date': booking.return_date.isoformat() if booking.return_date else None
+            'return_date': booking.return_date.isoformat() if booking.return_date else None,
+            'license_document_url': booking.license_document_url
         },
         'customer': {
             'id': customer.id,
@@ -1387,45 +1389,11 @@ def complete_handover(booking_id):
     data = request.get_json()
     
     try:
-        # 1. Update license verification
+        # 1. Update license verification (view-only; license must already be on file from booking stage)
         if data.get('license_verified'):
             booking.license_verified = True
             booking.license_verified_at = datetime.utcnow()
-        
-        # 1b. Save license document (image or PDF as base64 Data URL)
-        license_doc = data.get('license_document')
-        # Enforce license document upload if not already stored
-        if booking.license_document_url is None and not license_doc:
-            return jsonify({'success': False, 'message': 'Driver license document is required for handover.'}), 400
-        if license_doc and 'data' in license_doc:
-            # Expect license_doc like { name, mime, data: 'data:...;base64,XXXXX' }
-            try:
-                header, encoded = license_doc['data'].split(',', 1)
-            except ValueError:
-                header = None
-                encoded = None
-            if encoded:
-                filename_root = f"license_{booking_id}_{uuid.uuid4().hex[:8]}"
-                # Choose extension from mime or filename
-                ext = 'bin'
-                if license_doc.get('mime'):
-                    if 'pdf' in license_doc['mime']:
-                        ext = 'pdf'
-                    elif 'jpeg' in license_doc['mime'] or 'jpg' in license_doc['mime']:
-                        ext = 'jpg'
-                    elif 'png' in license_doc['mime']:
-                        ext = 'png'
-                if license_doc.get('name') and '.' in license_doc['name']:
-                    # Prefer original extension when present
-                    ext = license_doc['name'].rsplit('.', 1)[1].lower()
-                filename = f"{filename_root}.{ext}"
-                from app.services.storage import get_storage
-                storage = get_storage()
-                import base64 as _b64
-                key = f"licenses/{filename}"
-                url = storage.upload_bytes(_b64.b64decode(encoded), key, content_type=license_doc.get('mime'))
-                booking.license_document_url = url
-        
+
         # 2. Store odometer reading
         if data.get('odometer_reading'):
             booking.pickup_odometer = data['odometer_reading']
@@ -1543,6 +1511,75 @@ def complete_handover(booking_id):
         db.session.rollback()
         print(f"Error in handover: {e}")
         return jsonify({'success': False, 'message': str(e)})
+
+@admin_bp.route('/maintenance/add-record', methods=['POST'])
+@admin_required
+def add_service_record():
+    """Add a manual service record completed by admin."""
+    try:
+        car_id = request.form.get('car_id', type=int)
+        service_date_str = request.form.get('service_date')
+        service_type_text = (request.form.get('service_type') or '').strip()
+        cost = request.form.get('cost', type=float)
+        provider = request.form.get('provider')
+        description = request.form.get('description') or ''
+
+        if not car_id or not service_date_str or not service_type_text:
+            flash('Car, service date, and service type are required.', 'danger')
+            return redirect(url_for('admin.maintenance'))
+
+        try:
+            service_date = datetime.strptime(service_date_str, '%Y-%m-%d').date()
+        except Exception:
+            flash('Invalid service date format.', 'danger')
+            return redirect(url_for('admin.maintenance'))
+
+        # Map free-form type to enum; fall back to OTHER if not matched
+        normalized = service_type_text.lower().replace(' ', '_').replace('-', '_')
+        try:
+            mt = MaintenanceType(normalized)
+        except Exception:
+            mt = MaintenanceType.OTHER
+            if description:
+                description = f"{service_type_text} - {description}"
+            else:
+                description = service_type_text
+
+        maintenance = Maintenance(
+            car_id=car_id,
+            type=mt,
+            status=MaintenanceStatus.COMPLETED,
+            service_date=service_date,
+            completion_date=service_date,
+            description=description or service_type_text,
+            total_cost=cost or 0.0,
+            service_provider=provider
+        )
+
+        db.session.add(maintenance)
+
+        # Update car last service date if available
+        car = Car.query.get(car_id)
+        if car is not None:
+            try:
+                car.last_service_date = service_date
+            except Exception:
+                pass
+
+        db.session.commit()
+        flash('Service record added successfully!', 'success')
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f"Error adding service record: {str(e)}")
+        flash('Failed to add service record.', 'danger')
+    return redirect(url_for('admin.maintenance'))
+
+@admin_bp.route('/users/<int:user_id>/view')
+@admin_required
+def view_user(user_id):
+    """View full user details."""
+    user = User.query.get_or_404(user_id)
+    return render_template('admin/view_user.html', user=user)
 
 @admin_bp.route('/api/booking/<int:booking_id>/return-details', methods=['GET'])
 @admin_required
