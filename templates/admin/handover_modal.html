@@ -236,6 +236,15 @@ function loadHandoverModal(bookingId) {
         .then(response => response.json())
         .then(data => {
             renderHandoverForm(data);
+            // Save for contract generation
+            window.__handoverData = data;
+            try {
+                const url = data && data.booking && data.booking.contract_signed_url;
+                if (url) {
+                    const viewBtn = document.getElementById('viewContractBtn');
+                    if (viewBtn) { viewBtn.href = url; viewBtn.style.display = 'inline-flex'; }
+                }
+            } catch (e) { /* no-op */ }
         })
         .catch(error => {
             console.error('Error:', error);
@@ -312,16 +321,14 @@ function renderHandoverForm(data) {
         <!-- Step 2: Contract -->
         <div class="handover-section" id="section-contract">
             <h6><i class="fas fa-file-contract"></i> Rental Contract</h6>
-            <div class="alert alert-info">
-                <i class="fas fa-info-circle"></i> Contract generation will be implemented soon.
+            <div class="d-flex align-items-center" style="gap: 10px; flex-wrap: wrap;">
+                <button class="btn btn-outline-primary" onclick="openContractForSigning()">
+                    <i class="fas fa-file-signature"></i> Generate & Sign Contract
+                </button>
+                <a id="viewContractBtn" class="btn btn-outline-secondary" href="#" target="_blank" style="display:none;">
+                    <i class="fas fa-file-contract"></i> View Signed Contract
+                </a>
             </div>
-            <button class="btn btn-secondary" onclick="generateContract()">
-                <i class="fas fa-file-pdf"></i> Generate Contract
-            </button>
-            <button class="btn btn-secondary ml-2" onclick="uploadSignedContract()">
-                <i class="fas fa-upload"></i> Upload Signed Contract
-            </button>
-            <input type="file" id="contractFile" style="display:none" accept=".pdf,.jpg,.jpeg,.png">
             <div id="contractStatus" class="mt-3"></div>
         </div>
 
@@ -465,13 +472,27 @@ function handleLicenseUpload(event) {
     reader.readAsDataURL(file);
 }
 
-function generateContract() {
-    // Placeholder for contract generation
-    $('#contractStatus').html('<div class="alert alert-warning">Contract generation will be implemented soon</div>');
-}
-
-function uploadSignedContract() {
-    document.getElementById('contractFile').click();
+function openContractForSigning() {
+    // Build contract URL with booking and renter/vehicle details
+    const b = window.__handoverData.booking;
+    const c = window.__handoverData.customer;
+    const car = window.__handoverData.car;
+    const params = new URLSearchParams({
+        bookingId: String(b.id),
+        renteeName: c.full_name || '',
+        renteeAddress: c.address || '',
+        renteeDob: c.date_of_birth || '',
+        renteeLicence: c.license_number || '',
+        renteeState: c.license_state || '',
+        vehicleRegistration: car.license_plate || '',
+        vehicleMake: (car.name || '').split(' ')[0] || '',
+        vehicleModel: (car.name || '').split(' ').slice(1).join(' ') || '',
+        vehicleYear: '',
+        vehicleVin: '',
+        vehicleColor: ''
+    });
+    const url = `/contract/index.html?${params.toString()}`;
+    window.open(url, '_blank');
 }
 
 function completeHandover() {

@@ -159,6 +159,15 @@
                                         {% if booking.status.value != 'confirmed' %}disabled{% endif %}>
                                     <i class="fas fa-key"></i>
                                 </button>
+
+                                <!-- View Contract -->
+                                <a class="action-icon" 
+                                   href="{{ booking.contract_signed_url or '#' }}" 
+                                   target="_blank" 
+                                   data-tooltip="View signed contract"
+                                   {% if not booking.contract_signed_url %}aria-disabled="true" onclick="return false;"{% endif %}>
+                                    <i class="fas fa-file-contract" {% if not booking.contract_signed_url %}style="opacity:.3"{% endif %}></i>
+                                </a>
                                 
                                 <!-- Return Vehicle -->
                                 <button class="action-icon" 

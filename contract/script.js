@@ -143,7 +143,11 @@ function setupControls() {
       return;
     }
     try {
-      const res = await fetch('/api/contracts', {
+      // Capture outerHTML for archival
+      const htmlSnapshot = document.documentElement.outerHTML;
+      payload.html = htmlSnapshot;
+
+      const res = await fetch('/admin/api/contracts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)

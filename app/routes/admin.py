@@ -660,6 +660,87 @@ def view_car_documents(car_id):
 
     return render_template('admin/view_car_documents.html', car=car, documents=normalized_docs)
 
+@admin_bp.route('/api/contracts', methods=['POST'])
+@admin_required
+def save_signed_contract():
+    """Save a signed contract HTML and signature image, and attach to booking.
+
+    Expected JSON body from the contract page includes:
+    - bookingId: int
+    - signatureDataUrl: data:image/png;base64,...
+    - html: full HTML snapshot string for viewing/archival
+    - other renter/vehicle/operator fields (ignored for now)
+    """
+    try:
+        data = request.get_json(force=True)
+    except Exception:
+        return jsonify({'success': False, 'message': 'Invalid JSON'}), 400
+
+    booking_id = None
+    try:
+        booking_id = int(data.get('bookingId')) if data.get('bookingId') is not None else None
+    except Exception:
+        booking_id = None
+    if not booking_id:
+        return jsonify({'success': False, 'message': 'bookingId is required'}), 400
+
+    booking = Booking.query.get_or_404(booking_id)
+
+    # Prepare storage
+    from app.services.storage import get_storage
+    storage = get_storage()
+    timestamp = datetime.utcnow().strftime('%Y%m%d_%H%M%S')
+
+    saved_urls = {}
+
+    # Save signature image if provided
+    sig_url = None
+    sig_data_url = (data.get('signatureDataUrl') or '').strip()
+    if sig_data_url.startswith('data:image') and ',' in sig_data_url:
+        try:
+            header, encoded = sig_data_url.split(',', 1)
+            import base64 as _b64
+            image_bytes = _b64.b64decode(encoded)
+            sig_key = storage.generate_key('contracts', f"{booking_id}/signature_{timestamp}.png")
+            sig_url = storage.upload_bytes(image_bytes, sig_key, content_type='image/png')
+            saved_urls['signature'] = sig_url
+        except Exception as e:
+            current_app.logger.error(f"Failed to store signature for booking {booking_id}: {e}")
+
+    # Save HTML snapshot if provided
+    html_url = None
+    html_content = data.get('html')
+    if isinstance(html_content, str) and html_content.strip():
+        try:
+            html_bytes = html_content.encode('utf-8')
+            html_key = storage.generate_key('contracts', f"{booking_id}/contract_{timestamp}.html")
+            html_url = storage.upload_bytes(html_bytes, html_key, content_type='text/html; charset=utf-8')
+            saved_urls['html'] = html_url
+        except Exception as e:
+            current_app.logger.error(f"Failed to store contract HTML for booking {booking_id}: {e}")
+
+    # Save raw JSON as well for auditing
+    try:
+        import json as _json
+        json_key = storage.generate_key('contracts', f"{booking_id}/contract_{timestamp}.json")
+        json_bytes = _json.dumps(data, ensure_ascii=False).encode('utf-8')
+        json_url = storage.upload_bytes(json_bytes, json_key, content_type='application/json')
+        saved_urls['json'] = json_url
+    except Exception as e:
+        current_app.logger.error(f"Failed to store contract JSON for booking {booking_id}: {e}")
+
+    # Update booking record
+    try:
+        # Prefer HTML URL if available, otherwise signature image
+        booking.contract_signed_url = html_url or sig_url or booking.contract_signed_url
+        booking.contract_signed_at = datetime.utcnow()
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': f'Failed to update booking: {e}'}), 500
+
+    return jsonify({'success': True, 'saved': saved_urls, 'redirectUrl': url_for('admin.bookings')}), 201
+
 @admin_bp.route('/fleet/<int:car_id>/upload-images', methods=['POST'])
 @admin_required
 def upload_car_images(car_id):
