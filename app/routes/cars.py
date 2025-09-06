@@ -24,8 +24,8 @@ def index():
     # Apply filters
     if category:
         try:
-            # Convert string to enum
-            category_enum = CarCategory(category)
+            # Convert string to enum (case-insensitive)
+            category_enum = CarCategory.from_any(category)
             query = query.filter_by(category=category_enum)
         except (ValueError, KeyError):
             # Invalid category value, ignore filter
@@ -100,6 +100,22 @@ def view(id):
     # Get recent bookings for this car
     recent_bookings = Booking.query.filter_by(car_id=car.id).order_by(
         Booking.created_at.desc()).limit(5).all()
+
+    # Compute next availability date for this car (earliest active booking return date)
+    next_available_date = None
+    active_statuses = [BookingStatus.CONFIRMED, BookingStatus.IN_PROGRESS]
+    upcoming = (
+        Booking.query
+        .filter(
+            Booking.car_id == car.id,
+            Booking.status.in_(active_statuses),
+            Booking.return_date >= datetime.utcnow()
+        )
+        .order_by(Booking.return_date.asc())
+        .first()
+    )
+    if upcoming:
+        next_available_date = upcoming.return_date
     
     # Check if user has complete profile (for booking eligibility)
     has_complete_profile = False
@@ -113,7 +129,8 @@ def view(id):
                          car=car,
                          recent_bookings=recent_bookings,
                          has_complete_profile=has_complete_profile,
-                         missing_details=missing_details)
+                         missing_details=missing_details,
+                         next_available_date=next_available_date)
 
 
 @bp.route('/new', methods=['GET', 'POST'])
@@ -125,12 +142,9 @@ def create():
         data = request.form.to_dict()
         
         # Create new car
-        # Parse category accepting both enum name and value
+        # Parse category accepting both enum name and value (case-insensitive)
         category_value = data['category']
-        try:
-            parsed_category = CarCategory[category_value.upper()]
-        except (KeyError, AttributeError):
-            parsed_category = CarCategory(category_value)
+        parsed_category = CarCategory.from_any(category_value)
 
         car = Car(
             make=data['make'],

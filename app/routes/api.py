@@ -102,7 +102,7 @@ def get_cars():
     if category:
         try:
             from app.models.car import CarCategory
-            query = query.filter_by(category=CarCategory(category))
+            query = query.filter_by(category=CarCategory.from_any(category))
         except Exception:
             pass
     if available_only:
