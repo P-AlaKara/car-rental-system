@@ -49,6 +49,13 @@
                             </div>
                         </div>
                         
+                        <!-- Inline total beneath dates -->
+                        <div class="row">
+                            <div class="col-12">
+                                <div id="inline_price_display" class="mt-2" style="display:none;"></div>
+                            </div>
+                        </div>
+
                         <div class="row">
                             <div class="col-6">
                                 <div class="form-group">
@@ -159,11 +166,12 @@ document.addEventListener('DOMContentLoaded', function() {
     const weeklyRateInput = document.getElementById('weekly_rate');
     const priceDisplay = document.getElementById('price_display');
     const imageWrapper = document.getElementById('selectedCarImageWrapper');
+    const inlinePrice = document.getElementById('inline_price_display');
 
     // Build a lookup of car data for quick preview updates
     const carData = {
         {% for car in cars %}
-        {{ car.id }}: {
+        "{{ car.id }}": {
             name: "{{ car.full_name|e }}",
             category: "{{ car.category.value if car.category else '' }}",
             year: "{{ car.year }}",
@@ -249,7 +257,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Calculate price when dates change
     returnDate.addEventListener('change', calculatePrice);
     
-    // Also calculate when options change
+    // Also calculate when options change (only if such options exist)
     document.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
         checkbox.addEventListener('change', calculatePrice);
     });
@@ -266,15 +274,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 let subtotal = weeks * weeklyRate;
                 
                 // Add optional services
-                if (document.getElementById('with_driver').checked) {
-                    subtotal += days * 50;
-                }
-                if (document.getElementById('insurance_opted').checked) {
-                    subtotal += days * 15;
-                }
-                if (document.getElementById('gps_opted').checked) {
-                    subtotal += days * 10;
-                }
+                const withDriverEl = document.getElementById('with_driver');
+                const insuranceEl = document.getElementById('insurance_opted');
+                const gpsEl = document.getElementById('gps_opted');
+                if (withDriverEl && withDriverEl.checked) subtotal += days * 50;
+                if (insuranceEl && insuranceEl.checked) subtotal += days * 15;
+                if (gpsEl && gpsEl.checked) subtotal += days * 10;
                 
                 const tax = subtotal * 0.1;
                 const total = subtotal + tax;
@@ -305,6 +310,16 @@ document.addEventListener('DOMContentLoaded', function() {
                         </div>
                     </div>
                 `;
+
+                // Update inline price (compact)
+                if (inlinePrice) {
+                    inlinePrice.style.display = 'block';
+                    inlinePrice.innerHTML = `
+                        <div class="alert alert-info" style="padding: .5rem .75rem; margin: 0;">
+                            <strong>Total:</strong> $${total.toFixed(2)} (GST included)
+                        </div>
+                    `;
+                }
             }
         }
     }

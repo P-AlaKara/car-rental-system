@@ -9,6 +9,32 @@ class CarCategory(Enum):
     SUV = 'suv'
     COUPE = 'coupe'
 
+    @classmethod
+    def from_any(cls, value):
+        """Parse enum from name or value, case-insensitive.
+
+        Accepts inputs like 'HATCHBACK', 'hatchback', 'Hatchback',
+        the Enum member itself, or None (raises ValueError).
+        """
+        if isinstance(value, cls):
+            return value
+        if value is None:
+            raise ValueError('CarCategory cannot be None')
+        # Try by name (uppercase)
+        try:
+            return cls[str(value).upper()]
+        except Exception:
+            pass
+        # Try by value (lowercase)
+        try:
+            value_lower = str(value).lower()
+            for member in cls:
+                if member.value == value_lower:
+                    return member
+        except Exception:
+            pass
+        raise ValueError(f'Invalid CarCategory: {value}')
+
 
 class CarStatus(Enum):
     AVAILABLE = 'available'

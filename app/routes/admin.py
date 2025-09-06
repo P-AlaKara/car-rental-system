@@ -348,7 +348,7 @@ def fleet():
             pass
     if category:
         try:
-            query = query.filter_by(category=CarCategory(category))
+            query = query.filter_by(category=CarCategory.from_any(category))
         except ValueError:
             pass
     if search:
@@ -384,7 +384,7 @@ def add_car():
             year=request.form.get('year', type=int),
             license_plate=request.form.get('license_plate'),
             vin=request.form.get('vin'),
-            category=CarCategory(request.form.get('category')),
+            category=CarCategory.from_any(request.form.get('category')),
             seats=request.form.get('seats', type=int),
             transmission=request.form.get('transmission'),
             fuel_type=request.form.get('fuel_type'),
@@ -470,7 +470,7 @@ def edit_car(car_id):
         car.license_plate = request.form.get('license_plate')
         car.vin = request.form.get('vin')
         try:
-            car.category = CarCategory(request.form.get('category'))
+            car.category = CarCategory.from_any(request.form.get('category'))
         except Exception:
             pass
         car.seats = request.form.get('seats', type=int)
