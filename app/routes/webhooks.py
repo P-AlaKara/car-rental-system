@@ -53,7 +53,66 @@ def payadvantage_webhook():
                 if value is None or (isinstance(value, str) and value.strip() == ""):
                     return "", 400
 
-        # 202: success, acknowledge quickly; process asynchronously elsewhere
+        # Process events (best-effort) without delaying the 202 response
+        try:
+            from app.services.pay_advantage import PayAdvantageService
+            from app.models.booking import BookingStatus
+
+            pa_service = PayAdvantageService()
+            for event in payload:
+                if not isinstance(event, dict):
+                    continue
+
+                installment = pa_service.upsert_installment_from_webhook(event)
+
+                # If completed, ensure a Payment record exists (idempotent)
+                if installment and str(getattr(installment, 'status', '')).lower() == 'completed':
+                    fallback_key = None
+                    try:
+                        fallback_key = f"sched:{installment.schedule_id}|due:{installment.due_date.isoformat()}"
+                    except Exception:
+                        fallback_key = None
+                    gateway_txn_id = installment.external_payment_id or fallback_key
+
+                    existing = None
+                    if gateway_txn_id:
+                        existing = Payment.query.filter_by(
+                            gateway='payadvantage',
+                            gateway_transaction_id=gateway_txn_id,
+                            booking_id=installment.booking_id
+                        ).first()
+
+                    if not existing:
+                        booking = Booking.query.get(installment.booking_id)
+                        if not booking:
+                            continue
+
+                        amount = getattr(installment, 'paid_amount', None) or getattr(installment, 'due_amount', 0) or 0
+
+                        payment = Payment(
+                            booking_id=booking.id,
+                            user_id=booking.customer_id,
+                            amount=amount,
+                            currency='AUD',
+                            payment_method=PaymentMethod.DIRECT_DEBIT,
+                            status=PaymentStatus.COMPLETED,
+                            gateway='payadvantage',
+                            gateway_transaction_id=gateway_txn_id,
+                            gateway_response=event,
+                            description=f'Direct debit payment for booking {booking.booking_number}',
+                            processed_at=datetime.utcnow()
+                        )
+                        payment.generate_transaction_id()
+                        db.session.add(payment)
+
+                        if booking.status in [BookingStatus.PENDING, BookingStatus.CANCELLED, BookingStatus.NO_SHOW]:
+                            booking.status = BookingStatus.CONFIRMED
+
+                        db.session.commit()
+        except Exception as e:
+            current_app.logger.error(f"PayAdvantage processing error: {e}")
+
+        # 202: success, acknowledge quickly; processing is best-effort
         return "", 202
     except Exception as e:
         current_app.logger.error(f"PayAdvantage webhook error: {e}")
