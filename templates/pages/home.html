@@ -72,7 +72,11 @@
                             <i class="fas fa-gas-pump"></i> {{ car.fuel_type }}
                         </p>
                         <div class="price-tag">
-                            <strong>${{ car.daily_rate }}/day</strong>
+                            {% if car.weekly_rate %}
+                            <strong>${{ car.weekly_rate }}/week</strong>
+                            {% else %}
+                            <strong>Contact for rate</strong>
+                            {% endif %}
                         </div>
                         <a href="{{ url_for('cars.view', id=car.id) }}" class="btn btn-primary btn-block mt-3">View Details</a>
                     </div>

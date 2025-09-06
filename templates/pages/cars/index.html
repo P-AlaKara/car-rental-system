@@ -119,7 +119,7 @@
                         <br>
                         {% set next_date = next_available_map.get(car.id) %}
                         {% if next_date %}
-                        <small class="text-success">Available on {{ next_date.strftime('%B %d, %Y') }}</small>
+                        <small class="text-success">Will be available on {{ next_date.strftime('%B %d, %Y') }}</small>
                         {% endif %}
                         {% endif %}
                     </p>
@@ -131,9 +131,10 @@
                     </div>
                     
                     <div class="price-section mt-3">
-                        <h4 class="text-primary">${{ car.daily_rate }}/day</h4>
                         {% if car.weekly_rate %}
-                        <small class="text-muted">${{ car.weekly_rate }}/week</small>
+                        <h4 class="text-primary">${{ car.weekly_rate }}/week</h4>
+                        {% else %}
+                        <h4 class="text-primary">Contact for rate</h4>
                         {% endif %}
                     </div>
                     

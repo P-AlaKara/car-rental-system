@@ -4,16 +4,10 @@ from app import db
 
 
 class CarCategory(Enum):
-    ECONOMY = 'economy'
-    COMPACT = 'compact'
-    MIDSIZE = 'midsize'
-    FULLSIZE = 'fullsize'
-    LUXURY = 'luxury'
+    HATCHBACK = 'hatchback'
+    SEDAN = 'sedan'
     SUV = 'suv'
-    MINIVAN = 'minivan'
-    CONVERTIBLE = 'convertible'
-    SPORTS = 'sports'
-    ELECTRIC = 'electric'
+    COUPE = 'coupe'
 
 
 class CarStatus(Enum):
@@ -99,17 +93,24 @@ class Car(db.Model):
         return self.status == CarStatus.AVAILABLE and self.is_active
     
     def calculate_rental_cost(self, days):
-        """Calculate rental cost based on number of days."""
-        if days >= 30 and self.monthly_rate:
-            months = days // 30
-            remaining_days = days % 30
-            return (months * self.monthly_rate) + (remaining_days * self.daily_rate)
-        elif days >= 7 and self.weekly_rate:
-            weeks = days // 7
-            remaining_days = days % 7
-            return (weeks * self.weekly_rate) + (remaining_days * self.daily_rate)
-        else:
-            return days * self.daily_rate
+        """Calculate rental cost based on weekly rates only.
+
+        Old daily-rate logic kept for reference:
+        # return days * self.daily_rate
+        """
+        if not days or days < 1:
+            days = 1
+        if self.weekly_rate and self.weekly_rate > 0:
+            # Charge in whole weeks: 1-7 days = 1 week, 8-14 = 2 weeks, etc.
+            from math import ceil
+            weeks = ceil(days / 7)
+            return weeks * self.weekly_rate
+        # Fallback if weekly_rate is not set: approximate from daily
+        if self.daily_rate:
+            from math import ceil
+            weeks = ceil(days / 7)
+            return weeks * (self.daily_rate * 7)
+        return 0.0
     
     @property
     def km_until_service(self):

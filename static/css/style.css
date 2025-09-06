@@ -117,8 +117,12 @@ h6 { font-size: 1.125rem; }
 }
 
 .logo i {
-    color: var(--gold-400);
-    -webkit-text-fill-color: var(--gold-400);
+    color: var(--secondary-color);
+    -webkit-text-fill-color: var(--secondary-color);
+}
+
+.logo .logo-icon {
+    color: var(--secondary-color) !important;
 }
 
 .logo:hover {

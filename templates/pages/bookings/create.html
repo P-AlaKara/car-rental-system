@@ -24,9 +24,9 @@
                             <select name="car_id" id="car_id" class="form-control" required>
                                 <option value="">Choose a car...</option>
                                 {% for car in cars %}
-                                <option value="{{ car.id }}" data-rate="{{ car.daily_rate }}"
+                                <option value="{{ car.id }}" data-weekly-rate="{{ car.weekly_rate or 0 }}"
                                     {% if selected_car and selected_car.id == car.id %}selected{% endif %}>
-                                    {{ car.full_name }} - ${{ car.daily_rate }}/day
+                                    {{ car.full_name }} - {% if car.weekly_rate %}${{ car.weekly_rate }}/week{% else %}Contact for rate{% endif %}
                                 </option>
                                 {% endfor %}
                             </select>
@@ -71,11 +71,15 @@
                             <textarea class="form-control" id="customer_notes" name="customer_notes" rows="3"></textarea>
                         </div>
                         
-                        <input type="hidden" id="daily_rate" value="0">
+                        <input type="hidden" id="weekly_rate" value="0">
                         
                         <div class="mt-4">
                             <div class="button-group">
+                                {% if current_user.is_authenticated %}
                                 <button type="submit" class="btn btn-primary btn-lg">Confirm Booking</button>
+                                {% else %}
+                                <a href="{{ url_for('auth.login', next=url_for('bookings.create', car_id=request.args.get('car_id'))) }}" class="btn btn-primary btn-lg">Login to Confirm Booking</a>
+                                {% endif %}
                                 <a href="{{ url_for('cars.index') }}" class="btn btn-secondary btn-lg">Cancel</a>
                                 <a href="{{ url_for('main.terms') }}" class="btn btn-outline btn-lg" target="_blank">
                                     <i class="fas fa-file-contract"></i> T&Cs
@@ -111,7 +115,7 @@
                     </div>
                     <hr>
                     <div class="price-highlight">
-                        <strong>Daily Rate:</strong>
+                        <strong>Weekly Rate:</strong>
                         <span class="text-primary" id="selectedCarRate">$0</span>
                     </div>
                 </div>
@@ -123,7 +127,7 @@
                 </div>
                 <div class="card-body">
                     <div id="price_display">
-                        <p class="text-muted">Select dates to see pricing</p>
+                        <p class="text-muted">Select dates to see total (GST included)</p>
                     </div>
                 </div>
             </div>
@@ -152,7 +156,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const carSelect = document.getElementById('car_id');
     const pickupDate = document.getElementById('pickup_date');
     const returnDate = document.getElementById('return_date');
-    const dailyRateInput = document.getElementById('daily_rate');
+    const weeklyRateInput = document.getElementById('weekly_rate');
     const priceDisplay = document.getElementById('price_display');
     const imageWrapper = document.getElementById('selectedCarImageWrapper');
 
@@ -166,7 +170,7 @@ document.addEventListener('DOMContentLoaded', function() {
             seats: "{{ car.seats }}",
             transmission: "{{ car.transmission }}",
             fuel: "{{ car.fuel_type }}",
-            rate: {{ '%.2f'|format(car.daily_rate)|replace(',', '') }},
+            rate: {{ '%.2f'|format(car.weekly_rate or 0)|replace(',', '') }},
             image: "{{ car.main_image or (car.images[0] if car.images and car.images|length > 0 else 'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?w=400&h=300&fit=crop') }}"
         }{% if not loop.last %},{% endif %}
         {% endfor %}
@@ -180,9 +184,9 @@ document.addEventListener('DOMContentLoaded', function() {
     const fuelEl = document.getElementById('selectedCarFuel');
     const rateEl = document.getElementById('selectedCarRate');
     
-    // If a car is pre-selected, set its daily rate and preview
+    // If a car is pre-selected, set its weekly rate and preview
     {% if selected_car %}
-    dailyRateInput.value = {{ selected_car.daily_rate }};
+    weeklyRateInput.value = {{ selected_car.weekly_rate or 0 }};
     (function(){
         const data = carData[{{ selected_car.id }}];
         if (data) {
@@ -212,10 +216,10 @@ document.addEventListener('DOMContentLoaded', function() {
         calculatePrice();
     });
     
-    // Update daily rate when car is selected
+    // Update weekly rate when car is selected
     carSelect.addEventListener('change', function() {
         const selectedOption = this.options[this.selectedIndex];
-        dailyRateInput.value = selectedOption.dataset.rate || 0;
+        weeklyRateInput.value = selectedOption.dataset.weeklyRate || 0;
         const id = this.value;
         const data = carData[id];
         if (data) {
@@ -251,14 +255,15 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     
     function calculatePrice() {
-        if (pickupDate.value && returnDate.value && dailyRateInput.value > 0) {
+        if (pickupDate.value && returnDate.value && weeklyRateInput.value > 0) {
             const start = new Date(pickupDate.value);
             const end = new Date(returnDate.value);
             const days = Math.ceil((end - start) / (1000 * 60 * 60 * 24));
             
             if (days > 0) {
-                const dailyRate = parseFloat(dailyRateInput.value);
-                let subtotal = days * dailyRate;
+                const weeklyRate = parseFloat(weeklyRateInput.value);
+                const weeks = Math.ceil(days / 7);
+                let subtotal = weeks * weeklyRate;
                 
                 // Add optional services
                 if (document.getElementById('with_driver').checked) {
@@ -281,8 +286,8 @@ document.addEventListener('DOMContentLoaded', function() {
                             <strong>${days}</strong>
                         </div>
                         <div class="price-item">
-                            <span>Daily Rate:</span>
-                            <strong>$${dailyRate.toFixed(2)}</strong>
+                            <span>Weekly Rate:</span>
+                            <strong>$${weeklyRate.toFixed(2)}</strong>
                         </div>
                         <hr>
                         <div class="price-item">
@@ -290,7 +295,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             <strong>$${subtotal.toFixed(2)}</strong>
                         </div>
                         <div class="price-item">
-                            <span>Tax (10%):</span>
+                            <span>GST (10%):</span>
                             <strong>$${tax.toFixed(2)}</strong>
                         </div>
                         <hr>
