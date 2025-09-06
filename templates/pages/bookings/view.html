@@ -141,8 +141,8 @@
                                 <p class="font-weight-bold">{{ booking.total_days }} day(s)</p>
                             </div>
                             <div class="col-md-6 mb-3">
-                                <label class="text-muted">Daily Rate</label>
-                                <p class="font-weight-bold">${{ "%.2f"|format(booking.daily_rate) }}</p>
+                                <label class="text-muted">Weekly-based Pricing</label>
+                                <p class="font-weight-bold">GST included</p>
                             </div>
                         </div>
                         
@@ -220,7 +220,7 @@
                     <h4 class="mb-3">Pricing Summary</h4>
                     <div class="price-breakdown">
                         <div class="price-item">
-                            <span>Daily Rate × {{ booking.total_days }} days</span>
+                            <span>Weekly rate calculation applied</span>
                             <span>${{ "%.2f"|format(booking.subtotal) }}</span>
                         </div>
                         {% if booking.with_driver %}

@@ -39,20 +39,25 @@ def index():
 
 
 @bp.route('/new', methods=['GET', 'POST'])
-@login_required
 def create():
     """Create a new booking."""
-    # Check if user has complete driver license and address details
-    if not current_user.has_complete_driver_details():
-        missing_details = current_user.get_missing_details()
-        flash('⚠️ You cannot book a car without completing your driver profile. Please provide the following information:', 'danger')
-        for detail in missing_details:
-            flash(f'• {detail}', 'danger')
-        # Store the intended car_id in session to redirect back after profile completion
-        if request.args.get('car_id'):
-            from flask import session
-            session['pending_booking_car'] = request.args.get('car_id')
-        return redirect(url_for('auth.edit_profile') + '#license')
+    # Allow guests to select dates and see total, require login only to confirm
+    if not current_user.is_authenticated:
+        if request.method == 'POST':
+            flash('Please login to confirm booking.', 'info')
+            return redirect(url_for('auth.login', next=url_for('bookings.create', car_id=request.form.get('car_id'))))
+    else:
+        # Only enforce profile completion for logged-in users when confirming
+        if request.method == 'POST' and not current_user.has_complete_driver_details():
+            missing_details = current_user.get_missing_details()
+            flash('⚠️ You cannot book a car without completing your driver profile. Please provide the following information:', 'danger')
+            for detail in missing_details:
+                flash(f'• {detail}', 'danger')
+            # Store the intended car_id in session to redirect back after profile completion
+            if request.args.get('car_id'):
+                from flask import session
+                session['pending_booking_car'] = request.args.get('car_id')
+            return redirect(url_for('auth.edit_profile') + '#license')
     
     if request.method == 'POST':
         # Double-check profile completion in case of direct POST manipulation
@@ -81,7 +86,7 @@ def create():
             total_days = 1
         
         subtotal = car.calculate_rental_cost(total_days)
-        tax_amount = subtotal * 0.1  # 10% tax
+        tax_amount = subtotal * 0.1  # 10% GST
         total_amount = subtotal + tax_amount
         
         # Create booking
@@ -92,7 +97,7 @@ def create():
             return_date=return_date,
             pickup_location=data.get('pickup_location', 'Main Office'),
             return_location=data.get('return_location', 'Main Office'),
-            daily_rate=car.daily_rate,
+            # daily_rate=car.daily_rate,  # Deprecated: using weekly-based pricing
             total_days=total_days,
             subtotal=subtotal,
             tax_amount=tax_amount,

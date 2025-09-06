@@ -370,6 +370,14 @@ def fleet():
 def add_car():
     """Add a new car to the fleet."""
     if request.method == 'POST':
+        weekly_rate_value = request.form.get('weekly_rate', type=float)
+        derived_daily_rate = None
+        if weekly_rate_value:
+            try:
+                derived_daily_rate = round(float(weekly_rate_value) / 7.0, 2)
+            except Exception:
+                derived_daily_rate = None
+
         car = Car(
             make=request.form.get('make'),
             model=request.form.get('model'),
@@ -380,8 +388,8 @@ def add_car():
             seats=request.form.get('seats', type=int),
             transmission=request.form.get('transmission'),
             fuel_type=request.form.get('fuel_type'),
-            daily_rate=request.form.get('daily_rate', type=float),
-            weekly_rate=request.form.get('weekly_rate', type=float),
+            daily_rate=(derived_daily_rate if derived_daily_rate is not None else request.form.get('daily_rate', type=float) or 0.0),  # Keep column populated
+            weekly_rate=weekly_rate_value,
             monthly_rate=request.form.get('monthly_rate', type=float),
             color=request.form.get('color'),
             agency=request.form.get('agency'),
@@ -398,29 +406,26 @@ def add_car():
         
         db.session.add(car)
         db.session.flush()  # Flush to get the car ID before committing
-        
-        # Handle image uploads
-        if 'images' in request.files:
-            files = request.files.getlist('images')
-            uploaded_images = []
-            
-            # Upload to storage (Spaces or local)
+
+        # Require main image upload
+        main_file = request.files.get('main_image')
+        if not main_file or not getattr(main_file, 'filename', None):
+            db.session.rollback()
+            flash('A main car image is required.', 'danger')
+            return redirect(url_for('admin.add_car'))
+
+        try:
             from app.services.storage import get_storage
             storage = get_storage()
-            
-            for file in files:
-                if file and file.filename:
-                    # Secure the filename
-                    filename = secure_filename(file.filename)
-                    # Add timestamp to make filename unique
-                    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-                    filename = f"{car.id}_{timestamp}_{filename}"
-                    key = storage.generate_key('cars', filename)
-                    url = storage.upload_fileobj(file, key, content_type=file.mimetype)
-                    uploaded_images.append(url)
-            
-            if uploaded_images:
-                car.images = uploaded_images
+            filename = secure_filename(main_file.filename)
+            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+            filename = f"{car.id}_{timestamp}_{filename}"
+            key = storage.generate_key('cars', filename)
+            car.main_image = storage.upload_fileobj(main_file, key, content_type=main_file.mimetype)
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Failed to upload main image: {e}', 'danger')
+            return redirect(url_for('admin.add_car'))
         
         # Handle document uploads (PDFs and images) via unified storage
         if 'documents' in request.files:
@@ -471,8 +476,18 @@ def edit_car(car_id):
         car.seats = request.form.get('seats', type=int)
         car.transmission = request.form.get('transmission')
         car.fuel_type = request.form.get('fuel_type')
-        car.daily_rate = request.form.get('daily_rate', type=float)
-        car.weekly_rate = request.form.get('weekly_rate', type=float)
+        # Update rates carefully to avoid nulls
+        weekly_rate_value = request.form.get('weekly_rate', type=float)
+        if weekly_rate_value is not None:
+            car.weekly_rate = weekly_rate_value
+            try:
+                car.daily_rate = round(float(weekly_rate_value) / 7.0, 2)
+            except Exception:
+                pass
+        else:
+            daily_rate_value = request.form.get('daily_rate', type=float)
+            if daily_rate_value is not None:
+                car.daily_rate = daily_rate_value
         car.monthly_rate = request.form.get('monthly_rate', type=float)
         car.color = request.form.get('color')
         car.agency = request.form.get('agency')

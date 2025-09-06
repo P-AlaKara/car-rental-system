@@ -21,8 +21,8 @@ class User(UserMixin, db.Model):
     password_hash = db.Column(db.String(255), nullable=False)
     
     # Profile information
-    first_name = db.Column(db.String(50), nullable=False)
-    last_name = db.Column(db.String(50), nullable=False)
+    first_name = db.Column(db.String(50), nullable=False, default='User')
+    last_name = db.Column(db.String(50), nullable=False, default='')
     phone = db.Column(db.String(20))
     address = db.Column(db.Text)
     city = db.Column(db.String(50))

@@ -75,8 +75,8 @@
                         <span class="detail-value">{{ car.category.value.title() if car.category else '' }}</span>
                     </div>
                     <div class="detail-row">
-                        <span class="detail-label">Daily Rate:</span>
-                        <span class="detail-value">${{ "{:,.2f}".format(car.daily_rate) }}</span>
+                        <span class="detail-label">Weekly Rate:</span>
+                        <span class="detail-value">${{ "{:,.2f}".format(car.weekly_rate or 0) }}</span>
                     </div>
                     <div class="detail-row">
                         <span class="detail-label">Current Odometer:</span>

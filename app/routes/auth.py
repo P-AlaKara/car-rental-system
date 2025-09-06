@@ -78,8 +78,8 @@ def register():
         else:
             data = request.form.to_dict()
         
-        # Validate required fields
-        required_fields = ['email', 'username', 'password', 'first_name', 'last_name']
+        # Validate required fields (only email and password compulsory)
+        required_fields = ['email', 'password']
         for field in required_fields:
             if not data.get(field):
                 if request.is_json:
@@ -94,7 +94,7 @@ def register():
             flash('Email already registered', 'error')
             return redirect(url_for('auth.register'))
         
-        if User.query.filter_by(username=data['username']).first():
+        if data.get('username') and User.query.filter_by(username=data['username']).first():
             if request.is_json:
                 return jsonify({'error': 'Username already taken'}), 400
             flash('Username already taken', 'error')
@@ -103,9 +103,9 @@ def register():
         # Create new user
         user = User(
             email=data['email'],
-            username=data['username'],
-            first_name=data['first_name'],
-            last_name=data['last_name'],
+            username=data.get('username'),
+            first_name=(data.get('first_name') or 'User'),
+            last_name=(data.get('last_name') or ' '),
             phone=data.get('phone'),
             role=Role.CUSTOMER
         )
